@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   SidebarProvider,
   Sidebar,
@@ -39,6 +39,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -49,6 +52,20 @@ const navItems = [
 ];
 
 function UserNav() {
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: "Logged Out", description: "You have been successfully logged out." });
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -64,29 +81,27 @@ function UserNav() {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">Velocity Driver</p>
             <p className="text-xs leading-none text-muted-foreground">
-              driver@example.com
+              {auth.currentUser?.email || "driver@example.com"}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push('/profile')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <Link href="/">
-          <DropdownMenuItem>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
-          </DropdownMenuItem>
-        </Link>
+        <DropdownMenuItem onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Log out</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
 function MobileNav() {
-    const { openMobile, setOpenMobile, toggleSidebar } = useSidebar();
+    const { toggleSidebar } = useSidebar();
     return (
         <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
             <Menu className="h-6 w-6" />
@@ -102,6 +117,19 @@ export default function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: "Logged Out", description: "You have been successfully logged out." });
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
+    }
+  };
 
   return (
     <SidebarProvider defaultOpen>
@@ -137,16 +165,10 @@ export default function AuthenticatedLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-             <Avatar className="h-8 w-8">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="User" data-ai-hint="person avatar small" />
-                <AvatarFallback>VD</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                <span className="text-sm font-semibold">Current Driver</span>
-                <span className="text-xs text-muted-foreground">Online</span>
-            </div>
-          </div>
+          <Button variant="ghost" onClick={handleLogout} className="w-full justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <LogOut className="h-5 w-5" />
+            <span className="group-data-[collapsible=icon]:hidden ml-2">Logout</span>
+          </Button>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
