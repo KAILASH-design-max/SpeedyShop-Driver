@@ -12,40 +12,78 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus, Mail, Lock, Car, FileText } from "lucide-react";
+import { auth, db } from "@/lib/firebase"; // Import Firebase auth and db
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  vehicleInfo: z.string().min(2, { message: "Vehicle information is required." }),
-  // For file upload, actual handling would be more complex
-  // For this prototype, we'll just use a text input or a basic file input
-  // documents: z.instanceof(File).optional(), // This is tricky with SSR and RHF.
+  vehicleDetails: z.string().min(2, { message: "Vehicle details are required." }),
 });
 
 export function SignupForm() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: "",
       email: "",
       password: "",
-      vehicleInfo: "",
+      vehicleDetails: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Mock signup logic
-    console.log("Signup values:", values);
-    // In a real app, you would create the user and handle document uploads
-    router.push("/dashboard"); 
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Store additional user info in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: values.email,
+        fullName: values.fullName,
+        vehicleDetails: values.vehicleDetails,
+        createdAt: new Date().toISOString(),
+      });
+
+      toast({
+        title: "Account Created!",
+        description: "Your account has been successfully created.",
+        className: "bg-green-500 text-white",
+      });
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      let errorMessage = "Failed to create account. Please try again.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already in use. Please try a different email or log in.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "The password is too weak. Please choose a stronger password.";
+      }
+      toast({
+        variant: "destructive",
+        title: "Signup Failed",
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -67,7 +105,7 @@ export function SignupForm() {
                 <FormItem>
                   <FormLabel className="flex items-center"><UserPlus className="mr-2 h-4 w-4 text-muted-foreground"/>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="John Doe" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -80,7 +118,7 @@ export function SignupForm() {
                 <FormItem>
                   <FormLabel className="flex items-center"><Mail className="mr-2 h-4 w-4 text-muted-foreground"/>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} />
+                    <Input placeholder="you@example.com" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -93,7 +131,7 @@ export function SignupForm() {
                 <FormItem>
                   <FormLabel className="flex items-center"><Lock className="mr-2 h-4 w-4 text-muted-foreground"/>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -101,12 +139,12 @@ export function SignupForm() {
             />
             <FormField
               control={form.control}
-              name="vehicleInfo"
+              name="vehicleDetails"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Information</FormLabel>
+                  <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Details</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Honda Activa, Blue Bike" {...field} />
+                    <Input placeholder="e.g., Honda Activa, Blue Bike" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -115,15 +153,15 @@ export function SignupForm() {
             <FormItem>
               <FormLabel className="flex items-center"><FileText className="mr-2 h-4 w-4 text-muted-foreground"/>Upload Documents</FormLabel>
               <FormControl>
-                <Input type="file" multiple className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:hover:bg-primary/20 file:border-none file:rounded-md file:px-3 file:py-1.5" />
+                <Input type="file" multiple className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:hover:bg-primary/20 file:border-none file:rounded-md file:px-3 file:py-1.5" disabled={isLoading} />
               </FormControl>
               <FormDescription>
-                Upload driver&apos;s license, vehicle registration, etc.
+                Upload driver&apos;s license, vehicle registration, etc. (Document upload functionality will be implemented in a future step.)
               </FormDescription>
               <FormMessage />
             </FormItem>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-             <UserPlus className="mr-2 h-5 w-5" /> Sign Up
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+             {isLoading ? "Signing up..." : <><UserPlus className="mr-2 h-5 w-5" /> Sign Up</>}
             </Button>
           </form>
         </Form>

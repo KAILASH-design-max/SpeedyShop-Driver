@@ -18,6 +18,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn } from "lucide-react";
+import { auth } from "@/lib/firebase"; // Import Firebase auth
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -26,6 +30,9 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -34,11 +41,32 @@ export function LoginForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Mock login logic
-    console.log("Login values:", values);
-    // In a real app, you would set some auth state here
-    router.push("/dashboard"); 
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: "Login Successful!",
+        description: "Welcome back!",
+        className: "bg-green-500 text-white",
+      });
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      let errorMessage = "Invalid email or password. Please try again.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "The email address is not valid.";
+      }
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -60,7 +88,7 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel className="flex items-center"><Mail className="mr-2 h-4 w-4 text-muted-foreground" />Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} />
+                    <Input placeholder="you@example.com" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -73,14 +101,14 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel className="flex items-center"><Lock className="mr-2 h-4 w-4 text-muted-foreground" />Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              <LogIn className="mr-2 h-5 w-5" /> Log In
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+              {isLoading ? "Logging in..." : <><LogIn className="mr-2 h-5 w-5" /> Log In</>}
             </Button>
           </form>
         </Form>
