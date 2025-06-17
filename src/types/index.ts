@@ -1,5 +1,4 @@
 
-
 export interface Order {
   id: string;
   customerName: string;
@@ -36,9 +35,10 @@ export interface ProfileDocumentUrls {
 
 export interface Profile {
   uid: string;
-  fullName: string;
+  name: string; // Changed from fullName
   email: string; // Non-editable after creation
-  phone: string;
+  phoneNumber: string; // Changed from phone
+  role?: string; // Added role
   vehicleDetails: string; // e.g., "Honda Activa - MH01AB1234"
   bankAccountNumber: string; // Store fully, display masked
   profilePictureUrl?: string;
@@ -69,4 +69,3 @@ export interface ChatThread {
   unreadCount: number;
   avatarUrl?: string;
 }
-

@@ -26,7 +26,7 @@ export default function ProfilePage() {
       if (user) {
         setCurrentUser(user);
       } else {
-        router.push("/"); // Redirect to login if not authenticated
+        router.push("/"); 
       }
     });
     return () => unsubscribeAuth();
@@ -34,23 +34,19 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (currentUser) {
-      const profileRef = doc(db, "deliveryPartners", currentUser.uid);
+      const profileRef = doc(db, "users", currentUser.uid); // Changed collection to "users"
       const unsubscribeProfile = onSnapshot(
         profileRef,
         (docSnap) => {
           if (docSnap.exists()) {
             setProfile(docSnap.data() as Profile);
           } else {
-            // This case might happen if signup didn't complete, or data was deleted.
-            // For robustness, one might create a default profile structure here.
-            // For now, we assume signup creates the basic structure.
-            toast({ variant: "destructive", title: "Profile Not Found", description: "Could not load your profile data." });
-            // Initialize a default structure if it's missing to prevent errors
              const defaultProfile: Profile = {
                 uid: currentUser.uid,
                 email: currentUser.email || "",
-                fullName: currentUser.displayName || "",
-                phone: "",
+                name: currentUser.displayName || "", // Changed from fullName
+                phoneNumber: "", // Changed from phone
+                role: "deliveryPartner",
                 vehicleDetails: "",
                 bankAccountNumber: "",
                 profilePictureUrl: "",
@@ -62,8 +58,8 @@ export default function ProfilePage() {
                 createdAt: new Date().toISOString(),
              };
              setProfile(defaultProfile);
-             // Optionally, write this default to Firestore
-             // setDoc(profileRef, defaultProfile).catch(err => console.error("Error creating default profile", err));
+             setDoc(profileRef, defaultProfile).catch(err => console.error("Error creating default profile", err));
+             toast({ title: "Profile Initialized", description: "Your profile has been initialized. Please complete your details." });
           }
           setLoading(false);
         },
@@ -75,13 +71,13 @@ export default function ProfilePage() {
       );
       return () => unsubscribeProfile();
     } else {
-      setLoading(true); // Keep loading if no current user yet
+      setLoading(true); 
     }
   }, [currentUser, toast]);
 
   const handleProfileUpdate = async (updatedData: Partial<Profile>) => {
     if (!currentUser) return;
-    const profileRef = doc(db, "deliveryPartners", currentUser.uid);
+    const profileRef = doc(db, "users", currentUser.uid); // Changed collection to "users"
     try {
       await updateDoc(profileRef, updatedData);
       toast({ title: "Profile Updated", description: "Your changes have been saved.", className: "bg-green-500 text-white" });
@@ -104,7 +100,6 @@ export default function ProfilePage() {
     <div className="container mx-auto py-8 space-y-8">
       <ProfileForm profile={profile} onUpdate={handleProfileUpdate} />
       <Separator />
-      {/* Ensure PerformanceMetrics receives the necessary fields from the profile state */}
       <PerformanceMetrics 
         profile={{
           ...profile,
