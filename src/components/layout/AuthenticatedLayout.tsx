@@ -118,7 +118,7 @@ export default function AuthenticatedLayout({
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.label}>
-                <Link href={item.href} legacyBehavior passHref>
+                <Link href={item.href} asChild>
                   <SidebarMenuButton
                     className={cn(
                       pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))
