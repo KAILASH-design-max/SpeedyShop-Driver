@@ -9,20 +9,10 @@ import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Navigation, PackageCheck, MessageSquare } from "lucide-react";
+import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock data fetching function
-const fetchOrderDetails = async (id: string): Promise<Order | null> => {
-  console.log("Fetching order:", id);
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const mockOrders: Order[] = [
-    { id: "ORD789DEF", customerName: "Carol White", pickupLocation: "East Dark Store", dropOffLocation: "789 Pine Ln, Anytown", items: ["Pharmacy Items", "Band-aids"], status: "accepted", estimatedEarnings: 9.25, estimatedTime: 30, deliveryInstructions: "Leave at front porch if no answer.", customerContact: "555-0100" },
-    { id: "ORD123XYZ", customerName: "Alice Smith", pickupLocation: "North Dark Store", dropOffLocation: "123 Main St, Anytown", items: ["Groceries", "Snacks"], status: "picked-up", estimatedEarnings: 7.50, estimatedTime: 25, deliveryInstructions: "Ring bell twice.", customerContact: "555-0101" },
-  ];
-  return mockOrders.find(order => order.id === id) || null;
-};
+import { db } from "@/lib/firebase";
+import { doc, onSnapshot, updateDoc, DocumentData } from "firebase/firestore";
 
 export default function OrderPage() {
   const params = useParams();
@@ -31,49 +21,85 @@ export default function OrderPage() {
   const orderId = typeof params.id === 'string' ? params.id : '';
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (orderId) {
-      fetchOrderDetails(orderId).then(data => {
-        setOrder(data);
+      const orderRef = doc(db, "orders", orderId);
+      const unsubscribe = onSnapshot(orderRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setOrder({ id: docSnap.id, ...docSnap.data() } as Order);
+        } else {
+          setOrder(null);
+          toast({ variant: "destructive", title: "Error", description: "Order not found." });
+        }
+        setLoading(false);
+      }, (error) => {
+        console.error("Error fetching order details:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch order details." });
         setLoading(false);
       });
+      return () => unsubscribe();
     } else {
       setLoading(false);
+      toast({ variant: "destructive", title: "Error", description: "No order ID provided."});
     }
-  }, [orderId]);
+  }, [orderId, toast]);
 
-  const handlePickupConfirmation = () => {
+  const handlePickupConfirmation = async () => {
     if (order && order.status === "accepted") {
-      setOrder({ ...order, status: "picked-up" });
-      toast({ title: "Pickup Confirmed", description: `Order ${order.id.substring(0,8)} marked as picked-up.`, className: "bg-blue-500 text-white" });
+      setIsUpdating(true);
+      try {
+        const orderRef = doc(db, "orders", order.id);
+        await updateDoc(orderRef, { status: "picked-up" });
+        // Local state will be updated by onSnapshot
+        toast({ title: "Pickup Confirmed", description: `Order ${order.id.substring(0,8)} marked as picked-up.`, className: "bg-blue-500 text-white" });
+      } catch (error) {
+        console.error("Error confirming pickup:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not confirm pickup." });
+      } finally {
+        setIsUpdating(false);
+      }
     }
   };
   
   const handleStartNavigation = () => {
       if (order?.dropOffLocation) {
-        // In a real app, this would integrate with a mapping service
-        // For now, let's open Google Maps with the address
         const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.dropOffLocation)}`;
         window.open(mapsUrl, "_blank");
         toast({ title: "Navigation Started", description: `Routing to ${order.dropOffLocation}.`});
       }
   };
 
-  const handleDeliveryConfirmed = () => {
+  const handleDeliveryConfirmed = async () => {
     if (order) {
-      setOrder({ ...order, status: "delivered" });
-      // Potentially navigate away or update UI further
-      router.push("/dashboard");
+      setIsUpdating(true);
+      try {
+        const orderRef = doc(db, "orders", order.id);
+        await updateDoc(orderRef, { status: "delivered" });
+        // Local state will update via onSnapshot, then this will navigate
+        toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
+        router.push("/dashboard");
+      } catch (error) {
+        console.error("Error confirming delivery:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not confirm delivery." });
+      } finally {
+        setIsUpdating(false);
+      }
     }
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-full"><p>Loading order details...</p></div>;
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2">Loading order details...</p>
+      </div>
+    );
   }
 
   if (!order) {
-    return <div className="flex justify-center items-center h-full"><p>Order not found.</p></div>;
+    return <div className="flex justify-center items-center h-full"><p>Order not found or an error occurred.</p></div>;
   }
 
   return (
@@ -86,16 +112,17 @@ export default function OrderPage() {
         <Card>
           <CardContent className="p-6 space-y-4">
             {order.status === "accepted" && (
-              <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+              <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white" disabled={isUpdating}>
+                {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <PackageCheck className="mr-2 h-5 w-5" /> Confirm Pickup from Store
               </Button>
             )}
              {(order.status === "picked-up" || order.status === "out-for-delivery") && (
-              <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isUpdating}>
                 <Navigation className="mr-2 h-5 w-5" /> Start Navigation to Customer
               </Button>
             )}
-             <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)}>
+             <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)} disabled={isUpdating}>
                 <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
             </Button>
           </CardContent>

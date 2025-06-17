@@ -5,22 +5,60 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, Clock, DollarSign, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
-import type { Order } from "@/types"; // We'll define this type
+import { MapPin, Package, Clock, DollarSign, AlertTriangle, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
+import type { Order } from "@/types";
+import { db } from "@/lib/firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export function OrderCard({ order, type }: { order: Order, type: "new" | "active" }) {
   const isNewOrder = type === "new";
+  const { toast } = useToast();
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
 
-  const handleAccept = () => {
-    // Mock accept logic
-    console.log("Order accepted:", order.id);
-    // Potentially update state or make API call
+  const handleAccept = async () => {
+    setIsAccepting(true);
+    try {
+      const orderRef = doc(db, "orders", order.id);
+      await updateDoc(orderRef, { status: "accepted" });
+      toast({
+        title: "Order Accepted!",
+        description: `Order #${order.id.substring(0,8)} has been moved to active orders.`,
+        className: "bg-green-500 text-white",
+      });
+    } catch (error) {
+      console.error("Error accepting order:", error);
+      toast({
+        variant: "destructive",
+        title: "Acceptance Failed",
+        description: "Could not accept the order. Please try again.",
+      });
+    } finally {
+      setIsAccepting(false);
+    }
   };
 
-  const handleReject = () => {
-    // Mock reject logic
-    console.log("Order rejected:", order.id);
-    // Potentially update state or make API call
+  const handleReject = async () => {
+    setIsRejecting(true);
+    try {
+      const orderRef = doc(db, "orders", order.id);
+      await updateDoc(orderRef, { status: "cancelled" }); // Or "rejected_by_driver"
+      toast({
+        title: "Order Rejected",
+        description: `Order #${order.id.substring(0,8)} has been rejected.`,
+      });
+    } catch (error) {
+      console.error("Error rejecting order:", error);
+      toast({
+        variant: "destructive",
+        title: "Rejection Failed",
+        description: "Could not reject the order. Please try again.",
+      });
+    } finally {
+      setIsRejecting(false);
+    }
   };
 
   return (
@@ -56,8 +94,14 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
       <CardFooter className="flex gap-2">
         {isNewOrder ? (
           <>
-            <Button onClick={handleAccept} className="flex-1 bg-green-500 hover:bg-green-600 text-white">Accept</Button>
-            <Button onClick={handleReject} variant="outline" className="flex-1">Reject</Button>
+            <Button onClick={handleAccept} className="flex-1 bg-green-500 hover:bg-green-600 text-white" disabled={isAccepting || isRejecting}>
+              {isAccepting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Accept
+            </Button>
+            <Button onClick={handleReject} variant="outline" className="flex-1" disabled={isAccepting || isRejecting}>
+              {isRejecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Reject
+            </Button>
           </>
         ) : (
           <Link href={`/orders/${order.id}`} className="w-full">
