@@ -21,6 +21,7 @@ import type { Profile } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Label } from "@/components/ui/label";
 
 const profileFormSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
