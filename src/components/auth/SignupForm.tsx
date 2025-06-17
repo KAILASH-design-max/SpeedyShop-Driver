@@ -19,11 +19,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus, Mail, Lock, Car, FileText } from "lucide-react";
-import { auth, db } from "@/lib/firebase"; // Import Firebase auth and db
+import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import type { Profile } from "@/types";
 
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -53,21 +54,30 @@ export function SignupForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // Store additional user info in Firestore
-      await setDoc(doc(db, "users", user.uid), {
+      // Store additional user info in Firestore 'deliveryPartners' collection
+      const initialProfileData: Partial<Profile> = {
         uid: user.uid,
         email: values.email,
         fullName: values.fullName,
         vehicleDetails: values.vehicleDetails,
+        phone: "", // To be filled in profile page
+        bankAccountNumber: "", // To be filled in profile page
+        profilePictureUrl: "",
+        documents: {
+            driverLicenseUrl: "",
+            vehicleRegistrationUrl: "",
+            proofOfInsuranceUrl: "",
+        },
         createdAt: new Date().toISOString(),
-      });
+      };
+      await setDoc(doc(db, "deliveryPartners", user.uid), initialProfileData);
 
       toast({
         title: "Account Created!",
-        description: "Your account has been successfully created.",
+        description: "Your account has been successfully created. Please complete your profile.",
         className: "bg-green-500 text-white",
       });
-      router.push("/dashboard");
+      router.push("/profile"); // Redirect to profile page to complete setup
     } catch (error: any) {
       console.error("Signup error:", error);
       let errorMessage = "Failed to create account. Please try again.";
@@ -152,13 +162,9 @@ export function SignupForm() {
             />
             <FormItem>
               <FormLabel className="flex items-center"><FileText className="mr-2 h-4 w-4 text-muted-foreground"/>Upload Documents</FormLabel>
-              <FormControl>
-                <Input type="file" multiple className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:hover:bg-primary/20 file:border-none file:rounded-md file:px-3 file:py-1.5" disabled={isLoading} />
-              </FormControl>
               <FormDescription>
-                Upload driver&apos;s license, vehicle registration, etc. (Document upload functionality will be implemented in a future step.)
+                Document uploads will be handled on your profile page after signup.
               </FormDescription>
-              <FormMessage />
             </FormItem>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
              {isLoading ? "Signing up..." : <><UserPlus className="mr-2 h-5 w-5" /> Sign Up</>}

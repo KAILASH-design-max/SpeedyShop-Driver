@@ -1,4 +1,5 @@
 
+
 export interface Order {
   id: string;
   customerName: string;
@@ -27,18 +28,30 @@ export interface Payout {
   transactionId?: string;
 }
 
+export interface ProfileDocumentUrls {
+  driverLicenseUrl?: string;
+  vehicleRegistrationUrl?: string;
+  proofOfInsuranceUrl?: string;
+}
+
 export interface Profile {
+  uid: string;
   fullName: string;
-  email: string;
+  email: string; // Non-editable after creation
   phone: string;
   vehicleDetails: string; // e.g., "Honda Activa - MH01AB1234"
-  bankAccountNumber: string; // Masked for display
+  bankAccountNumber: string; // Store fully, display masked
   profilePictureUrl?: string;
-  // Performance metrics
-  averageDeliveryTime: number; // in minutes
-  onTimeDeliveryRate: number; // percentage 0-100
-  totalDeliveries: number;
+  documents: ProfileDocumentUrls;
+  createdAt?: string; // ISO string
+
+  // Performance metrics (populated by another system, read-only here)
+  averageDeliveryTime?: number; // in minutes
+  onTimeDeliveryRate?: number; // percentage 0-100
+  totalDeliveries?: number;
+  overallRating?: number;
 }
+
 
 export interface CommunicationMessage {
   id: string;
@@ -56,3 +69,4 @@ export interface ChatThread {
   unreadCount: number;
   avatarUrl?: string;
 }
+

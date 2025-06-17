@@ -16,62 +16,84 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Mail, Phone, Car, CreditCard, Save, FileText, Image as ImageIcon } from "lucide-react";
+import { User, Mail, Phone, Car, CreditCard, Save, Image as ImageIcon, Loader2 } from "lucide-react";
 import type { Profile } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
+import { storage } from "@/lib/firebase";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const profileFormSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }).optional(), // Email might not be editable
   phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
   vehicleDetails: z.string().min(5, { message: "Vehicle details are required." }),
-  bankAccountNumber: z.string().min(8, {message: "Bank account number is required."}), // Should be handled securely
-  // profilePicture: z.instanceof(File).optional(),
+  bankAccountNumber: z.string().min(8, {message: "Bank account number is required."}),
 });
 
 interface ProfileFormProps {
-  profile: Profile; // Initial profile data
+  profile: Profile;
+  onUpdate: (data: Partial<Profile>) => Promise<void>;
 }
 
-export function ProfileForm({ profile }: ProfileFormProps) {
+export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
   const { toast } = useToast();
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(profile.profilePictureUrl || null);
+  const [isUploadingPicture, setIsUploadingPicture] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      fullName: profile.fullName,
-      email: profile.email,
-      phone: profile.phone,
-      vehicleDetails: profile.vehicleDetails,
-      bankAccountNumber: profile.bankAccountNumber, // This is for display, actual update needs security
+      fullName: profile.fullName || "",
+      email: profile.email || "",
+      phone: profile.phone || "",
+      vehicleDetails: profile.vehicleDetails || "",
+      bankAccountNumber: profile.bankAccountNumber || "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof profileFormSchema>) {
-    // Mock profile update logic
-    console.log("Updated profile values:", values);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been successfully saved.",
-      className: "bg-green-500 text-white",
+  useEffect(() => {
+    form.reset({
+      fullName: profile.fullName || "",
+      email: profile.email || "",
+      phone: profile.phone || "",
+      vehicleDetails: profile.vehicleDetails || "",
+      bankAccountNumber: profile.bankAccountNumber || "",
     });
+    setProfilePicturePreview(profile.profilePictureUrl || null);
+  }, [profile, form]);
+
+
+  async function onSubmit(values: z.infer<typeof profileFormSchema>) {
+    setIsSaving(true);
+    await onUpdate(values);
+    setIsSaving(false);
   }
 
-  const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      // Here you would typically upload the file
-      // For now, just set a preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePicturePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-       toast({ title: "Profile Picture Selected", description: "Click 'Save Changes' to update."});
+      if (!profile.uid) {
+        toast({ variant: "destructive", title: "Error", description: "User ID not found. Cannot upload picture." });
+        return;
+      }
+      setIsUploadingPicture(true);
+      const pictureStorageRef = storageRef(storage, `profilePictures/${profile.uid}/${file.name}`);
+      try {
+        const snapshot = await uploadBytes(pictureStorageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        setProfilePicturePreview(downloadURL);
+        await onUpdate({ profilePictureUrl: downloadURL });
+        toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
+      } catch (error) {
+        console.error("Error uploading profile picture:", error);
+        toast({ variant: "destructive", title: "Upload Failed", description: "Could not upload profile picture." });
+      } finally {
+        setIsUploadingPicture(false);
+      }
     }
   };
 
@@ -79,18 +101,25 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   return (
     <Card className="shadow-xl">
       <CardHeader>
-        <div className="flex items-center gap-4 mb-4">
-            <Avatar className="h-24 w-24 border-4 border-primary">
-                <AvatarImage src={profilePicturePreview || "https://placehold.co/150x150.png"} alt={profile.fullName} data-ai-hint="person face" />
-                <AvatarFallback>{profile.fullName.substring(0,2).toUpperCase()}</AvatarFallback>
-            </Avatar>
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+            <div className="relative">
+              <Avatar className="h-24 w-24 border-4 border-primary">
+                  <AvatarImage src={profilePicturePreview || "https://placehold.co/150x150.png"} alt={profile.fullName} data-ai-hint="person face" />
+                  <AvatarFallback>{profile.fullName?.substring(0,2).toUpperCase() || "JD"}</AvatarFallback>
+              </Avatar>
+              {isUploadingPicture && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                  <Loader2 className="h-8 w-8 animate-spin text-white" />
+                </div>
+              )}
+            </div>
             <div>
-                <CardTitle className="text-2xl font-bold text-primary">{profile.fullName}</CardTitle>
+                <CardTitle className="text-2xl font-bold text-primary">{profile.fullName || "Driver Name"}</CardTitle>
                 <CardDescription>Manage your personal information and settings.</CardDescription>
                  <Label htmlFor="profile-picture-upload" className="mt-2 inline-flex items-center text-sm text-primary hover:underline cursor-pointer">
                     <ImageIcon className="mr-1 h-4 w-4" /> Change Profile Picture
                 </Label>
-                <Input id="profile-picture-upload" type="file" accept="image/*" className="hidden" onChange={handleProfilePictureChange} />
+                <Input id="profile-picture-upload" type="file" accept="image/*" className="hidden" onChange={handleProfilePictureChange} disabled={isUploadingPicture} />
             </div>
         </div>
       </CardHeader>
@@ -104,7 +133,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel className="flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground"/>Full Name</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} disabled={isSaving}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -131,7 +160,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/>Phone Number</FormLabel>
                   <FormControl>
-                    <Input type="tel" {...field} />
+                    <Input type="tel" {...field} disabled={isSaving}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,7 +173,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Details</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Honda Activa - MH01AB1234" {...field} />
+                    <Input placeholder="e.g., Honda Activa - MH01AB1234" {...field} disabled={isSaving} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -157,8 +186,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel className="flex items-center"><CreditCard className="mr-2 h-4 w-4 text-muted-foreground"/>Bank Account (for Payouts)</FormLabel>
                   <FormControl>
-                    {/* In a real app, this would be handled much more securely, possibly by redirecting to a secure portal or using masked inputs */}
-                    <Input placeholder="Enter your bank account number" {...field} />
+                    <Input placeholder="Enter your bank account number" {...field} disabled={isSaving} />
                   </FormControl>
                   <FormDescription>Ensure this is accurate for receiving payouts.</FormDescription>
                   <FormMessage />
@@ -166,8 +194,9 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               )}
             />
             
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Save className="mr-2 h-5 w-5"/> Save Changes
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving || isUploadingPicture}>
+              {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5"/>}
+              Save Changes
             </Button>
           </form>
         </Form>
