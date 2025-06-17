@@ -17,7 +17,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   LayoutDashboard,
   Route,
@@ -25,19 +24,10 @@ import {
   User,
   MessagesSquare,
   LogOut,
-  ChevronRight,
   Menu,
   Truck,
-  Settings,
+  Bell, // Added Bell icon
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
@@ -50,55 +40,6 @@ const navItems = [
   { href: "/communication", label: "Messages", icon: MessagesSquare },
   { href: "/profile", label: "Profile", icon: User },
 ];
-
-function UserNav() {
-  const router = useRouter();
-  const { toast } = useToast();
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast({ title: "Logged Out", description: "You have been successfully logged out." });
-      router.push("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
-    }
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10 border-2 border-primary">
-            <AvatarImage src="https://placehold.co/100x100.png" alt="User" data-ai-hint="person avatar" />
-            <AvatarFallback>VD</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Velocity Driver</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {auth.currentUser?.email || "driver@example.com"}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push('/profile')}>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 function MobileNav() {
     const { toggleSidebar } = useSidebar();
@@ -177,7 +118,10 @@ export default function AuthenticatedLayout({
                 <MobileNav />
                  <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span>
             </div>
-            <UserNav />
+            {/* Replaced UserNav with Notification Bell Icon */}
+            <Button variant="ghost" size="icon" aria-label="Notifications">
+              <Bell className="h-6 w-6 text-primary" />
+            </Button>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
             {children}
