@@ -35,12 +35,11 @@ export interface ProfileDocumentUrls {
 
 export interface Profile {
   uid: string;
-  name: string; // Changed from fullName
+  name: string; 
   email: string; // Non-editable after creation
-  phoneNumber: string; // Changed from phone
-  role?: string; // Added role
+  phoneNumber: string; 
+  role?: string; 
   vehicleDetails: string; // e.g., "Honda Activa - MH01AB1234"
-  bankAccountNumber: string; // Store fully, display masked
   profilePictureUrl?: string;
   documents: ProfileDocumentUrls;
   createdAt?: string; // ISO string

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Mail, Phone, Car, CreditCard, Save, Image as ImageIcon, Loader2 } from "lucide-react";
+import { User, Mail, Phone, Car, Save, Image as ImageIcon, Loader2 } from "lucide-react";
 import type { Profile } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
@@ -26,11 +26,10 @@ import { storage } from "@/lib/firebase";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const profileFormSchema = z.object({
-  name: z.string().min(2, { message: "Full name must be at least 2 characters." }), // Changed from fullName
+  name: z.string().min(2, { message: "Full name must be at least 2 characters." }), 
   email: z.string().email({ message: "Invalid email address." }).optional(),
-  phoneNumber: z.string().min(10, { message: "Phone number must be at least 10 digits." }), // Changed from phone
+  phoneNumber: z.string().min(10, { message: "Phone number must be at least 10 digits." }), 
   vehicleDetails: z.string().min(5, { message: "Vehicle details are required." }),
-  bankAccountNumber: z.string().min(8, {message: "Bank account number is required."}),
 });
 
 interface ProfileFormProps {
@@ -51,7 +50,6 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
       email: profile.email || "",
       phoneNumber: profile.phoneNumber || "",
       vehicleDetails: profile.vehicleDetails || "",
-      bankAccountNumber: profile.bankAccountNumber || "",
     },
   });
 
@@ -61,7 +59,6 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
       email: profile.email || "",
       phoneNumber: profile.phoneNumber || "",
       vehicleDetails: profile.vehicleDetails || "",
-      bankAccountNumber: profile.bankAccountNumber || "",
     });
     setProfilePicturePreview(profile.profilePictureUrl || null);
   }, [profile, form]);
@@ -128,7 +125,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name" // Changed from fullName
+              name="name" 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground"/>Full Name</FormLabel>
@@ -155,7 +152,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
             />
              <FormField
               control={form.control}
-              name="phoneNumber" // Changed from phone
+              name="phoneNumber" 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/>Phone Number</FormLabel>
@@ -175,20 +172,6 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
                   <FormControl>
                     <Input placeholder="e.g., Honda Activa - MH01AB1234" {...field} disabled={isSaving} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="bankAccountNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center"><CreditCard className="mr-2 h-4 w-4 text-muted-foreground"/>Bank Account (for Payouts)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your bank account number" {...field} disabled={isSaving} />
-                  </FormControl>
-                  <FormDescription>Ensure this is accurate for receiving payouts.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

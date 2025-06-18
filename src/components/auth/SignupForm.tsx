@@ -27,7 +27,7 @@ import { useState } from "react";
 import type { Profile } from "@/types";
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Full name must be at least 2 characters." }), // Changed from fullName
+  name: z.string().min(2, { message: "Full name must be at least 2 characters." }), 
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   vehicleDetails: z.string().min(2, { message: "Vehicle details are required." }),
@@ -41,7 +41,7 @@ export function SignupForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "", // Changed from fullName
+      name: "", 
       email: "",
       password: "",
       vehicleDetails: "",
@@ -57,10 +57,9 @@ export function SignupForm() {
       const initialProfileData: Partial<Profile> = {
         uid: user.uid,
         email: values.email,
-        name: values.name, // Changed from fullName
+        name: values.name, 
         vehicleDetails: values.vehicleDetails,
         phoneNumber: "", // To be filled in profile page
-        bankAccountNumber: "", // To be filled in profile page
         profilePictureUrl: "",
         role: "deliveryPartner", // Default role
         documents: {
@@ -70,7 +69,7 @@ export function SignupForm() {
         },
         createdAt: new Date().toISOString(),
       };
-      await setDoc(doc(db, "users", user.uid), initialProfileData); // Changed collection to "users"
+      await setDoc(doc(db, "users", user.uid), initialProfileData); 
 
       toast({
         title: "Account Created!",
@@ -110,7 +109,7 @@ export function SignupForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name" // Changed from fullName
+              name="name" 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center"><UserPlus className="mr-2 h-4 w-4 text-muted-foreground"/>Full Name</FormLabel>
