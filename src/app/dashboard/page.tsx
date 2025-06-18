@@ -94,7 +94,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Listener for new orders
-    const newOrdersQuery = query(collection(db, "orders"), where("status", "==", "new"));
+    const newOrdersQuery = query(collection(db, "orders"), where("status", "==", "Placed"));
     const unsubscribeNew = onSnapshot(newOrdersQuery, (snapshot) => {
       const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
       setNewOrders(ordersData);
@@ -104,8 +104,12 @@ export default function DashboardPage() {
       setLoadingNew(false);
     });
 
-    // Listener for active orders
-    const activeOrdersQuery = query(collection(db, "orders"), where("status", "in", ["accepted", "picked-up", "out-for-delivery"]));
+    // Listener for active orders (driver has accepted or is processing)
+    const activeOrdersQuery = query(
+      collection(db, "orders"), 
+      where("status", "in", ["accepted", "picked-up", "out-for-delivery"]),
+      // Potentially add: where("driverId", "==", currentUser.uid) if orders are assigned
+    );
     const unsubscribeActive = onSnapshot(activeOrdersQuery, (snapshot) => {
       const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
       setActiveOrders(ordersData);

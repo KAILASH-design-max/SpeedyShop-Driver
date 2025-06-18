@@ -5,7 +5,7 @@ export interface Order {
   pickupLocation: string; // Could be "Dark Store A", "Warehouse B"
   dropOffLocation: string; // Customer address
   items: string[];
-  status: "new" | "accepted" | "picked-up" | "out-for-delivery" | "delivered" | "cancelled";
+  status: "Placed" | "accepted" | "picked-up" | "out-for-delivery" | "delivered" | "cancelled";
   estimatedEarnings: number;
   estimatedTime: number; // in minutes
   deliveryInstructions?: string;
