@@ -23,7 +23,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { storage } from "@/lib/firebase";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, UploadTaskSnapshot } from "firebase/storage"; // Updated imports
+import { Progress } from "@/components/ui/progress";
+
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Full name must be at least 2 characters." }), 
@@ -41,6 +43,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
   const { toast } = useToast();
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(profile.profilePictureUrl || null);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
+  const [pictureUploadProgress, setPictureUploadProgress] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
@@ -78,19 +81,37 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
         return;
       }
       setIsUploadingPicture(true);
+      setPictureUploadProgress(0);
       const pictureStorageRef = storageRef(storage, `profilePictures/${profile.uid}/${file.name}`);
-      try {
-        const snapshot = await uploadBytes(pictureStorageRef, file);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        setProfilePicturePreview(downloadURL);
-        await onUpdate({ profilePictureUrl: downloadURL });
-        toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
-      } catch (error) {
-        console.error("Error uploading profile picture:", error);
-        toast({ variant: "destructive", title: "Upload Failed", description: "Could not upload profile picture." });
-      } finally {
-        setIsUploadingPicture(false);
-      }
+      
+      const uploadTask = uploadBytesResumable(pictureStorageRef, file);
+
+      uploadTask.on('state_changed',
+        (snapshot: UploadTaskSnapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setPictureUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Error uploading profile picture:", error);
+          toast({ variant: "destructive", title: "Upload Failed", description: `Could not upload profile picture. ${error.message}` });
+          setIsUploadingPicture(false);
+          setPictureUploadProgress(0);
+        },
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            setProfilePicturePreview(downloadURL);
+            await onUpdate({ profilePictureUrl: downloadURL });
+            toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
+          } catch (error) {
+            console.error("Error finalizing profile picture upload:", error);
+            toast({ variant: "destructive", title: "Update Failed", description: "Could not save new profile picture." });
+          } finally {
+            setIsUploadingPicture(false);
+            setPictureUploadProgress(0);
+          }
+        }
+      );
     }
   };
 
@@ -116,7 +137,10 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
                  <Label htmlFor="profile-picture-upload" className="mt-2 inline-flex items-center text-sm text-primary hover:underline cursor-pointer">
                     <ImageIcon className="mr-1 h-4 w-4" /> Change Profile Picture
                 </Label>
-                <Input id="profile-picture-upload" type="file" accept="image/*" className="hidden" onChange={handleProfilePictureChange} disabled={isUploadingPicture} />
+                <Input id="profile-picture-upload" type="file" accept="image/*" className="hidden" onChange={handleProfilePictureChange} disabled={isUploadingPicture || isSaving} />
+                 {isUploadingPicture && pictureUploadProgress > 0 && (
+                    <Progress value={pictureUploadProgress} className="w-full h-1.5 mt-1" />
+                 )}
             </div>
         </div>
       </CardHeader>
@@ -130,7 +154,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel className="flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground"/>Full Name</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={isSaving}/>
+                    <Input {...field} disabled={isSaving || isUploadingPicture}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -157,7 +181,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/>Phone Number</FormLabel>
                   <FormControl>
-                    <Input type="tel" {...field} disabled={isSaving}/>
+                    <Input type="tel" {...field} disabled={isSaving || isUploadingPicture}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -170,7 +194,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Details</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Honda Activa - MH01AB1234" {...field} disabled={isSaving} />
+                    <Input placeholder="e.g., Honda Activa - MH01AB1234" {...field} disabled={isSaving || isUploadingPicture} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,3 +211,4 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
     </Card>
   );
 }
+

@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress"; // Added Progress component
 import { FileText, UploadCloud, CheckCircle, AlertTriangle, LinkIcon, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { Profile, ProfileDocumentUrls } from "@/types";
 import { storage } from "@/lib/firebase";
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from "firebase/storage"; // Updated imports
 
 interface DocumentItemProps {
   docName: string;
@@ -24,6 +25,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0); // State for upload progress
   const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,6 +33,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
       const selectedFile = event.target.files[0];
       setFile(selectedFile);
       setFileName(selectedFile.name);
+      setUploadProgress(0); // Reset progress
     } else {
       setFile(null);
       setFileName(null);
@@ -48,32 +51,39 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
     const documentPath = `partnerDocuments/${profileUid}/${docKey}/${file.name}`;
     const fileStorageRef = storageRef(storage, documentPath);
+    
+    const uploadTask = uploadBytesResumable(fileStorageRef, file);
 
-    try {
-      // If a file already exists, delete it first (optional, depends on desired behavior)
-      if (currentUrl) {
+    uploadTask.on('state_changed', 
+      (snapshot: UploadTaskSnapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(progress);
+      }, 
+      (error) => {
+        console.error(`Error uploading ${docName}:`, error);
+        toast({ variant: "destructive", title: "Upload Failed", description: `Could not upload ${docName}. ${error.message}` });
+        setIsUploading(false);
+        setUploadProgress(0);
+      }, 
+      async () => {
         try {
-          // Attempt to derive path from URL - this is non-trivial and brittle.
-          // For simplicity, we're not deleting old files here.
-          // A more robust solution would store the full storage path in Firestore.
-        } catch (e) { console.warn("Could not delete old file, proceeding with upload.", e); }
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          await onUpdate({ documents: { [docKey]: downloadURL } });
+          toast({ title: "Document Uploaded", description: `${docName} has been successfully uploaded.`, className: "bg-green-500 text-white" });
+          setFile(null); 
+          setFileName(null);
+        } catch (error) {
+            console.error(`Error getting download URL or updating profile for ${docName}:`, error);
+            toast({ variant: "destructive", title: "Upload Post-Processing Failed", description: `Could not finalize ${docName} upload.` });
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+        }
       }
-
-      const snapshot = await uploadBytes(fileStorageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      await onUpdate({ documents: { [docKey]: downloadURL } });
-      toast({ title: "Document Uploaded", description: `${docName} has been successfully uploaded.`, className: "bg-green-500 text-white" });
-      setFile(null); // Clear file input after successful upload
-      setFileName(null);
-    } catch (error) {
-      console.error(`Error uploading ${docName}:`, error);
-      toast({ variant: "destructive", title: "Upload Failed", description: `Could not upload ${docName}.` });
-    } finally {
-      setIsUploading(false);
-    }
+    );
   };
   
   const getStatusIcon = () => {
@@ -83,7 +93,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
   };
   
   const getStatusText = () => {
-    if (isUploading) return "Uploading...";
+    if (isUploading) return `Uploading... ${Math.round(uploadProgress)}%`;
     if (currentUrl) return "Document Uploaded";
     return "Not Uploaded";
   }
@@ -124,6 +134,9 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
           )}
         </div>
       </div>
+      {isUploading && uploadProgress > 0 && (
+        <Progress value={uploadProgress} className="w-full h-2 mt-2" />
+      )}
     </div>
   );
 }
@@ -177,3 +190,4 @@ export function DocumentManagement({ profile, onUpdate }: DocumentManagementProp
     </Card>
   );
 }
+
