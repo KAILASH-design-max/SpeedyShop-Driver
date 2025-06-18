@@ -4,17 +4,93 @@
 import { useEffect, useState } from "react";
 import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { OrderCard } from "@/components/dashboard/OrderCard";
-import type { Order } from "@/types";
+import type { Order, Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, PackageCheck, Loader2 } from "lucide-react";
-import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, DocumentData } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, DocumentData } from "firebase/firestore";
+import type { User } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus'] | undefined>(undefined);
+  const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(true);
   const [newOrders, setNewOrders] = useState<Order[]>([]);
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [loadingNew, setLoadingNew] = useState(true);
   const [loadingActive, setLoadingActive] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+      if (!user) {
+        // Handle user not logged in, e.g., redirect
+        setIsAvailabilityLoading(false);
+      }
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      const userDocRef = doc(db, "users", currentUser.uid);
+      const unsubscribeProfile = onSnapshot(userDocRef, async (docSnap) => {
+        setIsAvailabilityLoading(true);
+        if (docSnap.exists()) {
+          const profileData = docSnap.data() as Profile;
+          if (profileData.availabilityStatus === undefined) {
+            // If status is not set, default to 'offline' and update DB
+            await updateDoc(userDocRef, { availabilityStatus: 'offline' });
+            setAvailabilityStatus('offline');
+          } else {
+            setAvailabilityStatus(profileData.availabilityStatus);
+          }
+        } else {
+          // Profile document might not exist yet if signup flow was interrupted
+          // Or if this is an old user. Default to 'offline'.
+          // Consider creating a profile document here if necessary, or ensure signup always creates it.
+          // For now, just set local state and if an update occurs, it will create/set the field.
+          setAvailabilityStatus('offline');
+           await setDoc(userDocRef, { availabilityStatus: 'offline' }, { merge: true });
+
+        }
+        setIsAvailabilityLoading(false);
+      }, (error) => {
+        console.error("Error fetching user profile for availability:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not load availability status." });
+        setAvailabilityStatus('offline'); // Default on error
+        setIsAvailabilityLoading(false);
+      });
+      return () => unsubscribeProfile();
+    } else {
+      setIsAvailabilityLoading(false);
+      setAvailabilityStatus(undefined); // No user, no status
+    }
+  }, [currentUser, toast]);
+
+
+  const handleAvailabilityChange = async (newStatus: Required<Profile['availabilityStatus']>) => {
+    if (!currentUser) {
+      toast({ variant: "destructive", title: "Error", description: "Not logged in." });
+      return;
+    }
+    setIsAvailabilityLoading(true);
+    try {
+      const userDocRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userDocRef, { availabilityStatus: newStatus });
+      // setAvailabilityStatus(newStatus); // Optimistic update handled by onSnapshot
+      toast({ title: "Status Updated", description: `You are now ${newStatus}.`, className: newStatus === 'online' ? "bg-green-500 text-white" : newStatus === 'on_break' ? "bg-yellow-500 text-black" : "" });
+    } catch (error) {
+      console.error("Error updating availability status:", error);
+      toast({ variant: "destructive", title: "Update Failed", description: "Could not update status." });
+      // Revert optimistic update if onSnapshot doesn't correct it, or rely on onSnapshot
+    } finally {
+      // setIsAvailabilityLoading(false); // onSnapshot will set loading to false
+    }
+  };
+
 
   useEffect(() => {
     // Listener for new orders
@@ -49,7 +125,11 @@ export default function DashboardPage() {
     <div className="container mx-auto py-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
-          <AvailabilityToggle />
+          <AvailabilityToggle
+            currentStatus={availabilityStatus}
+            onStatusChange={handleAvailabilityChange}
+            isLoading={isAvailabilityLoading}
+          />
         </div>
 
         <div className="md:col-span-2 space-y-6">

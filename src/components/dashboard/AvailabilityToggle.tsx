@@ -1,42 +1,63 @@
 
 "use client";
 
-import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Zap, Coffee, ZapOff } from "lucide-react";
+import { Zap, Coffee, ZapOff, Loader2 } from "lucide-react";
+import type { Profile } from "@/types";
 
-export function AvailabilityToggle() {
-  const [isOnline, setIsOnline] = useState(true);
-  const [isOnBreak, setIsOnBreak] = useState(false);
+interface AvailabilityToggleProps {
+  currentStatus: Profile['availabilityStatus'];
+  onStatusChange: (newStatus: Required<Profile['availabilityStatus']>) => void;
+  isLoading?: boolean;
+}
+
+export function AvailabilityToggle({ currentStatus, onStatusChange, isLoading }: AvailabilityToggleProps) {
+  const isOnline = currentStatus === "online" || currentStatus === "on_break";
+  const isOnBreak = currentStatus === "on_break";
 
   const handleOnlineToggle = (checked: boolean) => {
-    setIsOnline(checked);
-    if (!checked) {
-      setIsOnBreak(false); // Can't be on break if offline
+    if (isLoading) return;
+    if (checked) {
+      onStatusChange("online");
+    } else {
+      onStatusChange("offline");
     }
   };
 
   const handleBreakToggle = () => {
+    if (isLoading) return;
     if (isOnline) {
-      setIsOnBreak(!isOnBreak);
+      if (isOnBreak) {
+        onStatusChange("online"); // End break, go online
+      } else {
+        onStatusChange("on_break"); // Start break
+      }
     }
+  };
+
+  const getTitleIcon = () => {
+    if (isLoading) return <Loader2 className="mr-2 h-5 w-5 animate-spin" />;
+    if (isOnline) {
+      return isOnBreak ? <Coffee className="mr-2 text-yellow-500 h-5 w-5"/> : <Zap className="mr-2 text-green-500 h-5 w-5" />;
+    }
+    return <ZapOff className="mr-2 text-red-500 h-5 w-5" />;
   };
 
   return (
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
-          {isOnline ? (isOnBreak ? <Coffee className="mr-2 text-yellow-500"/> : <Zap className="mr-2 text-green-500" />) : <ZapOff className="mr-2 text-red-500" />}
+          {getTitleIcon()}
           Availability Status
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
           <Label htmlFor="online-toggle" className="text-lg font-medium">
-            {isOnline ? "You are Online" : "You are Offline"}
+            {isLoading ? "Updating..." : (isOnline ? "You are Online" : "You are Offline")}
           </Label>
           <Switch
             id="online-toggle"
@@ -44,22 +65,36 @@ export function AvailabilityToggle() {
             onCheckedChange={handleOnlineToggle}
             className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
             aria-label={isOnline ? "Go Offline" : "Go Online"}
+            disabled={isLoading}
           />
         </div>
-        
+
         {isOnline && (
           <Button
             variant={isOnBreak ? "destructive" : "outline"}
             onClick={handleBreakToggle}
             className="w-full"
             aria-label={isOnBreak ? "End Break" : "Take a Break"}
+            disabled={isLoading}
           >
-            {isOnBreak ? <Zap className="mr-2 h-4 w-4"/> : <Coffee className="mr-2 h-4 w-4" />}
-            {isOnBreak ? "End Break" : "Take a Break"}
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+            ) : isOnBreak ? (
+              <Zap className="mr-2 h-4 w-4"/>
+            ) : (
+              <Coffee className="mr-2 h-4 w-4" />
+            )}
+            {isLoading ? "Please wait" : (isOnBreak ? "End Break" : "Take a Break")}
           </Button>
         )}
         <p className="text-sm text-muted-foreground text-center">
-          {isOnline ? (isOnBreak ? "You are currently on a break. You won't receive new orders." : "You are available to receive new delivery orders.") : "You are offline and will not receive any new orders."}
+          { isLoading ? "Updating status..." :
+            isOnline
+            ? isOnBreak
+              ? "You are currently on a break. You won't receive new orders."
+              : "You are available to receive new delivery orders."
+            : "You are offline and will not receive any new orders."
+          }
         </p>
       </CardContent>
     </Card>

@@ -35,14 +35,15 @@ export interface ProfileDocumentUrls {
 
 export interface Profile {
   uid: string;
-  name: string; 
+  name: string;
   email: string; // Non-editable after creation
-  phoneNumber: string; 
-  role?: string; 
+  phoneNumber: string;
+  role?: string;
   vehicleDetails: string; // e.g., "Honda Activa - MH01AB1234"
   profilePictureUrl?: string;
   documents: ProfileDocumentUrls;
   createdAt?: string; // ISO string
+  availabilityStatus?: 'online' | 'offline' | 'on_break'; // Added availability status
 
   // Performance metrics (populated by another system, read-only here)
   averageDeliveryTime?: number; // in minutes
