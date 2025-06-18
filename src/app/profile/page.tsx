@@ -34,7 +34,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (currentUser) {
-      const profileRef = doc(db, "users", currentUser.uid); // Changed collection to "users"
+      const profileRef = doc(db, "users", currentUser.uid);
       const unsubscribeProfile = onSnapshot(
         profileRef,
         (docSnap) => {
@@ -44,11 +44,10 @@ export default function ProfilePage() {
              const defaultProfile: Profile = {
                 uid: currentUser.uid,
                 email: currentUser.email || "",
-                name: currentUser.displayName || "", // Changed from fullName
-                phoneNumber: "", // Changed from phone
+                name: currentUser.displayName || "",
+                phoneNumber: "",
                 role: "deliveryPartner",
                 vehicleDetails: "",
-                bankAccountNumber: "",
                 profilePictureUrl: "",
                 documents: {
                     driverLicenseUrl: "",
@@ -75,9 +74,9 @@ export default function ProfilePage() {
     }
   }, [currentUser, toast]);
 
-  const handleProfileUpdate = async (updatedData: Partial<Profile>) => {
+  const handleProfileUpdate = async (updatedData: Partial<Profile> | Record<string,any>) => {
     if (!currentUser) return;
-    const profileRef = doc(db, "users", currentUser.uid); // Changed collection to "users"
+    const profileRef = doc(db, "users", currentUser.uid); 
     try {
       await updateDoc(profileRef, updatedData);
       toast({ title: "Profile Updated", description: "Your changes have been saved.", className: "bg-green-500 text-white" });
@@ -87,7 +86,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading || !profile) {
+  if (loading || !profile || !currentUser) {
     return (
       <div className="flex justify-center items-center h-full min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

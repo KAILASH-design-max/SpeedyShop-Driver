@@ -5,27 +5,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress"; // Added Progress component
+import { Progress } from "@/components/ui/progress";
 import { FileText, UploadCloud, CheckCircle, AlertTriangle, LinkIcon, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { Profile, ProfileDocumentUrls } from "@/types";
 import { storage } from "@/lib/firebase";
-import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from "firebase/storage"; // Updated imports
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from "firebase/storage";
 
 interface DocumentItemProps {
   docName: string;
   docKey: keyof ProfileDocumentUrls;
   currentUrl?: string;
   profileUid: string;
-  onUpdate: (data: Partial<Profile>) => Promise<void>;
+  onUpdate: (data: Partial<Profile> | Record<string, any>) => Promise<void>; // Allow Record<string, any> for dot notation
 }
 
 function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate }: DocumentItemProps) {
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number>(0); // State for upload progress
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +33,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
       const selectedFile = event.target.files[0];
       setFile(selectedFile);
       setFileName(selectedFile.name);
-      setUploadProgress(0); // Reset progress
+      setUploadProgress(0); 
     } else {
       setFile(null);
       setFileName(null);
@@ -71,7 +71,9 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
       async () => {
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          await onUpdate({ documents: { [docKey]: downloadURL } });
+          // Use dot notation to update only the specific document URL field
+          const updateData = { [`documents.${docKey}`]: downloadURL };
+          await onUpdate(updateData);
           toast({ title: "Document Uploaded", description: `${docName} has been successfully uploaded.`, className: "bg-green-500 text-white" });
           setFile(null); 
           setFileName(null);
@@ -144,7 +146,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
 
 interface DocumentManagementProps {
   profile: Profile;
-  onUpdate: (data: Partial<Profile>) => Promise<void>;
+  onUpdate: (data: Partial<Profile> | Record<string, any>) => Promise<void>; // Allow Record<string, any> for dot notation
 }
 
 export function DocumentManagement({ profile, onUpdate }: DocumentManagementProps) {
@@ -190,4 +192,3 @@ export function DocumentManagement({ profile, onUpdate }: DocumentManagementProp
     </Card>
   );
 }
-
