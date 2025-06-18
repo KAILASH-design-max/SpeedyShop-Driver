@@ -6,7 +6,7 @@ import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile, OrderItem } from "@/types";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, PackageCheck, Loader2 } from "lucide-react";
+import { AlertCircle, PackageCheck, Loader2, Info } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, DocumentData } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -27,6 +27,7 @@ export default function DashboardPage() {
       setCurrentUser(user);
       if (!user) {
         setIsAvailabilityLoading(false);
+        setAvailabilityStatus(undefined);
         setNewOrders([]);
         setActiveOrders([]);
         setLoadingNew(false);
@@ -77,10 +78,13 @@ export default function DashboardPage() {
     try {
       const userDocRef = doc(db, "users", currentUser.uid);
       await updateDoc(userDocRef, { availabilityStatus: newStatus });
+      setAvailabilityStatus(newStatus); // Update local state immediately
       toast({ title: "Status Updated", description: `You are now ${newStatus}.`, className: newStatus === 'online' ? "bg-green-500 text-white" : newStatus === 'on_break' ? "bg-yellow-500 text-black" : "" });
     } catch (error) {
       console.error("Error updating availability status:", error);
       toast({ variant: "destructive", title: "Update Failed", description: "Could not update status." });
+    } finally {
+      setIsAvailabilityLoading(false);
     }
   };
 
@@ -105,18 +109,18 @@ export default function DashboardPage() {
     let dropOffLocationString = `${dropOffStreet}, ${dropOffCity} ${dropOffPostalCode}`.trim();
     if (dropOffLocationString.startsWith(',')) dropOffLocationString = dropOffLocationString.substring(1).trim();
     if (dropOffLocationString.endsWith(',')) dropOffLocationString = dropOffLocationString.slice(0, -1).trim();
-    if (dropOffLocationString === ',') dropOffLocationString = "N/A";
+    if (dropOffLocationString === ',' || !dropOffLocationString) dropOffLocationString = "N/A";
 
 
     return {
       id: docSnap.id,
-      customerName: data.customerName || "Customer", // Expect customerName in Firestore or use a default
-      pickupLocation: data.pickupLocation || "Default Pickup Location", // Expect pickupLocation or use a default
-      dropOffLocation: dropOffLocationString || "N/A",
+      customerName: data.customerName || "Customer Name Missing", 
+      pickupLocation: data.pickupLocation || "Restaurant/Store Address", 
+      dropOffLocation: dropOffLocationString,
       items: items,
       orderStatus: data.orderStatus || "Placed",
-      estimatedEarnings: data.estimatedEarnings || (data.total ? data.total * 0.1 : 0) || 50, // Placeholder calculation
-      estimatedTime: data.estimatedTime || 30, // Placeholder
+      estimatedEarnings: data.estimatedEarnings || (data.total ? data.total * 0.1 : 0) || 50, 
+      estimatedTime: data.estimatedTime || 30, 
       deliveryInstructions: data.deliveryInstructions,
       customerContact: data.phoneNumber || address.phoneNumber,
     };
@@ -125,30 +129,48 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!currentUser) {
       setNewOrders([]);
-      setActiveOrders([]);
       setLoadingNew(false);
-      setLoadingActive(false);
-      return () => {}; // Return an empty function for cleanup
+      return () => {}; 
     }
 
-    setLoadingNew(true);
+    if (availabilityStatus === 'offline') {
+      setNewOrders([]);
+      setLoadingNew(false);
+      return () => {};
+    }
+    
+    // Only fetch new orders if online or on_break (on_break drivers might still want to see, but usually won't accept)
+    if (availabilityStatus === 'online' || availabilityStatus === 'on_break') {
+      setLoadingNew(true);
+      const newOrdersQuery = query(collection(db, "orders"), where("orderStatus", "==", "Placed"));
+      const unsubscribeNew = onSnapshot(newOrdersQuery, (snapshot) => {
+        const ordersData = snapshot.docs.map(mapFirestoreDocToOrder);
+        setNewOrders(ordersData);
+        setLoadingNew(false);
+      }, (error) => {
+        console.error("Error fetching new orders:", error);
+        toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
+        setLoadingNew(false);
+      });
+      return () => unsubscribeNew();
+    } else {
+      setNewOrders([]);
+      setLoadingNew(false);
+      return () => {};
+    }
+  }, [currentUser, availabilityStatus, toast]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setActiveOrders([]);
+      setLoadingActive(false);
+      return () => {}; 
+    }
     setLoadingActive(true);
-
-    const newOrdersQuery = query(collection(db, "orders"), where("orderStatus", "==", "Placed"));
-    const unsubscribeNew = onSnapshot(newOrdersQuery, (snapshot) => {
-      const ordersData = snapshot.docs.map(mapFirestoreDocToOrder);
-      setNewOrders(ordersData);
-      setLoadingNew(false);
-    }, (error) => {
-      console.error("Error fetching new orders:", error);
-      toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
-      setLoadingNew(false);
-    });
-
     const activeOrdersQuery = query(
       collection(db, "orders"), 
       where("orderStatus", "in", ["accepted", "picked-up", "out-for-delivery"]),
-      // where("driverId", "==", currentUser.uid) // Uncomment if orders are assigned to specific drivers
+      // where("driverId", "==", currentUser.uid) // Uncomment if orders are assigned to specific drivers and you have a driverId field
     );
     const unsubscribeActive = onSnapshot(activeOrdersQuery, (snapshot) => {
       const ordersData = snapshot.docs.map(mapFirestoreDocToOrder);
@@ -160,10 +182,7 @@ export default function DashboardPage() {
       setLoadingActive(false);
     });
 
-    return () => {
-      unsubscribeNew();
-      unsubscribeActive();
-    };
+    return () => unsubscribeActive();
   }, [currentUser, toast]);
 
   return (
@@ -183,7 +202,18 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-semibold mb-4 flex items-center text-destructive">
               <AlertCircle className="mr-2 h-6 w-6" /> New Order Alerts
             </h2>
-            {loadingNew ? (
+            {isAvailabilityLoading ? (
+                 <div className="flex justify-center items-center p-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="ml-2">Checking availability...</p>
+                 </div>
+            ) : availabilityStatus === 'offline' ? (
+              <div className="flex flex-col items-center justify-center p-4 text-center bg-muted rounded-lg">
+                <Info className="h-10 w-10 text-primary mb-2" />
+                <p className="font-semibold text-lg">You are currently offline.</p>
+                <p className="text-muted-foreground">Go online using the toggle to start receiving new order alerts.</p>
+              </div>
+            ) : loadingNew ? (
               <div className="flex justify-center items-center p-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="ml-2">Loading new orders...</p>
@@ -225,3 +255,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
