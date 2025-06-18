@@ -560,17 +560,18 @@ const SidebarMenuButton = React.forwardRef<
     const { isMobile, state } = useSidebar();
 
     const Comp = localAsChild ? Slot : (restProps.href ? "a" : "button");
+    const isRenderingNativeElement = typeof Comp === 'string';
     
-    let propsForElement = { ...restProps };
+    let finalProps: Record<string, any> = { ...restProps };
 
-    // If SidebarMenuButton is NOT rendering a Slot (i.e., it's rendering 'a' or 'button'),
-    // and an 'asChild' prop was passed (e.g., from a parent Link asChild),
-    // then delete 'asChild' from the props to be spread on the DOM element.
-    // This prevents the "React does not recognize the `asChild` prop on a DOM element" error.
-    if (!localAsChild && propsForElement.hasOwnProperty('asChild')) {
-      delete (propsForElement as { asChild?: boolean }).asChild;
+    // If SidebarMenuButton itself is NOT a Slot (localAsChild is false),
+    // AND it's rendering a native DOM element (e.g., 'a' or 'button'),
+    // AND an 'asChild' prop was passed in restProps (this is the one from the parent Link, usually true),
+    // THEN remove this 'asChild' prop from finalProps to prevent it from being rendered on the DOM element.
+    if (!localAsChild && isRenderingNativeElement && finalProps.asChild === true) {
+      delete finalProps.asChild;
     }
-
+    
     const element = (
       <Comp
         ref={ref}
@@ -578,7 +579,7 @@ const SidebarMenuButton = React.forwardRef<
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
-        {...propsForElement}
+        {...finalProps}
       />
     );
 
