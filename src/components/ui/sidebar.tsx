@@ -547,55 +547,55 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild: localAsChild = false,
+      asChild: localAsChild = false, 
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
       className,
-      ...restProps // Contains all other props from parent, including Link's props if Link is parent
+      ...restProps 
     },
     ref
   ) => {
     const { isMobile, state } = useSidebar();
 
-    // Destructure `asChild` from restProps if it was passed by a parent <Link asChild>.
-    // This prevents the parent's asChild from being spread onto the DOM element (<a> or <button>)
-    // if localAsChild (SidebarMenuButton's own asChild prop) is false.
-    const { asChild: _forwardedAsChild, ...finalProps } = restProps as any;
+    const Comp = localAsChild ? Slot : (restProps.href ? "a" : "button");
+    
+    let propsForElement = { ...restProps };
 
-    const isLinkElement = !!finalProps.href && !localAsChild;
-    const Comp = localAsChild ? Slot : isLinkElement ? "a" : "button";
+    // If SidebarMenuButton is NOT rendering a Slot (i.e., it's rendering 'a' or 'button'),
+    // and an 'asChild' prop was passed (e.g., from a parent Link asChild),
+    // then delete 'asChild' from the props to be spread on the DOM element.
+    // This prevents the "React does not recognize the `asChild` prop on a DOM element" error.
+    if (!localAsChild && propsForElement.hasOwnProperty('asChild')) {
+      delete (propsForElement as { asChild?: boolean }).asChild;
+    }
 
-    const button = (
+    const element = (
       <Comp
         ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
-        {...finalProps} // Spread finalProps, which has the potentially problematic asChild (from Link) removed
+        {...propsForElement}
       />
     );
 
     if (!tooltip) {
-      return button;
+      return element;
     }
 
-    if (typeof tooltip === "string") {
-      tooltip = {
-        children: tooltip,
-      };
-    }
+    const tooltipContentProps = typeof tooltip === "string" ? { children: tooltip } : tooltip;
 
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipTrigger asChild>{element}</TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
           hidden={state !== "collapsed" || isMobile}
-          {...tooltip}
+          {...tooltipContentProps}
         />
       </Tooltip>
     );
