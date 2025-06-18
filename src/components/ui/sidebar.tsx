@@ -547,40 +547,45 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild = false,
+      asChild: localAsChild = false,
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
       className,
-      ...props
+      ...restProps // Contains all other props from parent, including Link's props if Link is parent
     },
     ref
   ) => {
-    const { isMobile, state } = useSidebar()
+    const { isMobile, state } = useSidebar();
 
-    const isLink = !!props.href;
-    const Comp = asChild ? Slot : isLink ? "a" : "button";
+    // Destructure `asChild` from restProps if it was passed by a parent <Link asChild>.
+    // This prevents the parent's asChild from being spread onto the DOM element (<a> or <button>)
+    // if localAsChild (SidebarMenuButton's own asChild prop) is false.
+    const { asChild: _forwardedAsChild, ...finalProps } = restProps as any;
+
+    const isLinkElement = !!finalProps.href && !localAsChild;
+    const Comp = localAsChild ? Slot : isLinkElement ? "a" : "button";
 
     const button = (
       <Comp
-        ref={ref as any}
+        ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
-        {...props}
+        {...finalProps} // Spread finalProps, which has the potentially problematic asChild (from Link) removed
       />
-    )
+    );
 
     if (!tooltip) {
-      return button
+      return button;
     }
 
     if (typeof tooltip === "string") {
       tooltip = {
         children: tooltip,
-      }
+      };
     }
 
     return (
@@ -593,9 +598,9 @@ const SidebarMenuButton = React.forwardRef<
           {...tooltip}
         />
       </Tooltip>
-    )
+    );
   }
-)
+);
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
 const SidebarMenuAction = React.forwardRef<
