@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { OrderCard } from "@/components/dashboard/OrderCard";
-import type { Order, Profile } from "@/types";
+import type { Order, Profile, OrderItem } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, PackageCheck, Loader2 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
@@ -27,6 +27,10 @@ export default function DashboardPage() {
       setCurrentUser(user);
       if (!user) {
         setIsAvailabilityLoading(false);
+        setNewOrders([]);
+        setActiveOrders([]);
+        setLoadingNew(false);
+        setLoadingActive(false);
       }
     });
     return () => unsubscribeAuth();
@@ -80,6 +84,43 @@ export default function DashboardPage() {
     }
   };
 
+  const mapFirestoreDocToOrder = (docSnap: DocumentData): Order => {
+    const data = docSnap.data();
+    const address = data.address || {};
+    
+    let items: OrderItem[] = [];
+    if (Array.isArray(data.items)) {
+      items = data.items.map((item: any) => ({
+        name: item.name || "Unknown Item",
+        quantity: item.quantity || 0,
+        price: item.price,
+        productId: item.productId,
+        imageUrl: item.imageUrl,
+      }));
+    }
+
+    const dropOffStreet = address.street || '';
+    const dropOffCity = address.city || '';
+    const dropOffPostalCode = address.postalCode || '';
+    let dropOffLocationString = `${dropOffStreet}, ${dropOffCity} ${dropOffPostalCode}`.trim();
+    if (dropOffLocationString.startsWith(',')) dropOffLocationString = dropOffLocationString.substring(1).trim();
+    if (dropOffLocationString.endsWith(',')) dropOffLocationString = dropOffLocationString.slice(0, -1).trim();
+    if (dropOffLocationString === ',') dropOffLocationString = "N/A";
+
+
+    return {
+      id: docSnap.id,
+      customerName: data.customerName || "Customer", // Expect customerName in Firestore or use a default
+      pickupLocation: data.pickupLocation || "Default Pickup Location", // Expect pickupLocation or use a default
+      dropOffLocation: dropOffLocationString || "N/A",
+      items: items,
+      orderStatus: data.orderStatus || "Placed",
+      estimatedEarnings: data.estimatedEarnings || (data.total ? data.total * 0.1 : 0) || 50, // Placeholder calculation
+      estimatedTime: data.estimatedTime || 30, // Placeholder
+      deliveryInstructions: data.deliveryInstructions,
+      customerContact: data.phoneNumber || address.phoneNumber,
+    };
+  };
 
   useEffect(() => {
     if (!currentUser) {
@@ -87,16 +128,15 @@ export default function DashboardPage() {
       setActiveOrders([]);
       setLoadingNew(false);
       setLoadingActive(false);
-      return;
+      return () => {}; // Return an empty function for cleanup
     }
 
     setLoadingNew(true);
     setLoadingActive(true);
 
-    // Listener for new orders
-    const newOrdersQuery = query(collection(db, "orders"), where("status", "==", "Placed"));
+    const newOrdersQuery = query(collection(db, "orders"), where("orderStatus", "==", "Placed"));
     const unsubscribeNew = onSnapshot(newOrdersQuery, (snapshot) => {
-      const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+      const ordersData = snapshot.docs.map(mapFirestoreDocToOrder);
       setNewOrders(ordersData);
       setLoadingNew(false);
     }, (error) => {
@@ -105,14 +145,13 @@ export default function DashboardPage() {
       setLoadingNew(false);
     });
 
-    // Listener for active orders (driver has accepted or is processing)
     const activeOrdersQuery = query(
       collection(db, "orders"), 
-      where("status", "in", ["accepted", "picked-up", "out-for-delivery"]),
-      // Potentially add: where("driverId", "==", currentUser.uid) if orders are assigned
+      where("orderStatus", "in", ["accepted", "picked-up", "out-for-delivery"]),
+      // where("driverId", "==", currentUser.uid) // Uncomment if orders are assigned to specific drivers
     );
     const unsubscribeActive = onSnapshot(activeOrdersQuery, (snapshot) => {
-      const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+      const ordersData = snapshot.docs.map(mapFirestoreDocToOrder);
       setActiveOrders(ordersData);
       setLoadingActive(false);
     }, (error) => {

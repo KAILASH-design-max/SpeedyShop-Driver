@@ -1,15 +1,24 @@
 
+export interface OrderItem {
+  name: string;
+  quantity: number;
+  // Include other item properties if needed for other parts of the app
+  price?: number;
+  productId?: string;
+  imageUrl?: string;
+}
+
 export interface Order {
   id: string;
-  customerName: string;
-  pickupLocation: string; // Could be "Dark Store A", "Warehouse B"
-  dropOffLocation: string; // Customer address
-  items: string[];
-  status: "Placed" | "accepted" | "picked-up" | "out-for-delivery" | "delivered" | "cancelled";
-  estimatedEarnings: number;
-  estimatedTime: number; // in minutes
+  customerName: string; // Ensure this field exists in your Firestore 'orders' doc or is mapped
+  pickupLocation: string; // Ensure this field exists or is mapped (e.g., from a store associated with the order)
+  dropOffLocation: string; // Mapped from Firestore address object
+  items: OrderItem[]; // Changed from string[]
+  orderStatus: "Placed" | "accepted" | "picked-up" | "out-for-delivery" | "delivered" | "cancelled"; // Renamed from status
+  estimatedEarnings: number; // Ensure this is calculated or present for the driver
+  estimatedTime: number; // in minutes, ensure this is calculated or present
   deliveryInstructions?: string;
-  customerContact?: string;
+  customerContact?: string; // Mapped from Firestore phoneNumber
 }
 
 export interface EarningSummary {
@@ -43,7 +52,7 @@ export interface Profile {
   profilePictureUrl?: string;
   documents: ProfileDocumentUrls;
   createdAt?: string; // ISO string
-  availabilityStatus?: 'online' | 'offline' | 'on_break'; // Added availability status
+  availabilityStatus?: 'online' | 'offline' | 'on_break';
 
   // Performance metrics (populated by another system, read-only here)
   averageDeliveryTime?: number; // in minutes
@@ -69,3 +78,4 @@ export interface ChatThread {
   unreadCount: number;
   avatarUrl?: string;
 }
+

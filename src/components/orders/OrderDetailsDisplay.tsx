@@ -20,7 +20,7 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="text-2xl font-bold text-primary">Order #{order.id.substring(0,8)}</CardTitle>
-          <Badge variant="secondary" className="text-sm capitalize">{order.status}</Badge>
+          <Badge variant="secondary" className="text-sm capitalize">{order.orderStatus}</Badge> {/* Changed from order.status */}
         </div>
         <CardDescription>Detailed information for the current order.</CardDescription>
       </CardHeader>
@@ -41,7 +41,7 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
           <h3 className="font-semibold text-lg mb-2 flex items-center"><Package className="mr-2 h-5 w-5 text-primary" />Order Items</h3>
           <ul className="list-disc list-inside">
             {order.items.map((item, index) => (
-              <li key={index}>{item}</li>
+              <li key={index}>{item.name} (Qty: {item.quantity})</li> 
             ))}
           </ul>
         </div>

@@ -12,7 +12,6 @@ import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-// Using a generic currency icon for now, replace with a specific Rupee icon if available/desired
 const CurrencyIcon = () => <span className="font-semibold">₹</span>;
 
 export function OrderCard({ order, type }: { order: Order, type: "new" | "active" }) {
@@ -25,7 +24,7 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
     setIsAccepting(true);
     try {
       const orderRef = doc(db, "orders", order.id);
-      await updateDoc(orderRef, { status: "accepted" });
+      await updateDoc(orderRef, { orderStatus: "accepted" }); // Changed status to orderStatus
       toast({
         title: "Order Accepted!",
         description: `Order #${order.id.substring(0,8)} has been moved to active orders.`,
@@ -47,7 +46,7 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
     setIsRejecting(true);
     try {
       const orderRef = doc(db, "orders", order.id);
-      await updateDoc(orderRef, { status: "cancelled" }); // Or "rejected_by_driver"
+      await updateDoc(orderRef, { orderStatus: "cancelled" }); // Changed status to orderStatus
       toast({
         title: "Order Rejected",
         description: `Order #${order.id.substring(0,8)} has been rejected.`,
@@ -64,6 +63,8 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
     }
   };
 
+  const displayItems = order.items.map(item => `${item.name} (x${item.quantity})`).join(", ");
+
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader>
@@ -71,7 +72,7 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
           <CardTitle className="text-lg font-semibold">Order #{order.id.substring(0, 8)}</CardTitle>
           <Badge variant={isNewOrder ? "destructive" : "secondary"} className="capitalize">
             {isNewOrder ? <AlertTriangle className="mr-1 h-3 w-3" /> : <CheckCircle className="mr-1 h-3 w-3" />}
-            {order.status}
+            {order.orderStatus} {/* Changed from order.status */}
           </Badge>
         </div>
         <CardDescription className="flex items-center text-sm">
@@ -85,7 +86,7 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <div className="flex items-center">
-          <Package className="mr-2 h-4 w-4 text-muted-foreground" /> Items: {order.items.join(", ")}
+          <Package className="mr-2 h-4 w-4 text-muted-foreground" /> Items: {displayItems}
         </div>
         <div className="flex items-center">
           <CurrencyIcon /> <span className="ml-1 mr-2 text-muted-foreground">Est. Earnings:</span> {order.estimatedEarnings.toFixed(2)}

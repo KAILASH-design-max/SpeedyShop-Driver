@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { Order } from "@/types";
+import type { Order, OrderItem } from "@/types";
 import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,50 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const mapFirestoreDocToOrder = (docSnap: DocumentData): Order => {
+    const data = docSnap.data();
+    const address = data.address || {};
+    
+    let items: OrderItem[] = [];
+    if (Array.isArray(data.items)) {
+      items = data.items.map((item: any) => ({
+        name: item.name || "Unknown Item",
+        quantity: item.quantity || 0,
+        price: item.price,
+        productId: item.productId,
+        imageUrl: item.imageUrl,
+      }));
+    }
+    
+    const dropOffStreet = address.street || '';
+    const dropOffCity = address.city || '';
+    const dropOffPostalCode = address.postalCode || '';
+    let dropOffLocationString = `${dropOffStreet}, ${dropOffCity} ${dropOffPostalCode}`.trim();
+    if (dropOffLocationString.startsWith(',')) dropOffLocationString = dropOffLocationString.substring(1).trim();
+    if (dropOffLocationString.endsWith(',')) dropOffLocationString = dropOffLocationString.slice(0, -1).trim();
+    if (dropOffLocationString === ',' || !dropOffLocationString) dropOffLocationString = "N/A";
+
+
+    return {
+      id: docSnap.id,
+      customerName: data.customerName || "Customer",
+      pickupLocation: data.pickupLocation || "Default Pickup Location",
+      dropOffLocation: dropOffLocationString,
+      items: items,
+      orderStatus: data.orderStatus || "Placed",
+      estimatedEarnings: data.estimatedEarnings || (data.total ? data.total * 0.1 : 0) || 50,
+      estimatedTime: data.estimatedTime || 30,
+      deliveryInstructions: data.deliveryInstructions,
+      customerContact: data.phoneNumber || address.phoneNumber,
+    };
+  };
+
   useEffect(() => {
     if (orderId) {
       const orderRef = doc(db, "orders", orderId);
       const unsubscribe = onSnapshot(orderRef, (docSnap) => {
         if (docSnap.exists()) {
-          setOrder({ id: docSnap.id, ...docSnap.data() } as Order);
+          setOrder(mapFirestoreDocToOrder(docSnap));
         } else {
           setOrder(null);
           toast({ variant: "destructive", title: "Error", description: "Order not found." });
@@ -47,12 +85,11 @@ export default function OrderPage() {
   }, [orderId, toast]);
 
   const handlePickupConfirmation = async () => {
-    if (order && order.status === "accepted") {
+    if (order && order.orderStatus === "accepted") { // Changed to orderStatus
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "picked-up" });
-        // Local state will be updated by onSnapshot
+        await updateDoc(orderRef, { orderStatus: "picked-up" }); // Changed to orderStatus
         toast({ title: "Pickup Confirmed", description: `Order ${order.id.substring(0,8)} marked as picked-up.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error confirming pickup:", error);
@@ -76,8 +113,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "delivered" });
-        // Local state will update via onSnapshot, then this will navigate
+        await updateDoc(orderRef, { orderStatus: "delivered" }); // Changed to orderStatus
         toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
         router.push("/dashboard");
       } catch (error) {
@@ -111,13 +147,13 @@ export default function OrderPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardContent className="p-6 space-y-4">
-            {order.status === "accepted" && (
+            {order.orderStatus === "accepted" && ( // Changed to orderStatus
               <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white" disabled={isUpdating}>
                 {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <PackageCheck className="mr-2 h-5 w-5" /> Confirm Pickup from Store
               </Button>
             )}
-             {(order.status === "picked-up" || order.status === "out-for-delivery") && (
+             {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( // Changed to orderStatus
               <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isUpdating}>
                 <Navigation className="mr-2 h-5 w-5" /> Start Navigation to Customer
               </Button>
@@ -128,12 +164,12 @@ export default function OrderPage() {
           </CardContent>
         </Card>
 
-        {(order.status === "picked-up" || order.status === "out-for-delivery") && (
+        {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( // Changed to orderStatus
           <DeliveryConfirmation orderId={order.id} onConfirm={handleDeliveryConfirmed} />
         )}
       </div>
 
-      {order.status === "delivered" && (
+      {order.orderStatus === "delivered" && ( // Changed to orderStatus
         <Card className="mt-6 bg-green-50 border-green-200">
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
