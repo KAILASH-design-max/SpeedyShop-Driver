@@ -5,12 +5,15 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, Clock, DollarSign, AlertTriangle, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
+import { MapPin, Package, Clock, AlertTriangle, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
 import type { Order } from "@/types";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+
+// Using a generic currency icon for now, replace with a specific Rupee icon if available/desired
+const CurrencyIcon = () => <span className="font-semibold">₹</span>;
 
 export function OrderCard({ order, type }: { order: Order, type: "new" | "active" }) {
   const isNewOrder = type === "new";
@@ -85,7 +88,7 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
           <Package className="mr-2 h-4 w-4 text-muted-foreground" /> Items: {order.items.join(", ")}
         </div>
         <div className="flex items-center">
-          <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" /> Est. Earnings: ${order.estimatedEarnings.toFixed(2)}
+          <CurrencyIcon /> <span className="ml-1 mr-2 text-muted-foreground">Est. Earnings:</span> {order.estimatedEarnings.toFixed(2)}
         </div>
         <div className="flex items-center">
           <Clock className="mr-2 h-4 w-4 text-muted-foreground" /> Est. Time: {order.estimatedTime} mins

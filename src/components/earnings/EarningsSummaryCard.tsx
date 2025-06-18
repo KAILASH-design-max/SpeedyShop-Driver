@@ -3,7 +3,11 @@
 
 import type { EarningSummary } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Truck, Award, Star } from "lucide-react";
+import { Truck, Award, Star } from "lucide-react";
+
+// Using a generic currency icon for now, replace with a specific Rupee icon if available/desired
+const CurrencyIcon = () => <span className="font-semibold">₹</span>;
+
 
 interface StatCardProps {
   title: string;
@@ -11,9 +15,10 @@ interface StatCardProps {
   icon: React.ElementType;
   description?: string;
   colorClass?: string;
+  prefixValue?: React.ReactNode;
 }
 
-function StatCard({ title, value, icon: Icon, description, colorClass = "text-primary" }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, description, colorClass = "text-primary", prefixValue }: StatCardProps) {
   return (
     <Card className="shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -21,7 +26,9 @@ function StatCard({ title, value, icon: Icon, description, colorClass = "text-pr
         <Icon className={`h-5 w-5 ${colorClass}`} />
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-bold ${colorClass}`}>{value}</div>
+        <div className={`text-2xl font-bold ${colorClass}`}>
+            {prefixValue}{value}
+        </div>
         {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </CardContent>
     </Card>
@@ -44,8 +51,9 @@ export function EarningsSummaryCard({ summary }: EarningsSummaryCardProps) {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard 
                     title="Current Week Earnings" 
-                    value={`$${summary.currentWeekEarnings.toFixed(2)}`}
-                    icon={DollarSign}
+                    prefixValue={<CurrencyIcon />}
+                    value={summary.currentWeekEarnings.toFixed(2)}
+                    icon={CurrencyIcon} // Using the same icon for visual consistency, could be DollarSign
                     description="Total earnings this week"
                     colorClass="text-green-500"
                 />

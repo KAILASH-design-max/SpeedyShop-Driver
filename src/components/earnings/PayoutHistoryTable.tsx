@@ -39,7 +39,7 @@ export function PayoutHistoryTable({ payouts }: PayoutHistoryTableProps) {
                 {payouts.map((payout) => (
                 <TableRow key={payout.id}>
                     <TableCell>{format(new Date(payout.date), "MMM dd, yyyy")}</TableCell>
-                    <TableCell className="font-medium">${payout.amount.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium">₹{payout.amount.toFixed(2)}</TableCell>
                     <TableCell>
                     <Badge 
                         variant={payout.status === "completed" ? "default" : payout.status === "pending" ? "secondary" : "destructive"}
