@@ -58,6 +58,7 @@ export default function OrderPage() {
       estimatedTime: data.estimatedTime || 30,
       deliveryInstructions: data.deliveryInstructions,
       customerContact: data.phoneNumber || address.phoneNumber,
+      deliveryPartnerId: data.deliveryPartnerId,
     };
   };
 
@@ -85,11 +86,11 @@ export default function OrderPage() {
   }, [orderId, toast]);
 
   const handlePickupConfirmation = async () => {
-    if (order && order.orderStatus === "accepted") { // Changed to orderStatus
+    if (order && order.orderStatus === "accepted") { 
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "picked-up" }); // Changed to orderStatus
+        await updateDoc(orderRef, { orderStatus: "picked-up" }); 
         toast({ title: "Pickup Confirmed", description: `Order ${order.id.substring(0,8)} marked as picked-up.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error confirming pickup:", error);
@@ -113,7 +114,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "delivered" }); // Changed to orderStatus
+        await updateDoc(orderRef, { orderStatus: "delivered" }); 
         toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
         router.push("/dashboard");
       } catch (error) {
@@ -147,13 +148,13 @@ export default function OrderPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardContent className="p-6 space-y-4">
-            {order.orderStatus === "accepted" && ( // Changed to orderStatus
+            {order.orderStatus === "accepted" && ( 
               <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white" disabled={isUpdating}>
                 {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <PackageCheck className="mr-2 h-5 w-5" /> Confirm Pickup from Store
               </Button>
             )}
-             {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( // Changed to orderStatus
+             {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
               <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isUpdating}>
                 <Navigation className="mr-2 h-5 w-5" /> Start Navigation to Customer
               </Button>
@@ -164,12 +165,12 @@ export default function OrderPage() {
           </CardContent>
         </Card>
 
-        {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( // Changed to orderStatus
+        {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
           <DeliveryConfirmation orderId={order.id} onConfirm={handleDeliveryConfirmed} />
         )}
       </div>
 
-      {order.orderStatus === "delivered" && ( // Changed to orderStatus
+      {order.orderStatus === "delivered" && ( 
         <Card className="mt-6 bg-green-50 border-green-200">
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />

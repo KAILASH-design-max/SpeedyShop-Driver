@@ -14,17 +14,35 @@ import { useState } from "react";
 
 const CurrencyIcon = () => <span className="font-semibold">₹</span>;
 
-export function OrderCard({ order, type }: { order: Order, type: "new" | "active" }) {
+interface OrderCardProps {
+  order: Order;
+  type: "new" | "active";
+  currentUserId?: string; // Optional: only needed for 'new' type to assign driver
+}
+
+export function OrderCard({ order, type, currentUserId }: OrderCardProps) {
   const isNewOrder = type === "new";
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
 
   const handleAccept = async () => {
+    if (!currentUserId && isNewOrder) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "User ID not available to accept order.",
+      });
+      return;
+    }
+
     setIsAccepting(true);
     try {
       const orderRef = doc(db, "orders", order.id);
-      await updateDoc(orderRef, { orderStatus: "accepted" }); // Changed status to orderStatus
+      await updateDoc(orderRef, { 
+        orderStatus: "accepted",
+        deliveryPartnerId: currentUserId // Assign current user as delivery partner
+      });
       toast({
         title: "Order Accepted!",
         description: `Order #${order.id.substring(0,8)} has been moved to active orders.`,
@@ -46,7 +64,7 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
     setIsRejecting(true);
     try {
       const orderRef = doc(db, "orders", order.id);
-      await updateDoc(orderRef, { orderStatus: "cancelled" }); // Changed status to orderStatus
+      await updateDoc(orderRef, { orderStatus: "cancelled" }); 
       toast({
         title: "Order Rejected",
         description: `Order #${order.id.substring(0,8)} has been rejected.`,
@@ -72,7 +90,7 @@ export function OrderCard({ order, type }: { order: Order, type: "new" | "active
           <CardTitle className="text-lg font-semibold">Order #{order.id.substring(0, 8)}</CardTitle>
           <Badge variant={isNewOrder ? "destructive" : "secondary"} className="capitalize">
             {isNewOrder ? <AlertTriangle className="mr-1 h-3 w-3" /> : <CheckCircle className="mr-1 h-3 w-3" />}
-            {order.orderStatus} {/* Changed from order.status */}
+            {order.orderStatus}
           </Badge>
         </div>
         <CardDescription className="flex items-center text-sm">

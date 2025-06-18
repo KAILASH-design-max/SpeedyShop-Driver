@@ -123,6 +123,7 @@ export default function DashboardPage() {
       estimatedTime: data.estimatedTime || 30, 
       deliveryInstructions: data.deliveryInstructions,
       customerContact: data.phoneNumber || address.phoneNumber,
+      deliveryPartnerId: data.deliveryPartnerId,
     };
   };
 
@@ -139,7 +140,6 @@ export default function DashboardPage() {
       return () => {};
     }
     
-    // Only fetch new orders if online or on_break (on_break drivers might still want to see, but usually won't accept)
     if (availabilityStatus === 'online' || availabilityStatus === 'on_break') {
       setLoadingNew(true);
       const newOrdersQuery = query(collection(db, "orders"), where("orderStatus", "==", "Placed"));
@@ -170,7 +170,7 @@ export default function DashboardPage() {
     const activeOrdersQuery = query(
       collection(db, "orders"), 
       where("orderStatus", "in", ["accepted", "picked-up", "out-for-delivery"]),
-      // where("driverId", "==", currentUser.uid) // Uncomment if orders are assigned to specific drivers and you have a driverId field
+      where("deliveryPartnerId", "==", currentUser.uid) 
     );
     const unsubscribeActive = onSnapshot(activeOrdersQuery, (snapshot) => {
       const ordersData = snapshot.docs.map(mapFirestoreDocToOrder);
@@ -221,7 +221,7 @@ export default function DashboardPage() {
             ) : newOrders.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {newOrders.map((order) => (
-                  <OrderCard key={order.id} order={order} type="new" />
+                  <OrderCard key={order.id} order={order} type="new" currentUserId={currentUser?.uid} />
                 ))}
               </div>
             ) : (
@@ -255,5 +255,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

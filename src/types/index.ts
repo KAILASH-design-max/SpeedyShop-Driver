@@ -10,15 +10,16 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  customerName: string; // Ensure this field exists in your Firestore 'orders' doc or is mapped
-  pickupLocation: string; // Ensure this field exists or is mapped (e.g., from a store associated with the order)
-  dropOffLocation: string; // Mapped from Firestore address object
-  items: OrderItem[]; // Changed from string[]
-  orderStatus: "Placed" | "accepted" | "picked-up" | "out-for-delivery" | "delivered" | "cancelled"; // Renamed from status
-  estimatedEarnings: number; // Ensure this is calculated or present for the driver
-  estimatedTime: number; // in minutes, ensure this is calculated or present
+  customerName: string; 
+  pickupLocation: string; 
+  dropOffLocation: string; 
+  items: OrderItem[]; 
+  orderStatus: "Placed" | "accepted" | "picked-up" | "out-for-delivery" | "delivered" | "cancelled"; 
+  estimatedEarnings: number; 
+  estimatedTime: number; 
   deliveryInstructions?: string;
-  customerContact?: string; // Mapped from Firestore phoneNumber
+  customerContact?: string; 
+  deliveryPartnerId?: string; // Added field for delivery partner
 }
 
 export interface EarningSummary {
@@ -78,4 +79,3 @@ export interface ChatThread {
   unreadCount: number;
   avatarUrl?: string;
 }
-
