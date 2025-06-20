@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Profile, ProfileDocumentUrls } from "@/types";
 import { storage } from "@/lib/firebase";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from "firebase/storage";
-import imageCompression from 'browser-image-compression';
+// Removed static import: import imageCompression from 'browser-image-compression';
 
 interface DocumentItemProps {
   docName: string;
@@ -62,13 +62,15 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
         maxWidthOrHeight: 1920,
         useWebWorker: true,
         onProgress: (p: number) => {
-          // You could show a pre-compression progress if needed, but for simplicity, we'll keep it silent
           console.log(`Compressing ${docName}: ${p}%`);
         }
       };
       try {
         toast({ title: "Compressing Image...", description: `Preparing ${docName} for upload. This may take a moment.`, duration: 3000 });
-        const compressedFile = await imageCompression(file, options);
+        const imageCompressionModule = await import('browser-image-compression'); // Dynamic import
+        const imageCompress = imageCompressionModule.default; // Access default export
+        const compressedFile = await imageCompress(file, options); // Use it
+        
         console.log(`${docName} - Original size: ${(file.size / 1024 / 1024).toFixed(2)} MB, Compressed size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
         if (compressedFile.size < file.size) {
             fileToUpload = compressedFile;
@@ -82,7 +84,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
       }
     }
     
-    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${fileToUpload.name}`; // Use original file name for path, even if content is compressed
+    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${fileToUpload.name}`;
     const fileStorageRef = storageRef(storage, documentPath);
     
     const uploadTask = uploadBytesResumable(fileStorageRef, fileToUpload);
@@ -103,7 +105,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           const updateData = { 
             [`documents.${docKey}`]: downloadURL,
-            updatedAt: new Date().toISOString() // Also update the main profile updatedAt timestamp
+            updatedAt: new Date().toISOString()
           };
           await onUpdate(updateData);
           toast({ title: "Document Uploaded", description: `${docName} has been successfully uploaded.`, className: "bg-green-500 text-white" });
