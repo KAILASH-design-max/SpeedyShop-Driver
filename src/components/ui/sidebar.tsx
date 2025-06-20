@@ -535,7 +535,7 @@ const sidebarMenuButtonVariants = cva(
 )
 
 type SidebarMenuButtonProps = (React.ComponentPropsWithoutRef<"button"> | React.ComponentPropsWithoutRef<"a">) & {
-  asChild?: boolean; // Prop specific to SidebarMenuButton
+  asChild?: boolean;
   isActive?: boolean;
   tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 } & VariantProps<typeof sidebarMenuButtonVariants>;
@@ -547,43 +547,48 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild: localAsChild = false, // Renamed to localAsChild to avoid conflict
+      asChild: ownAsChild = false, // Prop for SidebarMenuButton to turn into a Slot
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
-      className,
-      ...restProps // This might contain `asChild` from a parent Link
+      className, // className for the button/a itself
+      children,  // children like icon and span
+      ...rest // All other props. If from Link, this includes href and Link's asChild
     },
     ref
   ) => {
     const { isMobile, state } = useSidebar();
 
-    // Determine the component to render. If localAsChild is true, render Slot.
-    // Otherwise, render 'a' if href is present, else 'button'.
-    const Comp = localAsChild ? Slot : (restProps.href ? "a" : "button");
-    const isRenderingNativeElement = typeof Comp === 'string';
-    
-    // Create a mutable copy of restProps to potentially remove `asChild`
-    let finalProps: Record<string, any> = { ...restProps };
+    // Determine the component type:
+    // 1. If ownAsChild is true, SidebarMenuButton itself is a Slot.
+    // 2. Else, if 'href' is present in `rest` (typically from a Link parent), it's an 'a' tag.
+    // 3. Otherwise, it's a 'button' tag.
+    const Comp = ownAsChild ? Slot : (rest.href ? "a" : "button");
 
-    // If SidebarMenuButton is NOT rendering as a Slot (localAsChild is false),
-    // AND it's going to render a native HTML element (e.g., 'a' or 'button'),
-    // AND an `asChild` prop was passed in `restProps` (likely from a parent `Link asChild={true}`),
-    // THEN delete `asChild` from `finalProps` to prevent it from being passed to the DOM element.
-    if (!localAsChild && isRenderingNativeElement && finalProps.asChild === true) {
-      delete finalProps.asChild;
+    // Prepare the props that will be passed to Comp.
+    // Start with all `rest` props.
+    const compSpecificProps = { ...rest };
+
+    // If Comp is a native DOM element ('a' or 'button'), and `asChild` was passed in `rest`
+    // (e.g., from a parent <Link asChild>), we must remove it to avoid the React warning.
+    if ((Comp === 'a' || Comp === 'button') && compSpecificProps.asChild === true) {
+      delete compSpecificProps.asChild;
     }
-    
+    // If Comp is Slot (because ownAsChild was true), Slot knows how to handle an `asChild` prop if present
+    // in compSpecificProps, typically by passing it to its own child.
+
     const element = (
       <Comp
         ref={ref}
+        className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
-        {...finalProps} // Spread the potentially modified props
-      />
+        {...compSpecificProps} // Spreads href, onClick from Link, etc., but without 'asChild' if Comp is native
+      >
+        {children} 
+      </Comp>
     );
 
     if (!tooltip) {
