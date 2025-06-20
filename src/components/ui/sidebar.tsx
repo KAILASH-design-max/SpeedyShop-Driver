@@ -535,7 +535,7 @@ const sidebarMenuButtonVariants = cva(
 )
 
 type SidebarMenuButtonProps = (React.ComponentPropsWithoutRef<"button"> | React.ComponentPropsWithoutRef<"a">) & {
-  asChild?: boolean;
+  asChild?: boolean; // Prop specific to SidebarMenuButton
   isActive?: boolean;
   tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 } & VariantProps<typeof sidebarMenuButtonVariants>;
@@ -547,27 +547,30 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild: localAsChild = false, 
+      asChild: localAsChild = false, // Renamed to localAsChild to avoid conflict
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
       className,
-      ...restProps 
+      ...restProps // This might contain `asChild` from a parent Link
     },
     ref
   ) => {
     const { isMobile, state } = useSidebar();
 
+    // Determine the component to render. If localAsChild is true, render Slot.
+    // Otherwise, render 'a' if href is present, else 'button'.
     const Comp = localAsChild ? Slot : (restProps.href ? "a" : "button");
     const isRenderingNativeElement = typeof Comp === 'string';
     
+    // Create a mutable copy of restProps to potentially remove `asChild`
     let finalProps: Record<string, any> = { ...restProps };
 
-    // If SidebarMenuButton itself is NOT a Slot (localAsChild is false),
-    // AND it's rendering a native DOM element (e.g., 'a' or 'button'),
-    // AND an 'asChild' prop was passed in restProps (this is the one from the parent Link, usually true),
-    // THEN remove this 'asChild' prop from finalProps to prevent it from being rendered on the DOM element.
+    // If SidebarMenuButton is NOT rendering as a Slot (localAsChild is false),
+    // AND it's going to render a native HTML element (e.g., 'a' or 'button'),
+    // AND an `asChild` prop was passed in `restProps` (likely from a parent `Link asChild={true}`),
+    // THEN delete `asChild` from `finalProps` to prevent it from being passed to the DOM element.
     if (!localAsChild && isRenderingNativeElement && finalProps.asChild === true) {
       delete finalProps.asChild;
     }
@@ -579,7 +582,7 @@ const SidebarMenuButton = React.forwardRef<
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
-        {...finalProps}
+        {...finalProps} // Spread the potentially modified props
       />
     );
 
