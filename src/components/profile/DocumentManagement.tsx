@@ -12,13 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 import type { Profile, ProfileDocumentUrls } from "@/types";
 import { storage } from "@/lib/firebase";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from "firebase/storage";
+import imageCompression from 'browser-image-compression';
 
 interface DocumentItemProps {
   docName: string;
   docKey: keyof ProfileDocumentUrls;
   currentUrl?: string;
   profileUid: string;
-  onUpdate: (data: Partial<Profile> | Record<string, any>) => Promise<void>; // Allow Record<string, any> for dot notation
+  onUpdate: (data: Partial<Profile> | Record<string, any>) => Promise<void>; 
 }
 
 function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate }: DocumentItemProps) {
@@ -52,10 +53,39 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
 
     setIsUploading(true);
     setUploadProgress(0);
-    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${file.name}`;
+
+    let fileToUpload = file;
+
+    if (file.type.startsWith('image/')) {
+      const options = {
+        maxSizeMB: 0.48, // Aim slightly below 0.5MB to be safe
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        onProgress: (p: number) => {
+          // You could show a pre-compression progress if needed, but for simplicity, we'll keep it silent
+          console.log(`Compressing ${docName}: ${p}%`);
+        }
+      };
+      try {
+        toast({ title: "Compressing Image...", description: `Preparing ${docName} for upload. This may take a moment.`, duration: 3000 });
+        const compressedFile = await imageCompression(file, options);
+        console.log(`${docName} - Original size: ${(file.size / 1024 / 1024).toFixed(2)} MB, Compressed size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+        if (compressedFile.size < file.size) {
+            fileToUpload = compressedFile;
+            toast({ title: "Compression Successful", description: `${docName} compressed for faster upload.`, className: "bg-blue-500 text-white", duration: 2000 });
+        } else {
+            toast({ title: "Compression Note", description: `Original ${docName} is already optimized or small. Uploading as is.`, duration: 2000 });
+        }
+      } catch (error) {
+        console.error(`Error compressing ${docName}:`, error);
+        toast({ variant: "destructive", title: "Compression Failed", description: `Could not compress ${docName}. Uploading original file. ${ (error as Error).message }` });
+      }
+    }
+    
+    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${fileToUpload.name}`; // Use original file name for path, even if content is compressed
     const fileStorageRef = storageRef(storage, documentPath);
     
-    const uploadTask = uploadBytesResumable(fileStorageRef, file);
+    const uploadTask = uploadBytesResumable(fileStorageRef, fileToUpload);
 
     uploadTask.on('state_changed', 
       (snapshot: UploadTaskSnapshot) => {
@@ -71,8 +101,10 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
       async () => {
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          // Use dot notation to update only the specific document URL field
-          const updateData = { [`documents.${docKey}`]: downloadURL };
+          const updateData = { 
+            [`documents.${docKey}`]: downloadURL,
+            updatedAt: new Date().toISOString() // Also update the main profile updatedAt timestamp
+          };
           await onUpdate(updateData);
           toast({ title: "Document Uploaded", description: `${docName} has been successfully uploaded.`, className: "bg-green-500 text-white" });
           setFile(null); 
@@ -120,6 +152,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
             <Input 
               id={`doc-upload-${docKey}`} 
               type="file" 
+              accept="image/*,application/pdf"
               className="hidden" 
               onChange={handleFileChange}
               disabled={isUploading}
@@ -146,7 +179,7 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
 
 interface DocumentManagementProps {
   profile: Profile;
-  onUpdate: (data: Partial<Profile> | Record<string, any>) => Promise<void>; // Allow Record<string, any> for dot notation
+  onUpdate: (data: Partial<Profile> | Record<string, any>) => Promise<void>;
 }
 
 export function DocumentManagement({ profile, onUpdate }: DocumentManagementProps) {
@@ -175,7 +208,7 @@ export function DocumentManagement({ profile, onUpdate }: DocumentManagementProp
     <Card className="shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center text-2xl font-bold text-primary"><FileText className="mr-2 h-6 w-6"/>Document Management</CardTitle>
-        <CardDescription>Upload and manage your required documents for verification.</CardDescription>
+        <CardDescription>Upload and manage your required documents for verification. Images will be compressed if possible.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {documentsToManage.map((doc) => (
