@@ -19,7 +19,7 @@ export interface Order {
   estimatedTime: number; 
   deliveryInstructions?: string;
   customerContact?: string; 
-  deliveryPartnerId?: string; // Added field for delivery partner
+  deliveryPartnerId?: string; 
 }
 
 export interface EarningSummary {
@@ -53,6 +53,7 @@ export interface Profile {
   profilePictureUrl?: string;
   documents: ProfileDocumentUrls;
   createdAt?: string; // ISO string
+  updatedAt?: string; // ISO string for last update
   availabilityStatus?: 'online' | 'offline' | 'on_break';
 
   // Performance metrics (populated by another system, read-only here)

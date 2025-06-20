@@ -55,6 +55,7 @@ export default function ProfilePage() {
                     proofOfInsuranceUrl: "",
                 },
                 createdAt: new Date().toISOString(),
+                // updatedAt: new Date().toISOString(), // Only set on actual updates
              };
              setProfile(defaultProfile);
              setDoc(profileRef, defaultProfile).catch(err => console.error("Error creating default profile", err));
@@ -78,7 +79,11 @@ export default function ProfilePage() {
     if (!currentUser) return;
     const profileRef = doc(db, "users", currentUser.uid); 
     try {
-      await updateDoc(profileRef, updatedData);
+      const dataWithTimestamp = {
+        ...updatedData,
+        updatedAt: new Date().toISOString(),
+      };
+      await updateDoc(profileRef, dataWithTimestamp);
       toast({ title: "Profile Updated", description: "Your changes have been saved.", className: "bg-green-500 text-white" });
     } catch (error) {
       console.error("Error updating profile:", error);
