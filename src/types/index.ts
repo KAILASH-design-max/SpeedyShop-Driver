@@ -66,17 +66,17 @@ export interface Profile {
 
 export interface CommunicationMessage {
   id: string;
-  sender: 'driver' | 'customer' | 'support';
+  senderId: string;
   content: string;
-  timestamp: string; // ISO string
-  isRead?: boolean;
+  timestamp: any; // Firestore ServerTimestamp
 }
 
 export interface ChatThread {
-  id: string; // e.g., orderId
-  participantName: string; // Customer Name or Support
+  id: string; // document ID, usually orderId
+  participantIds: string[];
+  participantNames: { [key: string]: string }; // Maps UID to name
+  participantAvatars: { [key: string]: string }; // Maps UID to avatar URL
   lastMessage: string;
-  lastMessageTimestamp: string; // ISO string
-  unreadCount: number;
-  avatarUrl?: string;
+  lastMessageTimestamp: any; // Firestore ServerTimestamp
+  unreadCount?: number; // This can be added later
 }
