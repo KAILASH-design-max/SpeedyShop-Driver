@@ -52,11 +52,7 @@ export default function ProfilePage() {
                 vehicleRegistrationNumber: '',
                 verificationStatus: 'pending',
                 profilePictureUrl: "",
-                documents: {
-                    driverLicenseUrl: "",
-                    vehicleRegistrationUrl: "",
-                    proofOfInsuranceUrl: "",
-                },
+                documents: {},
                 bankDetails: {
                   accountHolderName: "",
                   accountNumber: "",

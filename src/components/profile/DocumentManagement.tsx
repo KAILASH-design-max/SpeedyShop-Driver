@@ -6,23 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { FileText, UploadCloud, CheckCircle, AlertTriangle, LinkIcon, Loader2 } from "lucide-react";
+import { FileText, UploadCloud, CheckCircle, AlertTriangle, LinkIcon, Loader2, ShieldQuestion } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { Profile, ProfileDocumentUrls } from "@/types";
+import type { Profile, ProfileDocuments, DocumentMetadata, DriverLicenseDocument, VehicleRegistrationDocument, ProofOfInsuranceDocument } from "@/types";
 import { storage } from "@/lib/firebase";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from "firebase/storage";
-// Removed static import: import imageCompression from 'browser-image-compression';
+import { Badge } from "@/components/ui/badge";
 
-interface DocumentItemProps {
+type DocumentObject = DriverLicenseDocument | VehicleRegistrationDocument | ProofOfInsuranceDocument;
+type DocumentTypeKey = keyof ProfileDocuments;
+
+interface DocumentUploadItemProps {
   docName: string;
-  docKey: keyof ProfileDocumentUrls;
-  currentUrl?: string;
+  docKey: DocumentTypeKey;
+  document?: DocumentObject;
   profileUid: string;
-  onUpdate: (data: Partial<Profile> | Record<string, any>) => Promise<void>; 
+  onUpdate: (data: Record<string, any>) => Promise<void>; 
 }
 
-function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate }: DocumentItemProps) {
+function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }: DocumentUploadItemProps) {
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -53,41 +56,11 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
 
     setIsUploading(true);
     setUploadProgress(0);
-
-    let fileToUpload = file;
-
-    if (file.type.startsWith('image/')) {
-      const options = {
-        maxSizeMB: 0.48, // Aim slightly below 0.5MB to be safe
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-        onProgress: (p: number) => {
-          console.log(`Compressing ${docName}: ${p}%`);
-        }
-      };
-      try {
-        toast({ title: "Compressing Image...", description: `Preparing ${docName} for upload. This may take a moment.`, duration: 3000 });
-        const imageCompressionModule = await import('browser-image-compression'); // Dynamic import
-        const imageCompress = imageCompressionModule.default; // Access default export
-        const compressedFile = await imageCompress(file, options); // Use it
-        
-        console.log(`${docName} - Original size: ${(file.size / 1024 / 1024).toFixed(2)} MB, Compressed size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
-        if (compressedFile.size < file.size) {
-            fileToUpload = compressedFile;
-            toast({ title: "Compression Successful", description: `${docName} compressed for faster upload.`, className: "bg-blue-500 text-white", duration: 2000 });
-        } else {
-            toast({ title: "Compression Note", description: `Original ${docName} is already optimized or small. Uploading as is.`, duration: 2000 });
-        }
-      } catch (error) {
-        console.error(`Error compressing ${docName}:`, error);
-        toast({ variant: "destructive", title: "Compression Failed", description: `Could not compress ${docName}. Uploading original file. ${ (error as Error).message }` });
-      }
-    }
     
-    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${fileToUpload.name}`;
+    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${file.name}`;
     const fileStorageRef = storageRef(storage, documentPath);
     
-    const uploadTask = uploadBytesResumable(fileStorageRef, fileToUpload);
+    const uploadTask = uploadBytesResumable(fileStorageRef, file);
 
     uploadTask.on('state_changed', 
       (snapshot: UploadTaskSnapshot) => {
@@ -103,11 +76,21 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
       async () => {
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          const updateData = { 
-            [`documents.${docKey}`]: downloadURL,
-            updatedAt: new Date().toISOString()
+          
+          const documentData: DocumentMetadata = {
+            fileName: file.name,
+            fileUrl: downloadURL,
+            storagePath: documentPath,
+            uploadedAt: new Date().toISOString(), // This will be converted to server timestamp by the parent
+            verificationStatus: 'pending',
           };
-          await onUpdate(updateData);
+
+          const updatePayload = { 
+            [`documents.${docKey}`]: documentData,
+          };
+
+          await onUpdate(updatePayload);
+
           toast({ title: "Document Uploaded", description: `${docName} has been successfully uploaded.`, className: "bg-green-500 text-white" });
           setFile(null); 
           setFileName(null);
@@ -124,14 +107,25 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
   
   const getStatusIcon = () => {
     if (isUploading) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-    if (currentUrl) return <CheckCircle className="h-5 w-5 text-green-500" />;
+    if (document?.verificationStatus === 'approved') return <CheckCircle className="h-5 w-5 text-green-500" />;
+    if (document?.verificationStatus === 'rejected') return <AlertTriangle className="h-5 w-5 text-red-500" />;
+    if (document?.verificationStatus === 'pending') return <ShieldQuestion className="h-5 w-5 text-yellow-500" />;
     return <AlertTriangle className="h-5 w-5 text-orange-400" />;
   };
   
   const getStatusText = () => {
     if (isUploading) return `Uploading... ${Math.round(uploadProgress)}%`;
-    if (currentUrl) return "Document Uploaded";
+    if (document?.verificationStatus) return `Verification: ${document.verificationStatus.charAt(0).toUpperCase() + document.verificationStatus.slice(1)}`;
     return "Not Uploaded";
+  }
+
+  const getBadgeVariant = (status?: string) => {
+    switch(status) {
+        case 'approved': return 'default';
+        case 'pending': return 'secondary';
+        case 'rejected': return 'destructive';
+        default: return 'outline';
+    }
   }
 
   return (
@@ -139,13 +133,21 @@ function DocumentUploadItem({ docName, docKey, currentUrl, profileUid, onUpdate 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
           <h3 className="font-semibold text-lg">{docName}</h3>
-          <div className="flex items-center text-sm">
-            {getStatusIcon()}
-            <span className="ml-2">{getStatusText()}</span>
+          <div className="flex items-center text-sm gap-2 mt-1">
+             {document ? (
+                <Badge variant={getBadgeVariant(document.verificationStatus)} className="capitalize">
+                    {getStatusIcon()}
+                    <span className="ml-2">{getStatusText()}</span>
+                </Badge>
+             ) : (
+                <Badge variant="outline">
+                    <AlertTriangle className="h-4 w-4 mr-1"/> Not Uploaded
+                </Badge>
+             )}
           </div>
-          {currentUrl && !isUploading && (
-            <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center mt-1">
-              <LinkIcon className="mr-1 h-3 w-3" /> View Uploaded Document
+          {document?.fileUrl && !isUploading && (
+            <a href={document.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center mt-1">
+              <LinkIcon className="mr-1 h-3 w-3" /> View {document.fileName}
             </a>
           )}
         </div>
@@ -185,10 +187,10 @@ interface DocumentManagementProps {
 }
 
 export function DocumentManagement({ profile, onUpdate }: DocumentManagementProps) {
-  const documentsToManage: Array<{ name: string; key: keyof ProfileDocumentUrls }> = [
-    { name: "Driver's License", key: "driverLicenseUrl" },
-    { name: "Vehicle Registration", key: "vehicleRegistrationUrl" },
-    { name: "Proof of Insurance", key: "proofOfInsuranceUrl" },
+  const documentsToManage: Array<{ name: string; key: keyof ProfileDocuments }> = [
+    { name: "Driver's License", key: "driverLicense" },
+    { name: "Vehicle Registration", key: "vehicleRegistration" },
+    { name: "Proof of Insurance", key: "proofOfInsurance" },
   ];
 
   if (!profile || !profile.uid) {
@@ -218,7 +220,7 @@ export function DocumentManagement({ profile, onUpdate }: DocumentManagementProp
             key={doc.key}
             docName={doc.name}
             docKey={doc.key}
-            currentUrl={profile.documents?.[doc.key]}
+            document={profile.documents?.[doc.key]}
             profileUid={profile.uid}
             onUpdate={onUpdate}
           />

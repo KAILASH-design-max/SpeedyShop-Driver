@@ -37,11 +37,41 @@ export interface Payout {
   transactionId?: string;
 }
 
-export interface ProfileDocumentUrls {
-  driverLicenseUrl?: string;
-  vehicleRegistrationUrl?: string;
-  proofOfInsuranceUrl?: string;
+// Detailed Document Metadata Types
+export interface DocumentMetadata {
+  fileName: string;
+  fileUrl: string;
+  storagePath: string;
+  uploadedAt: any; // Firestore ServerTimestamp
+  verificationStatus: 'pending' | 'approved' | 'rejected';
 }
+
+export interface DriverLicenseDocument extends DocumentMetadata {
+  licenseNumber?: string;
+  issueDate?: string;
+  expiryDate?: string;
+}
+
+export interface VehicleRegistrationDocument extends DocumentMetadata {
+  registrationNumber?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+}
+
+export interface ProofOfInsuranceDocument extends DocumentMetadata {
+  policyNumber?: string;
+  provider?: string;
+  effectiveDate?: string;
+  expirationDate?: string;
+}
+
+export interface ProfileDocuments {
+  driverLicense?: DriverLicenseDocument;
+  vehicleRegistration?: VehicleRegistrationDocument;
+  proofOfInsurance?: ProofOfInsuranceDocument;
+}
+
 
 export interface BankDetails {
   accountHolderName?: string;
@@ -68,7 +98,7 @@ export interface Profile {
   availabilityStatus?: 'online' | 'offline' | 'on_break';
   
   // Documents & Financials
-  documents: ProfileDocumentUrls;
+  documents: ProfileDocuments;
   bankDetails?: BankDetails;
 
   // Timestamps
