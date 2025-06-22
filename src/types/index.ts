@@ -43,18 +43,37 @@ export interface ProfileDocumentUrls {
   proofOfInsuranceUrl?: string;
 }
 
+export interface BankDetails {
+  accountHolderName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+}
+
 export interface Profile {
   uid: string;
   name: string;
   email: string; // Non-editable after creation
   phoneNumber: string;
   role?: string;
-  vehicleDetails: string; // e.g., "Honda Activa - MH01AB1234"
+  
+  // Vehicle Details
+  vehicleDetails: string; // Kept for backward compatibility, but new fields are preferred
+  vehicleType?: 'bike' | 'scooter' | 'car';
+  vehicleRegistrationNumber?: string;
+  drivingLicenseNumber?: string;
+
+  // Profile status and details
   profilePictureUrl?: string;
+  verificationStatus?: 'pending' | 'approved' | 'rejected';
+  availabilityStatus?: 'online' | 'offline' | 'on_break';
+  
+  // Documents & Financials
   documents: ProfileDocumentUrls;
+  bankDetails?: BankDetails;
+
+  // Timestamps
   createdAt?: string; // ISO string
   updatedAt?: string; // ISO string for last update
-  availabilityStatus?: 'online' | 'offline' | 'on_break';
 
   // Performance metrics (populated by another system, read-only here)
   averageDeliveryTime?: number; // in minutes

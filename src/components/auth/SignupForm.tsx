@@ -18,19 +18,21 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserPlus, Mail, Lock, Car, FileText } from "lucide-react";
+import { UserPlus, Mail, Lock, Car, FileText, Bike } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import type { Profile } from "@/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  vehicleDetails: z.string().min(2, { message: "Vehicle details are required." }),
+  vehicleType: z.enum(["bike", "scooter", "car"], { required_error: "Please select a vehicle type." }),
+  vehicleRegistrationNumber: z.string().min(2, { message: "Vehicle registration number is required." }),
 });
 
 export function SignupForm() {
@@ -44,7 +46,7 @@ export function SignupForm() {
       name: "",
       email: "",
       password: "",
-      vehicleDetails: "",
+      vehicleRegistrationNumber: "",
     },
   });
 
@@ -58,16 +60,25 @@ export function SignupForm() {
         uid: user.uid,
         email: values.email,
         name: values.name,
-        vehicleDetails: values.vehicleDetails,
+        vehicleDetails: `${values.vehicleType} - ${values.vehicleRegistrationNumber}`, // for legacy
+        vehicleType: values.vehicleType,
+        vehicleRegistrationNumber: values.vehicleRegistrationNumber,
         phoneNumber: "", // To be filled in profile page
         profilePictureUrl: "",
         role: "deliveryPartner", // Default role
+        verificationStatus: 'pending',
         documents: {
             driverLicenseUrl: "",
             vehicleRegistrationUrl: "",
             proofOfInsuranceUrl: "",
         },
+        bankDetails: {
+          accountHolderName: "",
+          accountNumber: "",
+          ifscCode: ""
+        },
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         availabilityStatus: 'offline', // Default availability status
       };
       await setDoc(doc(db, "users", user.uid), initialProfileData);
@@ -147,14 +158,36 @@ export function SignupForm() {
                 </FormItem>
               )}
             />
-            <FormField
+             <FormField
               control={form.control}
-              name="vehicleDetails"
+              name="vehicleType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Details</FormLabel>
+                  <FormLabel className="flex items-center"><Bike className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Type</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your vehicle type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="bike">Bike</SelectItem>
+                      <SelectItem value="scooter">Scooter</SelectItem>
+                      <SelectItem value="car">Car</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="vehicleRegistrationNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Registration No.</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Honda Activa, Blue Bike" {...field} disabled={isLoading} />
+                    <Input placeholder="e.g., MH01AB1234" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

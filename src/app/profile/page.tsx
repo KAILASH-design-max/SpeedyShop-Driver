@@ -48,14 +48,22 @@ export default function ProfilePage() {
                 phoneNumber: "",
                 role: "deliveryPartner",
                 vehicleDetails: "",
+                vehicleType: 'bike',
+                vehicleRegistrationNumber: '',
+                verificationStatus: 'pending',
                 profilePictureUrl: "",
                 documents: {
                     driverLicenseUrl: "",
                     vehicleRegistrationUrl: "",
                     proofOfInsuranceUrl: "",
                 },
+                bankDetails: {
+                  accountHolderName: "",
+                  accountNumber: "",
+                  ifscCode: "",
+                },
                 createdAt: new Date().toISOString(),
-                // updatedAt: new Date().toISOString(), // Only set on actual updates
+                updatedAt: new Date().toISOString(),
              };
              setProfile(defaultProfile);
              setDoc(profileRef, defaultProfile).catch(err => console.error("Error creating default profile", err));
