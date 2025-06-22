@@ -547,36 +547,25 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild: ownAsChild = false, // Prop for SidebarMenuButton to turn into a Slot
+      asChild: ownAsChild = false,
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
-      className, // className for the button/a itself
-      children,  // children like icon and span
-      ...rest // All other props. If from Link, this includes href and Link's asChild
+      className,
+      children,
+      ...rest
     },
     ref
   ) => {
     const { isMobile, state } = useSidebar();
 
-    // Determine the component type:
-    // 1. If ownAsChild is true, SidebarMenuButton itself is a Slot.
-    // 2. Else, if 'href' is present in `rest` (typically from a Link parent), it's an 'a' tag.
-    // 3. Otherwise, it's a 'button' tag.
     const Comp = ownAsChild ? Slot : (rest.href ? "a" : "button");
-
-    // Prepare the props that will be passed to Comp.
-    // Start with all `rest` props.
-    const compSpecificProps = { ...rest };
-
-    // If Comp is a native DOM element ('a' or 'button'), and `asChild` was passed in `rest`
-    // (e.g., from a parent <Link asChild>), we must remove it to avoid the React warning.
-    if ((Comp === 'a' || Comp === 'button') && compSpecificProps.asChild === true) {
-      delete compSpecificProps.asChild;
+    
+    const finalProps = { ...rest };
+    if (Comp !== Slot) {
+      delete (finalProps as any).asChild;
     }
-    // If Comp is Slot (because ownAsChild was true), Slot knows how to handle an `asChild` prop if present
-    // in compSpecificProps, typically by passing it to its own child.
 
     const element = (
       <Comp
@@ -585,9 +574,9 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        {...compSpecificProps} // Spreads href, onClick from Link, etc., but without 'asChild' if Comp is native
+        {...finalProps}
       >
-        {children} 
+        {children}
       </Comp>
     );
 
