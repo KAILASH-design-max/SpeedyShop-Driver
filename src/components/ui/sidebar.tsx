@@ -547,20 +547,21 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild = false,
+      asChild: isSlot = false,
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
       className,
       children,
-      ...props
+      ...rest
     },
     ref
   ) => {
     const { isMobile, state } = useSidebar();
+    const { asChild, ...linkProps } = rest as { asChild?: boolean; href?: string };
 
-    const Comp = asChild ? Slot : props.href ? "a" : "button";
+    const Comp = isSlot ? Slot : linkProps.href ? "a" : "button";
 
     const element = (
       <Comp
@@ -569,7 +570,7 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        {...props}
+        {...linkProps}
       >
         {children}
       </Comp>
