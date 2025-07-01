@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ChartTooltip, ChartTooltipContent, ChartContainer, ChartConfig } from '@/components/ui/chart';
 
 const chartData = [
-  { day: 'Mon', earnings: 2600 },
-  { day: 'Tue', earnings: 1950 },
-  { day: 'Wed', earnings: 1300 },
+  { day: 'Mon', earnings: 1300 },
+  { day: 'Tue', earnings: 1250 },
+  { day: 'Wed', earnings: 1200 },
   { day: 'Thu', earnings: 650 },
-  { day: 'Fri', earnings: 2500 },
-  { day: 'Sat', earnings: 2100 },
+  { day: 'Fri', earnings: 1300 },
+  { day: 'Sat', earnings: 2450 },
   { day: 'Sun', earnings: 900 },
 ];
 
@@ -46,7 +46,7 @@ export function WeeklyEarningsChart() {
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `₹${value}`}
-              domain={[0, 2700]}
+              domain={[0, 2600]}
             />
             <ChartTooltip
                 cursor={false}

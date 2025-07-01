@@ -4,13 +4,22 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Truck, Gift, Star } from "lucide-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+
 
 const transactions = [
-    { description: "Base Pay", id: "TXN001", type: "Delivery", amount: 45.00, icon: Truck },
-    { description: "Customer Tip", id: "TXN002", type: "Tip", amount: 10.00, icon: Gift },
-    { description: "Peak Hour Bonus", id: "TXN003", type: "Bonus", amount: 50.00, icon: Star },
-    { description: "Base Pay + Distance Pay", id: "TXN004", type: "Delivery", amount: 62.50, icon: Truck },
+    { description: "Base Pay", id: "TXN001", type: "Delivery", amount: 45.00 },
+    { description: "Customer Tip", id: "TXN002", type: "Tip", amount: 10.00 },
+    { description: "Peak Hour Bonus", id: "TXN003", type: "Bonus", amount: 50.00 },
+    { description: "Base Pay + Distance Pay", id: "TXN004", type: "Delivery", amount: 62.50 },
+    { description: "Base Pay", id: "TXN005", type: "Delivery", amount: 52.00 },
 ];
 
 const getBadgeClass = (type: string) => {
@@ -27,26 +36,34 @@ export function PayoutHistoryTable() {
         <Card className="shadow-xl">
             <CardHeader>
                 <CardTitle>Transaction History</CardTitle>
-                <CardDescription>A breakdown of your recent earnings and bonuses.</CardDescription>
+                <CardDescription>A detailed breakdown of your recent earnings and deductions.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <ul className="space-y-2">
-                    {transactions.map((transaction) => (
-                        <li key={transaction.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                             <div className="flex items-center gap-4">
-                               <transaction.icon className="h-5 w-5 text-muted-foreground"/>
-                                <div>
-                                    <p className="font-semibold">{transaction.description}</p>
-                                    <p className="text-xs text-muted-foreground">ID: {transaction.id}</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <p className="font-bold text-green-600">+₹{transaction.amount.toFixed(2)}</p>
-                                <Badge variant="outline" className={cn("mt-1 capitalize", getBadgeClass(transaction.type))}>{transaction.type}</Badge>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+            <CardContent className="p-0">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                            <TableHead>Transaction</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {transactions.map((transaction) => (
+                            <TableRow key={transaction.id} className="border-b-0">
+                                <TableCell>
+                                    <div className="font-medium">{transaction.description}</div>
+                                    <div className="text-xs text-muted-foreground">{transaction.id}</div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant="outline" className={cn("capitalize font-normal", getBadgeClass(transaction.type))}>{transaction.type}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-semibold text-green-600">
+                                    +₹{transaction.amount.toFixed(2)}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </CardContent>
         </Card>
     );
