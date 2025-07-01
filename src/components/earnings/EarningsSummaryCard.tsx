@@ -5,7 +5,7 @@ import type { EarningSummary } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, Award, Star } from "lucide-react";
 
-// Using a generic currency icon for now, replace with a specific Rupee icon if available/desired
+// Using a specific Rupee icon
 const CurrencyIcon = () => <span className="font-semibold">₹</span>;
 
 
@@ -53,7 +53,7 @@ export function EarningsSummaryCard({ summary }: EarningsSummaryCardProps) {
                     title="Current Week Earnings" 
                     prefixValue={<CurrencyIcon />}
                     value={summary.currentWeekEarnings.toFixed(2)}
-                    icon={CurrencyIcon} // Using the same icon for visual consistency, could be DollarSign
+                    icon={CurrencyIcon}
                     description="Total earnings this week"
                     colorClass="text-green-500"
                 />
