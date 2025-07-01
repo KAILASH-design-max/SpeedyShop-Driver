@@ -127,7 +127,7 @@ export function OrderCard({ order, type, currentUserId }: OrderCardProps) {
                 <div className="p-2 rounded-md bg-muted/50">
                     <div className="text-xs text-muted-foreground">Earnings</div>
                     <div className="font-bold text-lg text-green-600 flex items-center justify-center">
-                        ₹{order.estimatedEarnings.toFixed(2)}
+                        ₹{(order.estimatedEarnings || 0).toFixed(2)}
                     </div>
                 </div>
                 <div className="p-2 rounded-md bg-muted/50">

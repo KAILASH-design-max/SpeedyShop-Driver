@@ -12,11 +12,14 @@ export interface OrderItem {
 export interface Order {
   id: string;
   customerName: string; 
+  userId?: string; // The customer's ID
   pickupLocation: string; 
   dropOffLocation: string; 
   items: OrderItem[]; 
   orderStatus: "Placed" | "accepted" | "picked-up" | "out-for-delivery" | "delivered" | "cancelled"; 
-  estimatedEarnings: number; 
+  estimatedEarnings?: number; 
+  deliveryCharge?: number;
+  total?: number;
   estimatedTime: number; 
   deliveryInstructions?: string;
   customerContact?: string; 
