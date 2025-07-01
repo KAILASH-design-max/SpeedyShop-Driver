@@ -42,7 +42,7 @@ const overviewStats = [
 
 export function EarningsOverview() {
     return (
-        <div className="mb-6">
+        <div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {overviewStats.map((stat) => (
                     <Link href={stat.href} key={stat.title} className="block hover:no-underline">
