@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, DocumentData } from 'firebase/firestore';
+import { formatDistanceToNow } from 'date-fns';
 
 interface PerformanceMetricsProps {
   profile: Profile;
@@ -18,6 +19,7 @@ interface FeedbackItem {
     name: string;
     rating: number;
     comment: string;
+    timestamp: any;
 }
 
 const mockPositiveComments = [
@@ -44,23 +46,24 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(true);
 
-  const { overallRating, ratingBreakdown } = useMemo(() => {
+  const { overallRating, ratingBreakdown, totalRatings } = useMemo(() => {
     const ratings = profile.deliveryRatings;
     if (!ratings || ratings.length === 0) {
       return {
         overallRating: 0,
+        totalRatings: 0,
         ratingBreakdown: [
-          { stars: 5, percentage: 0 },
-          { stars: 4, percentage: 0 },
-          { stars: 3, percentage: 0 },
-          { stars: 2, percentage: 0 },
-          { stars: 1, percentage: 0 },
+          { stars: 5, count: 0, percentage: 0 },
+          { stars: 4, count: 0, percentage: 0 },
+          { stars: 3, count: 0, percentage: 0 },
+          { stars: 2, count: 0, percentage: 0 },
+          { stars: 1, count: 0, percentage: 0 },
         ],
       };
     }
     
-    const totalRating = ratings.reduce((acc, r) => acc + r.rating, 0);
-    const overallRatingValue = totalRating / ratings.length;
+    const totalRatingValue = ratings.reduce((acc, r) => acc + r.rating, 0);
+    const overallRating = totalRatingValue / ratings.length;
 
     const counts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     ratings.forEach(r => {
@@ -72,10 +75,11 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
 
     const breakdown = Object.entries(counts).map(([stars, count]) => ({
       stars: parseInt(stars, 10),
+      count,
       percentage: Math.round((count / ratings.length) * 100),
     })).sort((a, b) => b.stars - a.stars);
 
-    return { overallRating: overallRatingValue, ratingBreakdown: breakdown };
+    return { overallRating, ratingBreakdown: breakdown, totalRatings: ratings.length };
   }, [profile.deliveryRatings]);
   
   useEffect(() => {
@@ -115,7 +119,8 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
           return {
             name: customerName,
             rating: rating.rating,
-            comment: comment
+            comment: comment,
+            timestamp: rating.ratedAt,
           };
         });
 
@@ -146,17 +151,23 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     return starArray;
   };
 
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp || !timestamp.seconds) return "";
+    const date = new Date(timestamp.seconds * 1000);
+    return formatDistanceToNow(date, { addSuffix: true });
+  }
+
   return (
     <Card className="shadow-xl">
       <CardHeader>
-        <CardTitle className="flex items-center text-2xl font-bold text-primary"><BarChart className="mr-2 h-6 w-6"/>Your Rating Summary</CardTitle>
-        <CardDescription>An overview of your customer ratings and feedback.</CardDescription>
+        <CardTitle className="flex items-center text-2xl font-bold text-primary"><BarChart className="mr-2 h-6 w-6"/>Your Rating</CardTitle>
+        <CardDescription>Based on your last {totalRatings} deliveries</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
         {/* Overall Rating */}
         <div className="text-center p-6 bg-primary/5 rounded-lg">
             <p className="text-muted-foreground">Overall Rating</p>
-            <div className="text-5xl font-bold my-2 text-primary">{overallRating.toFixed(1)} / 5</div>
+            <div className="text-5xl font-bold my-2 text-primary">{overallRating.toFixed(1)} / 5.0</div>
             <div className="flex justify-center gap-1">
                 {renderStars(overallRating, 'lg')}
             </div>
@@ -169,11 +180,10 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
                 {ratingBreakdown.map(item => (
                     <div key={item.stars} className="flex items-center gap-4">
                         <div className="flex items-center text-sm w-12 shrink-0">
-                            <span>{item.stars}</span>
-                            <Star className="h-4 w-4 ml-1 text-yellow-400" />
+                            <span>{item.stars}★</span>
                         </div>
-                        <Progress value={item.percentage} className="h-2 flex-grow" />
-                        <span className="text-sm font-medium w-8 text-right">{item.percentage}%</span>
+                        <Progress value={item.percentage} className="h-2 flex-grow bg-gray-200 [&>div]:bg-yellow-400" />
+                        <span className="text-sm font-medium w-20 text-right">{item.count} ratings</span>
                     </div>
                 ))}
             </div>
@@ -181,7 +191,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
 
         {/* Recent Customer Feedback */}
         <div>
-            <h3 className="text-lg font-semibold mb-3">Recent Customer Feedback</h3>
+            <h3 className="text-lg font-semibold mb-3">Customer Feedback</h3>
             {loadingFeedback ? (
               <div className="flex justify-center items-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -195,11 +205,13 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
                                 <AvatarFallback className="bg-primary/20 text-primary font-semibold">{feedback.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-semibold">{feedback.name}</p>
-                                    <div className="flex">{renderStars(feedback.rating)}</div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex">{renderStars(feedback.rating)}</div>
+                                    </div>
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1">"{feedback.comment}"</p>
+                                <p className="text-sm text-foreground mt-1 italic">"{feedback.comment}"</p>
+                                <p className="text-xs text-muted-foreground mt-2">{formatTimestamp(feedback.timestamp)}</p>
                             </div>
                         </div>
                     ))}
@@ -211,7 +223,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
         
         {/* Tips Box */}
         <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-            <h3 className="font-semibold text-lg mb-3 flex items-center text-blue-800"><ThumbsUp className="mr-2 h-5 w-5"/>Tips to Improve Your Rating</h3>
+            <h3 className="font-semibold text-lg mb-3 flex items-center text-blue-800"><ThumbsUp className="mr-2 h-5 w-5"/>Tips to Improve Rating</h3>
             <ul className="space-y-1.5 list-disc list-inside text-sm text-blue-700">
                 {improvementTips.map((tip, index) => (
                     <li key={index}>{tip}</li>
