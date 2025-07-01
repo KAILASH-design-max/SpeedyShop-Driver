@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, Clock, ArrowRight, Loader2, Store, User, Milestone } from "lucide-react";
+import { MapPin, Package, Clock, ArrowRight, Loader2, Store, User, Milestone, FileText } from "lucide-react";
 import type { Order } from "@/types";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
@@ -20,13 +20,11 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, type, currentUserId }: OrderCardProps) {
-  const isNewOrder = type === "new";
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
-  const [isRejecting, setIsRejecting] = useState(false);
 
   const handleAccept = async () => {
-    if (!currentUserId && isNewOrder) {
+    if (!currentUserId && type === "new") {
       toast({
         variant: "destructive",
         title: "Error",
@@ -59,48 +57,48 @@ export function OrderCard({ order, type, currentUserId }: OrderCardProps) {
     }
   };
 
-  const handleReject = async () => {
-    setIsRejecting(true);
+  const handleReject = () => {
     // In a real app, this might add the driver's ID to a 'rejectedBy' array in Firestore
-    // to prevent showing it again. For now, we'll just show a toast.
-    setTimeout(() => {
-        toast({
-            title: "Order Declined",
-            description: `You have declined order #${order.id.substring(0,8)}.`,
-        });
-        setIsRejecting(false);
-    }, 500);
+    // to prevent showing it again. This is a mock implementation for the UI.
+    toast({
+        title: "Order Declined",
+        description: `You have declined order #${order.id.substring(0,8)}. The order will be offered to another driver.`,
+    });
+    // In a real implementation, you would then hide this order card from the current driver's UI.
   };
   
   const displayItems = order.items.map(item => `${item.name} (x${item.quantity})`).join(", ");
-  // This is a mock value based on time to match the design. A real app would get this from the backend.
   const mockDistance = (order.estimatedTime / 4 + Math.random()).toFixed(1); 
 
-  // Active orders have a simpler card that links to the details page
   if (type === 'active') {
     return (
-      <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
-        <CardHeader>
-          <div className="flex justify-between items-start">
+      <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+        <CardHeader className="p-4">
+          <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-semibold">Order #{order.id.substring(0, 8)}</CardTitle>
             <Badge variant={"secondary"} className="capitalize">
-              {order.orderStatus}
+              {order.orderStatus.replace('-', ' ')}
             </Badge>
           </div>
-          <CardDescription className="flex items-center text-sm pt-2">
-            <MapPin className="mr-2 h-4 w-4 text-primary" /> 
-            Drop-off: {order.dropOffLocation}
+          <CardDescription className="flex items-center text-sm pt-2 text-muted-foreground">
+            <MapPin className="mr-2 h-4 w-4" /> 
+            <span className="truncate" title={order.dropOffLocation}>{order.dropOffLocation}</span>
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm">
-          <div className="flex items-center">
-            <Package className="mr-2 h-4 w-4 text-muted-foreground" /> Items: {displayItems}
+        <CardContent className="p-4 pt-0 text-sm space-y-3 flex-grow">
+           <div className="flex items-center">
+              <User className="mr-2 h-4 w-4 text-muted-foreground" /> 
+              <span className="font-semibold">{order.customerName}</span>
+          </div>
+          <div className="flex items-start">
+            <Package className="mr-2 h-4 w-4 mt-0.5 text-muted-foreground" />
+            <p className="font-semibold">{displayItems}</p>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="p-4 mt-auto border-t">
           <Link href={`/orders/${order.id}`} className="w-full">
-            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              View Details <ArrowRight className="ml-2 h-4 w-4"/>
+            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+              <FileText className="mr-2 h-4 w-4"/> View Details
             </Button>
           </Link>
         </CardFooter>
@@ -160,10 +158,10 @@ export function OrderCard({ order, type, currentUserId }: OrderCardProps) {
             </div>
         </CardContent>
         <CardFooter className="flex gap-3 p-3 bg-muted/30 mt-auto">
-            <Button onClick={handleReject} variant="ghost" className="flex-1 text-muted-foreground" disabled={isAccepting || isRejecting}>
-              {isRejecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Decline"}
+            <Button onClick={handleReject} variant="ghost" className="flex-1 text-muted-foreground" disabled={isAccepting}>
+              Decline
             </Button>
-            <Button onClick={handleAccept} className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold" disabled={isAccepting || isRejecting}>
+            <Button onClick={handleAccept} className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold" disabled={isAccepting}>
               {isAccepting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Accept"}
             </Button>
         </CardFooter>
