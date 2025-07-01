@@ -4,14 +4,15 @@
 import { useEffect, useState } from "react";
 import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { OrderCard } from "@/components/dashboard/OrderCard";
-import type { Order, Profile, OrderItem } from "@/types";
+import type { Order, Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, PackageCheck, Loader2, Info } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, DocumentData } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -89,45 +90,6 @@ export default function DashboardPage() {
     }
   };
 
-  const mapFirestoreDocToOrder = (docSnap: DocumentData): Order => {
-    const data = docSnap.data();
-    const address = data.address || {};
-    
-    let items: OrderItem[] = [];
-    if (Array.isArray(data.items)) {
-      items = data.items.map((item: any) => ({
-        name: item.name || "Unknown Item",
-        quantity: item.quantity || 0,
-        price: item.price,
-        productId: item.productId,
-        imageUrl: item.imageUrl,
-      }));
-    }
-
-    const dropOffStreet = address.street || '';
-    const dropOffCity = address.city || '';
-    const dropOffPostalCode = address.postalCode || '';
-    let dropOffLocationString = `${dropOffStreet}, ${dropOffCity} ${dropOffPostalCode}`.trim();
-    if (dropOffLocationString.startsWith(',')) dropOffLocationString = dropOffLocationString.substring(1).trim();
-    if (dropOffLocationString.endsWith(',')) dropOffLocationString = dropOffLocationString.slice(0, -1).trim();
-    if (dropOffLocationString === ',' || !dropOffLocationString) dropOffLocationString = "N/A";
-
-
-    return {
-      id: docSnap.id,
-      customerName: data.customerName || "Customer Name Missing", 
-      pickupLocation: data.pickupLocation || "Restaurant/Store Address", 
-      dropOffLocation: dropOffLocationString,
-      items: items,
-      orderStatus: data.orderStatus || "Placed",
-      estimatedEarnings: data.estimatedEarnings || (data.total ? data.total * 0.1 : 0) || 50, 
-      estimatedTime: data.estimatedTime || 30, 
-      deliveryInstructions: data.deliveryInstructions,
-      customerContact: data.phoneNumber || address.phoneNumber,
-      deliveryPartnerId: data.deliveryPartnerId,
-    };
-  };
-
   useEffect(() => {
     if (!currentUser) {
       setNewOrders([]);
@@ -144,8 +106,9 @@ export default function DashboardPage() {
     if (availabilityStatus === 'online' || availabilityStatus === 'on_break') {
       setLoadingNew(true);
       const newOrdersQuery = query(collection(db, "orders"), where("orderStatus", "==", "Placed"));
-      const unsubscribeNew = onSnapshot(newOrdersQuery, (snapshot) => {
-        const ordersData = snapshot.docs.map(mapFirestoreDocToOrder);
+      const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
+        const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+        const ordersData = await Promise.all(ordersDataPromises);
         setNewOrders(ordersData);
         setLoadingNew(false);
       }, (error) => {
@@ -173,8 +136,9 @@ export default function DashboardPage() {
       where("orderStatus", "in", ["accepted", "picked-up", "out-for-delivery"]),
       where("deliveryPartnerId", "==", currentUser.uid) 
     );
-    const unsubscribeActive = onSnapshot(activeOrdersQuery, (snapshot) => {
-      const ordersData = snapshot.docs.map(mapFirestoreDocToOrder);
+    const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
+      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+      const ordersData = await Promise.all(ordersDataPromises);
       setActiveOrders(ordersData);
       setLoadingActive(false);
     }, (error) => {

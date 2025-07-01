@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { Order, OrderItem } from "@/types";
+import type { Order } from "@/types";
 import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, DocumentData, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
+import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 
 export default function OrderPage() {
   const params = useParams();
@@ -22,51 +23,13 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const mapFirestoreDocToOrder = (docSnap: DocumentData): Order => {
-    const data = docSnap.data();
-    const address = data.address || {};
-    
-    let items: OrderItem[] = [];
-    if (Array.isArray(data.items)) {
-      items = data.items.map((item: any) => ({
-        name: item.name || "Unknown Item",
-        quantity: item.quantity || 0,
-        price: item.price,
-        productId: item.productId,
-        imageUrl: item.imageUrl,
-      }));
-    }
-    
-    const dropOffStreet = address.street || '';
-    const dropOffCity = address.city || '';
-    const dropOffPostalCode = address.postalCode || '';
-    let dropOffLocationString = `${dropOffStreet}, ${dropOffCity} ${dropOffPostalCode}`.trim();
-    if (dropOffLocationString.startsWith(',')) dropOffLocationString = dropOffLocationString.substring(1).trim();
-    if (dropOffLocationString.endsWith(',')) dropOffLocationString = dropOffLocationString.slice(0, -1).trim();
-    if (dropOffLocationString === ',' || !dropOffLocationString) dropOffLocationString = "N/A";
-
-
-    return {
-      id: docSnap.id,
-      customerName: data.customerName || "Customer",
-      pickupLocation: data.pickupLocation || "Default Pickup Location",
-      dropOffLocation: dropOffLocationString,
-      items: items,
-      orderStatus: data.orderStatus || "Placed",
-      estimatedEarnings: data.estimatedEarnings || (data.total ? data.total * 0.1 : 0) || 50,
-      estimatedTime: data.estimatedTime || 30,
-      deliveryInstructions: data.deliveryInstructions,
-      customerContact: data.phoneNumber || address.phoneNumber,
-      deliveryPartnerId: data.deliveryPartnerId,
-    };
-  };
-
   useEffect(() => {
     if (orderId) {
       const orderRef = doc(db, "orders", orderId);
-      const unsubscribe = onSnapshot(orderRef, (docSnap) => {
+      const unsubscribe = onSnapshot(orderRef, async (docSnap) => {
         if (docSnap.exists()) {
-          setOrder(mapFirestoreDocToOrder(docSnap));
+          const mappedOrder = await mapFirestoreDocToOrder(docSnap);
+          setOrder(mappedOrder);
         } else {
           setOrder(null);
           toast({ variant: "destructive", title: "Error", description: "Order not found." });
