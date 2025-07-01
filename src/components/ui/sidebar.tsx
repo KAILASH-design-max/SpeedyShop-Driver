@@ -534,11 +534,13 @@ const sidebarMenuButtonVariants = cva(
   }
 )
 
-type SidebarMenuButtonProps = (React.ComponentPropsWithoutRef<"button"> | React.ComponentPropsWithoutRef<"a">) & {
-  asChild?: boolean;
-  isActive?: boolean;
-  tooltip?: string | React.ComponentProps<typeof TooltipContent>;
-} & VariantProps<typeof sidebarMenuButtonVariants>;
+type SidebarMenuButtonProps = (
+  | React.ComponentPropsWithoutRef<"button">
+  | React.ComponentPropsWithoutRef<"a">
+) & {
+  isActive?: boolean
+  tooltip?: string | React.ComponentProps<typeof TooltipContent>
+} & VariantProps<typeof sidebarMenuButtonVariants>
 
 
 const SidebarMenuButton = React.forwardRef<
@@ -547,7 +549,6 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild,
       isActive = false,
       variant = "default",
       size = "default",
@@ -559,7 +560,12 @@ const SidebarMenuButton = React.forwardRef<
     ref
   ) => {
     const { isMobile, state } = useSidebar()
-    const Comp = props.href ? "a" : "button";
+    
+    // The `asChild` prop is passed down from the <Link> component.
+    // We destruct it from the props and use the rest.
+    const { asChild, ...rest } = props as { asChild?: boolean } & typeof props;
+
+    const Comp = props.href ? "a" : "button"
 
     const element = (
       <Comp
@@ -568,7 +574,7 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        {...props}
+        {...rest}
       >
         {children}
       </Comp>
