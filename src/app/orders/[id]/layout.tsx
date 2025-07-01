@@ -1,9 +1,9 @@
-import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout';
 
+// This layout is now handled by the parent /orders/layout.tsx to avoid nesting.
 export default function OrderDetailsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+  return <>{children}</>;
 }
