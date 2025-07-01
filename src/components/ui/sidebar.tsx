@@ -547,25 +547,19 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild = false, // The component's own asChild prop
+      asChild,
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
       className,
       children,
-      ...props // All other props, including from Link
+      ...props
     },
     ref
   ) => {
     const { isMobile, state } = useSidebar()
-
-    // The 'asChild' prop from a parent Link component will be in `props`.
-    // We need to remove it before passing it to the underlying DOM element.
-    // We rename it to `_` to signal it's intentionally unused.
-    const { asChild: _, ...linkProps } = props as { asChild?: boolean; href?: string }
-
-    const Comp = asChild ? Slot : linkProps.href ? "a" : "button"
+    const Comp = props.href ? "a" : "button";
 
     const element = (
       <Comp
@@ -574,7 +568,7 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        {...linkProps} // `linkProps` no longer contains `asChild` from the parent
+        {...props}
       >
         {children}
       </Comp>
