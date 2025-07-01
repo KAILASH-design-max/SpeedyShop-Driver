@@ -2,6 +2,7 @@
 import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
 import { PayoutHistoryTable } from "@/components/earnings/PayoutHistoryTable";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
+import { ActiveBonuses } from "@/components/earnings/ActiveBonuses";
 import { Separator } from "@/components/ui/separator";
 
 export default function EarningsPage() {
@@ -14,6 +15,8 @@ export default function EarningsPage() {
       <EarningsOverview />
       <Separator />
       <WeeklyEarningsChart />
+      <Separator />
+      <ActiveBonuses /> 
       <Separator />
       <PayoutHistoryTable />
     </div>
