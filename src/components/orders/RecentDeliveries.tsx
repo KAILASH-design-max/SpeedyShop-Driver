@@ -5,10 +5,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, orderBy, limit, getDoc, doc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
 import type { User } from "firebase/auth";
-import type { Order, Profile } from "@/types";
+import type { Order } from "@/types";
 import { Loader2 } from "lucide-react";
+import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 
 export function RecentDeliveries() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -52,36 +53,8 @@ export function RecentDeliveries() {
                 return;
             }
 
-            const ordersFromDb = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-
-            const userIds = ordersFromDb.map(order => order.userId).filter((id): id is string => !!id);
-            const uniqueUserIds = [...new Set(userIds)];
-            
-            const usersMap = new Map<string, string>();
-            if (uniqueUserIds.length > 0) {
-                const userPromises = uniqueUserIds.map(userId => getDoc(doc(db, "users", userId)));
-                const userDocs = await Promise.all(userPromises);
-                
-                userDocs.forEach(userDoc => {
-                    if (userDoc.exists()) {
-                        const profile = userDoc.data() as Profile;
-                        usersMap.set(userDoc.id, profile.name || "Customer");
-                    }
-                });
-            }
-
-            const ordersData: Order[] = ordersFromDb.map(order => {
-                const earnings = order.estimatedEarnings ?? order.deliveryCharge ?? 0;
-                return {
-                    id: order.id,
-                    ...order,
-                    customerName: order.userId ? usersMap.get(order.userId) || "Customer" : "Customer",
-                    estimatedEarnings: earnings,
-                } as Order;
-            });
+            const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+            const ordersData = await Promise.all(ordersDataPromises);
 
             setDeliveries(ordersData);
             setLoading(false);
