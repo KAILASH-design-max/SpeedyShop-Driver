@@ -7,7 +7,10 @@ import { Separator } from "@/components/ui/separator";
 export default function EarningsPage() {
   return (
     <div className="container mx-auto py-8 space-y-8">
-      <h1 className="text-3xl font-bold text-primary">Earnings Analytics</h1>
+      <div>
+        <h1 className="text-3xl font-bold text-primary">Earnings Overview</h1>
+        <p className="text-muted-foreground mt-1">Your performance and earnings at a glance.</p>
+      </div>
       <EarningsSummaryCard />
       <Separator />
       <WeeklyEarningsChart />
