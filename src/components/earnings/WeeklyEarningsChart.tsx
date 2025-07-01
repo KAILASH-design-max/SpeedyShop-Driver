@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ChartTooltip, ChartTooltipContent, ChartContainer, ChartConfig } from '@/components/ui/chart';
 
 const chartData = [
-  { day: 'Mon', earnings: 1800 },
-  { day: 'Tue', earnings: 1500 },
-  { day: 'Wed', earnings: 2200 },
-  { day: 'Thu', earnings: 1300 },
+  { day: 'Mon', earnings: 2600 },
+  { day: 'Tue', earnings: 1950 },
+  { day: 'Wed', earnings: 1300 },
+  { day: 'Thu', earnings: 650 },
   { day: 'Fri', earnings: 2500 },
   { day: 'Sat', earnings: 2100 },
   { day: 'Sun', earnings: 900 },
@@ -27,7 +27,7 @@ export function WeeklyEarningsChart() {
     <Card className="shadow-xl">
       <CardHeader>
         <CardTitle>Weekly Earnings</CardTitle>
-        <CardDescription>Your earnings from this week (Mon - Sun)</CardDescription>
+        <CardDescription>Your earnings for the current week.</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -46,7 +46,7 @@ export function WeeklyEarningsChart() {
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `₹${value}`}
-              domain={[0, 2600]}
+              domain={[0, 2700]}
             />
             <ChartTooltip
                 cursor={false}
