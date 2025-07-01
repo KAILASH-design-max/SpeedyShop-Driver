@@ -26,7 +26,8 @@ import {
   LogOut,
   Menu,
   Truck,
-  Bell, // Added Bell icon
+  Bell,
+  LifeBuoy, // Added LifeBuoy icon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/firebase";
@@ -38,6 +39,7 @@ const navItems = [
   { href: "/smart-routing", label: "Smart Routing", icon: Route },
   { href: "/earnings", label: "Earnings", icon: DollarSign },
   { href: "/communication", label: "Messages", icon: MessagesSquare },
+  { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
