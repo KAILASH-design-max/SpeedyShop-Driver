@@ -21,7 +21,7 @@ import {
   LayoutDashboard,
   Route,
   DollarSign,
-  User,
+  User as UserIcon,
   MessagesSquare,
   LogOut,
   Menu,
@@ -31,10 +31,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
+import { signOut, type User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { endSession } from "@/lib/sessionManager";
+import { ActiveTimeTracker } from "@/components/dashboard/ActiveTimeTracker";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -42,7 +43,7 @@ const navItems = [
   { href: "/earnings", label: "Earnings", icon: DollarSign },
   { href: "/communication", label: "Messages", icon: MessagesSquare },
   { href: "/support", label: "Support", icon: LifeBuoy },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/profile", label: "Profile", icon: UserIcon },
 ];
 
 function MobileNav() {
@@ -64,6 +65,14 @@ export default function AuthenticatedLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -133,9 +142,10 @@ export default function AuthenticatedLayout({
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
                 <MobileNav />
                  <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span>
+                 {currentUser && <ActiveTimeTracker userId={currentUser.uid} />}
             </div>
             {/* Replaced UserNav with Notification Bell Icon */}
             <Button variant="ghost" size="icon" aria-label="Notifications">
