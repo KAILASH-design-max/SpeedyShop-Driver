@@ -6,20 +6,11 @@ import { Wallet, Truck, Badge, Star, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import type { Profile } from "@/types";
 
 const staticStats = [
-    {
-        title: "Current Week Earnings",
-        value: "255.75",
-        subtext: "Total earnings this week",
-        icon: Wallet,
-        color: "text-green-500",
-        href: "/earnings",
-        isCurrency: true
-    },
     {
         title: "Active Bonuses",
         value: "2",
@@ -35,6 +26,8 @@ export function EarningsOverview() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [deliveriesToday, setDeliveriesToday] = useState(0);
     const [isLoadingDeliveries, setIsLoadingDeliveries] = useState(true);
+    const [currentWeekEarnings, setCurrentWeekEarnings] = useState(0);
+    const [isLoadingWeekEarnings, setIsLoadingWeekEarnings] = useState(true);
     const [overallRating, setOverallRating] = useState<number | null>(null);
     const [isLoadingRating, setIsLoadingRating] = useState(true);
 
@@ -44,6 +37,7 @@ export function EarningsOverview() {
             if (!user) {
                 setIsLoadingDeliveries(false);
                 setIsLoadingRating(false);
+                setIsLoadingWeekEarnings(false);
             }
         });
         return () => unsubscribeAuth();
@@ -54,33 +48,61 @@ export function EarningsOverview() {
             if(!auth.currentUser) {
                 setIsLoadingDeliveries(false);
                 setIsLoadingRating(false);
+                setIsLoadingWeekEarnings(false);
             }
             return;
         };
 
         setIsLoadingDeliveries(true);
-        const today = new Date();
-        const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-        const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+        setIsLoadingWeekEarnings(true);
+        setIsLoadingRating(true);
 
-        const deliveriesQuery = query(
+        // --- Weekly Deliveries and Earnings Logic ---
+        const today = new Date();
+        const day = today.getDay(); // Sunday = 0, Monday = 1
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust so Monday is the first day
+        const startOfWeek = new Date(new Date().setDate(diff));
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const weekDeliveriesQuery = query(
             collection(db, "orders"),
             where("deliveryPartnerId", "==", currentUser.uid),
             where("orderStatus", "==", "delivered"),
-            where("completedAt", ">=", startOfToday),
-            where("completedAt", "<=", endOfToday)
+            where("completedAt", ">=", startOfWeek)
         );
 
-        const unsubscribeDeliveries = onSnapshot(deliveriesQuery, (snapshot) => {
-            setDeliveriesToday(snapshot.size);
+        const unsubscribeDeliveries = onSnapshot(weekDeliveriesQuery, (snapshot) => {
+            let totalEarnings = 0;
+            let deliveriesTodayCount = 0;
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+
+            snapshot.forEach(doc => {
+                const orderData = doc.data();
+                const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
+                totalEarnings += earning;
+                
+                const completedAtTimestamp = orderData.completedAt as Timestamp;
+                if (completedAtTimestamp) {
+                    const completedDate = completedAtTimestamp.toDate();
+                    if (completedDate >= startOfToday) {
+                        deliveriesTodayCount++;
+                    }
+                }
+            });
+
+            setCurrentWeekEarnings(totalEarnings);
+            setDeliveriesToday(deliveriesTodayCount);
+            setIsLoadingWeekEarnings(false);
             setIsLoadingDeliveries(false);
         }, (error) => {
-            console.error("Error fetching deliveries count:", error);
+            console.error("Error fetching weekly deliveries:", error);
+            setIsLoadingWeekEarnings(false);
             setIsLoadingDeliveries(false);
         });
 
+        // --- Rating Logic ---
         const fetchRating = async () => {
-            setIsLoadingRating(true);
             const userDocRef = doc(db, 'users', currentUser.uid);
             try {
                 const docSnap = await getDoc(userDocRef);
@@ -92,7 +114,7 @@ export function EarningsOverview() {
                         const avgRating = totalRatingValue / ratings.length;
                         setOverallRating(avgRating);
                     } else {
-                        setOverallRating(0); // Default to 0 if no ratings
+                        setOverallRating(0);
                     }
                 } else {
                     setOverallRating(0);
@@ -112,7 +134,16 @@ export function EarningsOverview() {
     }, [currentUser]);
 
     const allStats = [
-        staticStats[0],
+        {
+            title: "Current Week Earnings",
+            value: isLoadingWeekEarnings ? null : currentWeekEarnings.toFixed(2),
+            subtext: "Total earnings this week",
+            icon: Wallet,
+            color: "text-green-500",
+            href: "/earnings",
+            isCurrency: true,
+            isLoading: isLoadingWeekEarnings,
+        },
         {
             title: "Deliveries Today",
             value: deliveriesToday,
@@ -123,7 +154,7 @@ export function EarningsOverview() {
             isCurrency: false,
             isLoading: isLoadingDeliveries,
         },
-        staticStats[1],
+        staticStats[0],
         {
             title: "Overall Rating",
             value: isLoadingRating ? null : (overallRating !== null ? `${overallRating.toFixed(1)}/5` : "N/A"),
