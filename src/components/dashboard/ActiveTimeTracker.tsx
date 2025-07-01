@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
-import { Card, CardContent } from '@/components/ui/card';
 import { Clock } from 'lucide-react';
 
 interface ActiveTimeTrackerProps {
@@ -80,18 +79,11 @@ export function ActiveTimeTracker({ userId }: ActiveTimeTrackerProps) {
 
 
   return (
-    <Card className="shadow-md bg-primary/10 border-primary/20">
-      <CardContent className="p-4 flex items-center gap-4">
-         <div className="p-3 bg-primary/20 rounded-full">
-            <Clock className="h-6 w-6 text-primary" />
-         </div>
-         <div>
-            <p className="text-sm font-medium text-primary/80">Today's Active Time</p>
-            <p className="text-2xl font-bold text-primary">
-                {formatDuration(displaySeconds)}
-            </p>
-         </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-2">
+       <Clock className="h-5 w-5 text-primary" />
+       <p className="text-base font-semibold text-primary">
+           {formatDuration(displaySeconds)}
+       </p>
+    </div>
   );
 }
