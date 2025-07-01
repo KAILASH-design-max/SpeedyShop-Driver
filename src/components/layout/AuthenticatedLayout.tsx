@@ -27,12 +27,14 @@ import {
   Menu,
   Truck,
   Bell,
-  LifeBuoy, // Added LifeBuoy icon
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { endSession } from "@/lib/sessionManager";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -63,8 +65,23 @@ export default function AuthenticatedLayout({
   const router = useRouter();
   const { toast } = useToast();
 
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // This will attempt to end the session when the tab is closed.
+      // Note: This is not guaranteed to complete, especially on mobile browsers.
+      endSession();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   const handleLogout = async () => {
     try {
+      await endSession();
       await signOut(auth);
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
       router.push("/");
@@ -89,7 +106,7 @@ export default function AuthenticatedLayout({
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.label}>
-                <Link href={item.href} asChild>
+                <Link href={item.href} passHref>
                   <SidebarMenuButton
                     className={cn(
                       pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))

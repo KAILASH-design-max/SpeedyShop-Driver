@@ -1,4 +1,5 @@
 
+
 export interface OrderItem {
   name: string;
   quantity: number;
@@ -124,8 +125,16 @@ export interface ChatThread {
   id: string; // document ID, usually orderId
   participantIds: string[];
   participantNames: { [key: string]: string }; // Maps UID to name
-  participantAvatars: { [key: string]: string }; // Maps UID to avatar URL
+  participantAvatars: { [key:string]: string }; // Maps UID to avatar URL
   lastMessage: string;
   lastMessageTimestamp: any; // Firestore ServerTimestamp
   unreadCount?: number; // This can be added later
+}
+
+export interface Session {
+  id: string;
+  userId: string;
+  loginTimestamp: any; // Firestore ServerTimestamp
+  logoutTimestamp?: any | null;
+  date: string; // YYYY-MM-DD
 }

@@ -22,6 +22,7 @@ import { auth } from "@/lib/firebase"; // Import Firebase auth
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { startSession } from "@/lib/sessionManager";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -44,7 +45,8 @@ export function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await startSession(userCredential.user.uid);
       toast({
         title: "Login Successful!",
         description: "Welcome back!",
