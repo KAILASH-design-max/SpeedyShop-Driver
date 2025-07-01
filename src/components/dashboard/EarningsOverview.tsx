@@ -6,8 +6,9 @@ import { Wallet, Truck, Badge, Star, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import type { Profile } from "@/types";
 
 const staticStats = [
     {
@@ -28,27 +29,21 @@ const staticStats = [
         href: "/bonuses",
         isCurrency: false
     },
-    {
-        title: "Overall Rating",
-        value: "4.7/5",
-        subtext: "Your average customer rating",
-        icon: Star,
-        color: "text-yellow-500",
-        href: "/profile",
-        isCurrency: false
-    },
 ];
 
 export function EarningsOverview() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [deliveriesToday, setDeliveriesToday] = useState(0);
     const [isLoadingDeliveries, setIsLoadingDeliveries] = useState(true);
+    const [overallRating, setOverallRating] = useState<number | null>(null);
+    const [isLoadingRating, setIsLoadingRating] = useState(true);
 
     useEffect(() => {
         const unsubscribeAuth = auth.onAuthStateChanged((user) => {
             setCurrentUser(user);
             if (!user) {
                 setIsLoadingDeliveries(false);
+                setIsLoadingRating(false);
             }
         });
         return () => unsubscribeAuth();
@@ -56,7 +51,10 @@ export function EarningsOverview() {
 
     useEffect(() => {
         if (!currentUser) {
-            if(!auth.currentUser) setIsLoadingDeliveries(false);
+            if(!auth.currentUser) {
+                setIsLoadingDeliveries(false);
+                setIsLoadingRating(false);
+            }
             return;
         };
 
@@ -73,7 +71,7 @@ export function EarningsOverview() {
             where("completedAt", "<=", endOfToday)
         );
 
-        const unsubscribe = onSnapshot(deliveriesQuery, (snapshot) => {
+        const unsubscribeDeliveries = onSnapshot(deliveriesQuery, (snapshot) => {
             setDeliveriesToday(snapshot.size);
             setIsLoadingDeliveries(false);
         }, (error) => {
@@ -81,7 +79,36 @@ export function EarningsOverview() {
             setIsLoadingDeliveries(false);
         });
 
-        return () => unsubscribe();
+        const fetchRating = async () => {
+            setIsLoadingRating(true);
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            try {
+                const docSnap = await getDoc(userDocRef);
+                if (docSnap.exists()) {
+                    const profileData = docSnap.data() as Profile;
+                    const ratings = profileData.deliveryRatings;
+                    if (ratings && ratings.length > 0) {
+                        const totalRatingValue = ratings.reduce((acc, r) => acc + r.rating, 0);
+                        const avgRating = totalRatingValue / ratings.length;
+                        setOverallRating(avgRating);
+                    } else {
+                        setOverallRating(0); // Default to 0 if no ratings
+                    }
+                } else {
+                    setOverallRating(0);
+                }
+            } catch (error) {
+                console.error("Error fetching user rating:", error);
+                setOverallRating(0);
+            } finally {
+                setIsLoadingRating(false);
+            }
+        };
+
+        fetchRating();
+
+
+        return () => unsubscribeDeliveries();
     }, [currentUser]);
 
     const allStats = [
@@ -97,7 +124,16 @@ export function EarningsOverview() {
             isLoading: isLoadingDeliveries,
         },
         staticStats[1],
-        staticStats[2]
+        {
+            title: "Overall Rating",
+            value: isLoadingRating ? null : (overallRating !== null ? `${overallRating.toFixed(1)}/5` : "N/A"),
+            subtext: "Your average customer rating",
+            icon: Star,
+            color: "text-yellow-500",
+            href: "/profile",
+            isCurrency: false,
+            isLoading: isLoadingRating,
+        },
     ];
     
     return (

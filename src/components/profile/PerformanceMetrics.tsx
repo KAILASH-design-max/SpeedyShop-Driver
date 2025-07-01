@@ -76,7 +76,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     const breakdown = Object.entries(counts).map(([stars, count]) => ({
       stars: parseInt(stars, 10),
       count,
-      percentage: Math.round((count / ratings.length) * 100),
+      percentage: ratings.length > 0 ? Math.round((count / ratings.length) * 100) : 0,
     })).sort((a, b) => b.stars - a.stars);
 
     return { overallRating, ratingBreakdown: breakdown, totalRatings: ratings.length };
@@ -161,7 +161,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     <Card className="shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center text-2xl font-bold text-primary"><BarChart className="mr-2 h-6 w-6"/>Your Rating</CardTitle>
-        <CardDescription>Based on your last {totalRatings} deliveries</CardDescription>
+        <CardDescription>Based on your last {totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
         {/* Overall Rating */}
@@ -179,11 +179,9 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
             <div className="space-y-3">
                 {ratingBreakdown.map(item => (
                     <div key={item.stars} className="flex items-center gap-4">
-                        <div className="flex items-center text-sm w-12 shrink-0">
-                            <span>{item.stars}★</span>
-                        </div>
+                        <div className="text-sm font-medium w-16 shrink-0">{item.stars}★</div>
                         <Progress value={item.percentage} className="h-2 flex-grow bg-gray-200 [&>div]:bg-yellow-400" />
-                        <span className="text-sm font-medium w-20 text-right">{item.count} ratings</span>
+                        <span className="text-sm font-medium w-24 text-right text-muted-foreground">{item.count} {item.count === 1 ? 'rating' : 'ratings'}</span>
                     </div>
                 ))}
             </div>
