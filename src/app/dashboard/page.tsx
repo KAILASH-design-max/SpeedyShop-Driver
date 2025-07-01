@@ -12,7 +12,6 @@ import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, DocumentD
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -190,7 +189,6 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto py-8">
       <DashboardHeader />
-      <EarningsOverview />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
           <AvailabilityToggle
