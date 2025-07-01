@@ -21,6 +21,7 @@ export interface Order {
   deliveryInstructions?: string;
   customerContact?: string; 
   deliveryPartnerId?: string; 
+  completedAt?: any;
 }
 
 export interface EarningSummary {

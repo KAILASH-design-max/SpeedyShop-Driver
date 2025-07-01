@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, DocumentData } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, DocumentData, serverTimestamp } from "firebase/firestore";
 
 export default function OrderPage() {
   const params = useParams();
@@ -113,7 +113,10 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "delivered" }); 
+        await updateDoc(orderRef, { 
+            orderStatus: "delivered",
+            completedAt: serverTimestamp() 
+        }); 
         toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
         router.push("/dashboard");
       } catch (error) {

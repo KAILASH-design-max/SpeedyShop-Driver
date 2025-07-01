@@ -1,46 +1,105 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-const deliveries = [
-    { name: "Rohan Sharma", orderId: "#426951", amount: 45.00 },
-    { name: "Priya Patel", orderId: "#229577", amount: 62.50 },
-    { name: "Amit Singh", orderId: "#321000", amount: 38.00 },
-    { name: "Sneha Gupta", orderId: "#501507", amount: 75.00 },
-    { name: "Vikram Kumar", orderId: "#520348", amount: 51.25 },
-    { name: "Anjali Mehta", orderId: "#611234", amount: 48.75 },
-];
+import { auth, db } from "@/lib/firebase";
+import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
+import type { User } from "firebase/auth";
+import type { Order } from "@/types";
+import { Loader2 } from "lucide-react";
 
 export function RecentDeliveries() {
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [deliveries, setDeliveries] = useState<Order[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            setCurrentUser(user);
+        });
+        return () => unsubscribeAuth();
+    }, []);
+
+    useEffect(() => {
+        if (!currentUser) {
+            setLoading(false);
+            setDeliveries([]);
+            return;
+        }
+
+        setLoading(true);
+
+        const today = new Date();
+        const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+        const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+        const deliveriesQuery = query(
+            collection(db, "orders"),
+            where("deliveryPartnerId", "==", currentUser.uid),
+            where("orderStatus", "==", "delivered"),
+            where("completedAt", ">=", startOfToday),
+            where("completedAt", "<=", endOfToday),
+            orderBy("completedAt", "desc"),
+            limit(50)
+        );
+
+        const unsubscribe = onSnapshot(deliveriesQuery, (snapshot) => {
+            const ordersData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            } as Order));
+            setDeliveries(ordersData);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching recent deliveries:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
     return (
         <Card className="shadow-lg max-w-2xl mx-auto">
             <CardHeader>
                 <CardTitle className="text-2xl font-bold">Recent Deliveries</CardTitle>
-                <CardDescription>You've completed {deliveries.length} deliveries today.</CardDescription>
+                <CardDescription>
+                    {loading ? "Loading deliveries..." : `You've completed ${deliveries.length} ${deliveries.length === 1 ? 'delivery' : 'deliveries'} today.`}
+                </CardDescription>
             </CardHeader>
             <CardContent>
-                <ul className="space-y-1">
-                    {deliveries.map((delivery, index) => (
-                        <li key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-10 w-10 bg-muted">
-                                    <AvatarFallback className="text-md font-semibold bg-primary/10 text-primary">
-                                        {delivery.name.charAt(0)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold text-foreground">{delivery.name}</p>
-                                    <p className="text-sm text-muted-foreground">Order {delivery.orderId}</p>
+                {loading ? (
+                    <div className="flex justify-center items-center p-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="ml-2">Loading recent deliveries...</p>
+                    </div>
+                ) : deliveries.length === 0 ? (
+                    <div className="text-center text-muted-foreground p-8">
+                        <p>No deliveries completed today.</p>
+                    </div>
+                ) : (
+                    <ul className="space-y-1">
+                        {deliveries.map((delivery) => (
+                            <li key={delivery.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-10 w-10 bg-muted">
+                                        <AvatarFallback className="text-md font-semibold bg-primary/10 text-primary">
+                                            {delivery.customerName?.charAt(0).toUpperCase() || "C"}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-semibold text-foreground">{delivery.customerName}</p>
+                                        <p className="text-sm text-muted-foreground">Order #{delivery.id.substring(0, 6)}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <p className="font-bold text-green-600 text-md">
-                                ₹{delivery.amount.toFixed(2)}
-                            </p>
-                        </li>
-                    ))}
-                </ul>
+                                <p className="font-bold text-green-600 text-md">
+                                    ₹{delivery.estimatedEarnings.toFixed(2)}
+                                </p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </CardContent>
         </Card>
     );
