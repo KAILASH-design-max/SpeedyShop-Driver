@@ -1,85 +1,50 @@
 
 "use client";
 
-import type { EarningSummary } from "@/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, Award, Star } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Wallet, Calendar, PiggyBank } from "lucide-react";
 
-// Using a specific Rupee icon
-const CurrencyIcon = () => <span className="font-semibold">₹</span>;
+const stats = [
+    {
+        title: "This Week’s Payout",
+        amount: "8,742.50",
+        description: "Pending for next cycle",
+        icon: Wallet,
+        color: "text-blue-500",
+    },
+    {
+        title: "This Month’s Earnings",
+        amount: "25,120.00",
+        description: "As of today",
+        icon: Calendar,
+        color: "text-green-500",
+    },
+    {
+        title: "Total Lifetime Earnings",
+        amount: "1,45,890.75",
+        description: "Since joining",
+        icon: PiggyBank,
+        color: "text-purple-500",
+    },
+];
 
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  description?: string;
-  colorClass?: string;
-  prefixValue?: React.ReactNode;
-}
-
-function StatCard({ title, value, icon: Icon, description, colorClass = "text-primary", prefixValue }: StatCardProps) {
-  return (
-    <Card className="shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-5 w-5 ${colorClass}`} />
-      </CardHeader>
-      <CardContent>
-        <div className={`text-2xl font-bold ${colorClass}`}>
-            {prefixValue}{value}
+export function EarningsSummaryCard() {
+    return (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {stats.map((stat) => (
+                <Card key={stat.title} className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                        <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                    </CardHeader>
+                    <CardContent>
+                        <div className={`text-2xl font-bold ${stat.color}`}>
+                            ₹{stat.amount}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{stat.description}</p>
+                    </CardContent>
+                </Card>
+            ))}
         </div>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
-      </CardContent>
-    </Card>
-  );
-}
-
-
-interface EarningsSummaryCardProps {
-  summary: EarningSummary;
-}
-
-export function EarningsSummaryCard({ summary }: EarningsSummaryCardProps) {
-  return (
-    <Card className="shadow-xl w-full">
-        <CardHeader>
-            <CardTitle className="text-2xl font-bold text-primary">Earnings Overview</CardTitle>
-            <CardDescription>Your performance and earnings at a glance.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard 
-                    title="Current Week Earnings" 
-                    prefixValue={<CurrencyIcon />}
-                    value={summary.currentWeekEarnings.toFixed(2)}
-                    icon={CurrencyIcon}
-                    description="Total earnings this week"
-                    colorClass="text-green-500"
-                />
-                <StatCard 
-                    title="Deliveries Today" 
-                    value={summary.completedDeliveriesToday}
-                    icon={Truck}
-                    description="Completed orders today"
-                    colorClass="text-blue-500"
-                />
-                <StatCard 
-                    title="Active Bonuses" 
-                    value={summary.activeBonuses}
-                    icon={Award}
-                    description="Bonuses you're working towards"
-                    colorClass="text-orange-500"
-                />
-                <StatCard 
-                    title="Overall Rating" 
-                    value={`${summary.overallRating}/5`}
-                    icon={Star}
-                    description="Your average customer rating"
-                    colorClass="text-yellow-500"
-                />
-            </div>
-        </CardContent>
-    </Card>
-  );
+    );
 }
