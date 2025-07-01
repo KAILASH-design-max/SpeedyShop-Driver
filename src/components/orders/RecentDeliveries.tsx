@@ -94,7 +94,7 @@ export function RecentDeliveries() {
                                     </div>
                                 </div>
                                 <p className="font-bold text-green-600 text-md">
-                                    ₹{delivery.estimatedEarnings.toFixed(2)}
+                                    ₹{(delivery.estimatedEarnings || 0).toFixed(2)}
                                 </p>
                             </li>
                         ))}
