@@ -1,8 +1,9 @@
 
-import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
+import { EarningsSummaryCard } from "@/components/earnings/EarningsSummaryCard";
 import { PayoutHistoryTable } from "@/components/earnings/PayoutHistoryTable";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
 import { Separator } from "@/components/ui/separator";
+import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
 
 export default function EarningsPage() {
   return (
