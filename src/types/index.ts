@@ -84,6 +84,12 @@ export interface BankDetails {
   ifscCode?: string;
 }
 
+export interface DeliveryRating {
+  orderId: string;
+  ratedAt: any; // Firestore Timestamp
+  rating: number;
+}
+
 export interface Profile {
   uid: string;
   name: string;
@@ -115,6 +121,7 @@ export interface Profile {
   onTimeDeliveryRate?: number; // percentage 0-100
   totalDeliveries?: number;
   overallRating?: number;
+  deliveryRatings?: DeliveryRating[];
 }
 
 

@@ -108,15 +108,7 @@ export default function ProfilePage() {
     <div className="container mx-auto py-8 space-y-8">
       <ProfileForm profile={profile} onUpdate={handleProfileUpdate} />
       <Separator />
-      <PerformanceMetrics 
-        profile={{
-          ...profile,
-          averageDeliveryTime: profile.averageDeliveryTime ?? 0,
-          onTimeDeliveryRate: profile.onTimeDeliveryRate ?? 0,
-          totalDeliveries: profile.totalDeliveries ?? 0,
-          overallRating: profile.overallRating ?? 0,
-        }} 
-      />
+      <PerformanceMetrics profile={profile} />
       <Separator />
       <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
     </div>
