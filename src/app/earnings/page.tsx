@@ -1,6 +1,5 @@
 
 import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
-import { ActiveBonuses } from "@/components/earnings/ActiveBonuses";
 import { PayoutHistoryTable } from "@/components/earnings/PayoutHistoryTable";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
 import { Separator } from "@/components/ui/separator";
@@ -13,8 +12,6 @@ export default function EarningsPage() {
         <p className="text-muted-foreground mt-1">Track your earnings, bonuses, and performance.</p>
       </div>
       <EarningsOverview />
-      <Separator />
-      <ActiveBonuses />
       <Separator />
       <WeeklyEarningsChart />
       <Separator />

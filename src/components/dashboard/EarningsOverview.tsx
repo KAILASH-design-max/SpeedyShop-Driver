@@ -28,7 +28,7 @@ const overviewStats = [
         subtext: "Bonuses you're working towards",
         icon: Badge,
         color: "text-orange-500",
-        href: "/earnings"
+        href: "/bonuses"
     },
     {
         title: "Overall Rating",

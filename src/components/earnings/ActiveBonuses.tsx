@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Target, Trophy, Clock } from "lucide-react";
@@ -34,6 +34,15 @@ const bonuses = [
         status: "Upcoming",
         timeLeft: "Starts Saturday",
         icon: Target
+    },
+    {
+        title: "Peak Hour Bonus Completed",
+        reward: 50,
+        progress: 5,
+        target: 5,
+        status: "Completed",
+        timeLeft: "—",
+        icon: Trophy,
     }
 ];
 
@@ -48,40 +57,42 @@ const getStatusBadgeClass = (status: string) => {
 
 export function ActiveBonuses() {
     return (
-        <Card className="shadow-xl">
-            <CardHeader>
-                <CardTitle>Your Active & Upcoming Bonuses</CardTitle>
-                <CardDescription>Complete challenges to earn extra.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+        <div>
+            <div>
+              <h1 className="text-3xl font-bold text-primary">Your Active & Upcoming Bonuses</h1>
+              <p className="text-muted-foreground mt-1">Track and complete bonus challenges to earn extra rewards.</p>
+            </div>
+            
+            <div className="mt-6 space-y-4">
                 {bonuses.map((bonus, index) => (
-                    <div key={index} className="p-4 rounded-lg border bg-muted/30 flex items-start gap-4">
-                        <div className="p-3 bg-primary/10 rounded-full">
-                           <bonus.icon className="h-6 w-6 text-primary" />
-                        </div>
-                        <div className="flex-grow">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="font-semibold">{bonus.title}</p>
-                                    <p className="text-sm font-bold text-green-600">Reward: ₹{bonus.reward}</p>
-                                </div>
-                                <Badge variant="outline" className={cn("capitalize", getStatusBadgeClass(bonus.status))}>{bonus.status}</Badge>
+                    <Card key={index} className="shadow-md hover:shadow-lg transition-shadow">
+                        <CardContent className="p-4 flex items-start gap-4">
+                             <div className="p-3 bg-primary/10 rounded-full mt-1 shrink-0">
+                               <bonus.icon className="h-6 w-6 text-primary" />
                             </div>
-                            <div className="mt-2">
-                                <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                                    <span>Progress</span>
-                                    <span>{bonus.progress} / {bonus.target} Deliveries</span>
+                            <div className="flex-grow w-full">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                    <div className="mb-2 sm:mb-0">
+                                        <p className="text-lg font-semibold">{bonus.title}</p>
+                                        <p className="text-md font-bold text-green-600">Reward: ₹{bonus.reward}</p>
+                                    </div>
+                                    <Badge variant="outline" className={cn("capitalize shrink-0", getStatusBadgeClass(bonus.status))}>{bonus.status}</Badge>
                                 </div>
-                                <Progress value={(bonus.progress / bonus.target) * 100} className="h-2" />
-                                <div className="flex items-center text-xs text-muted-foreground mt-2">
-                                    <Clock className="h-3 w-3 mr-1.5" />
-                                    <span>{bonus.timeLeft}</span>
+                                <div className="mt-3">
+                                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                        <span>Progress: {bonus.progress} / {bonus.target} Deliveries</span>
+                                    </div>
+                                    <Progress value={(bonus.progress / bonus.target) * 100} className="h-2" />
+                                    <div className="flex items-center text-sm text-muted-foreground mt-2">
+                                        <Clock className="h-4 w-4 mr-1.5" />
+                                        <span>{bonus.timeLeft}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 ))}
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }
