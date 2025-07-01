@@ -8,7 +8,6 @@ import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
@@ -128,7 +127,7 @@ export default function OrderPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center h-full min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="ml-2">Loading order details...</p>
       </div>
@@ -136,34 +135,30 @@ export default function OrderPage() {
   }
 
   if (!order) {
-    return <div className="flex justify-center items-center h-full"><p>Order not found or an error occurred.</p></div>;
+    return <div className="flex justify-center items-center h-full min-h-[calc(100vh-10rem)]"><p>Order not found or an error occurred.</p></div>;
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 space-y-8">
       <OrderDetailsDisplay order={order} />
       
-      <Separator className="my-8" />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardContent className="p-6 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4">
             {order.orderStatus === "accepted" && ( 
-              <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white" disabled={isUpdating}>
-                {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <PackageCheck className="mr-2 h-5 w-5" /> Confirm Pickup from Store
+              <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
+                 Confirm Pickup from Store
               </Button>
             )}
              {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
-              <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isUpdating}>
+              <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-6 font-bold" disabled={isUpdating}>
                 <Navigation className="mr-2 h-5 w-5" /> Start Navigation to Customer
               </Button>
             )}
              <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)} disabled={isUpdating}>
                 <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
             </Button>
-          </CardContent>
-        </Card>
+        </div>
 
         {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
           <DeliveryConfirmation orderId={order.id} onConfirm={handleDeliveryConfirmed} />
@@ -171,10 +166,10 @@ export default function OrderPage() {
       </div>
 
       {order.orderStatus === "delivered" && ( 
-        <Card className="mt-6 bg-green-50 border-green-200">
+        <Card className="mt-6 bg-green-100 border-green-300">
           <CardContent className="p-6 text-center">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-green-700">This order has been successfully delivered!</p>
+            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />
+            <p className="text-xl font-semibold text-green-800">This order has been successfully delivered!</p>
           </CardContent>
         </Card>
       )}
