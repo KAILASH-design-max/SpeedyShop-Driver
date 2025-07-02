@@ -1,28 +1,95 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, PiggyBank } from "lucide-react";
+import { Calendar, PiggyBank, Loader2 } from "lucide-react";
 import Link from "next/link";
-
-const stats = [
-    {
-        title: "This Month’s Earnings",
-        amount: "25,120.00",
-        description: "As of today",
-        icon: Calendar,
-        color: "text-green-500",
-        href: "/earnings/history"
-    },
-    {
-        title: "Total Lifetime Earnings",
-        amount: "1,45,890.75",
-        description: "Since joining",
-        icon: PiggyBank,
-        color: "text-purple-500",
-    },
-];
+import { useState, useEffect } from 'react';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
 
 export function EarningsSummaryCard() {
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [monthlyEarnings, setMonthlyEarnings] = useState(0);
+    const [lifetimeEarnings, setLifetimeEarnings] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            setCurrentUser(user);
+            if (!user) setIsLoading(false);
+        });
+        return () => unsubscribeAuth();
+    }, []);
+
+    useEffect(() => {
+        if (!currentUser) {
+             if(!auth.currentUser) {
+                setIsLoading(false);
+            }
+            return;
+        };
+
+        setIsLoading(true);
+
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const allDeliveriesQuery = query(
+            collection(db, "orders"),
+            where("deliveryPartnerId", "==", currentUser.uid),
+            where("orderStatus", "==", "delivered")
+        );
+        
+        const unsubscribe = onSnapshot(allDeliveriesQuery, (snapshot) => {
+            let totalLifetime = 0;
+            let totalMonth = 0;
+
+            snapshot.forEach(doc => {
+                const orderData = doc.data();
+                const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
+                totalLifetime += earning;
+                
+                const completedAtTimestamp = orderData.completedAt as Timestamp;
+                if (completedAtTimestamp && completedAtTimestamp.toDate() >= startOfMonth) {
+                    totalMonth += earning;
+                }
+            });
+
+            setMonthlyEarnings(totalMonth);
+            setLifetimeEarnings(totalLifetime);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching earnings summary:", error);
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
+
+    const stats = [
+        {
+            title: "This Month’s Earnings",
+            amount: isLoading ? null : monthlyEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            description: "As of today",
+            icon: Calendar,
+            color: "text-green-500",
+            href: "/earnings/history",
+            isLoading: isLoading,
+        },
+        {
+            title: "Total Lifetime Earnings",
+            amount: isLoading ? null : lifetimeEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            description: "Since joining",
+            icon: PiggyBank,
+            color: "text-purple-500",
+            isLoading: isLoading,
+        },
+    ];
+
     return (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             {stats.map((stat) => {
@@ -34,7 +101,13 @@ export function EarningsSummaryCard() {
                         </CardHeader>
                         <CardContent>
                             <div className={`text-2xl font-bold ${stat.color}`}>
-                                ₹{stat.amount}
+                                {stat.isLoading ? (
+                                    <Loader2 className="h-6 w-6 animate-spin" />
+                                ) : (
+                                    <>
+                                       ₹{stat.amount}
+                                    </>
+                                )}
                             </div>
                             <p className="text-xs text-muted-foreground">{stat.description}</p>
                         </CardContent>
