@@ -1,5 +1,5 @@
 
-import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
+import { EarningsSummaryCard } from "@/components/earnings/EarningsSummaryCard";
 import { PayoutHistoryTable } from "@/components/earnings/PayoutHistoryTable";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
 
@@ -11,7 +11,7 @@ export default function EarningsPage() {
         <p className="text-muted-foreground mt-1">A summary of your current and lifetime earnings.</p>
       </div>
 
-      <EarningsOverview />
+      <EarningsSummaryCard />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3">
