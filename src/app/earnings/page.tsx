@@ -1,7 +1,6 @@
 
 import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
 import { EarningsSummaryCard } from "@/components/earnings/EarningsSummaryCard";
-import { PayoutHistoryTable } from "@/components/earnings/PayoutHistoryTable";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
 
 export default function EarningsPage() {
@@ -16,14 +15,7 @@ export default function EarningsPage() {
 
       <EarningsSummaryCard />
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3">
-          <WeeklyEarningsChart />
-        </div>
-        <div className="lg:col-span-2">
-          <PayoutHistoryTable />
-        </div>
-      </div>
+      <WeeklyEarningsChart />
     </div>
   );
 }
