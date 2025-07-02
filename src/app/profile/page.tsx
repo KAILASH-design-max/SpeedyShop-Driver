@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { DocumentManagement } from "@/components/profile/DocumentManagement";
-import { PerformanceMetrics } from "@/components/profile/PerformanceMetrics";
 import type { Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
@@ -107,8 +106,6 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto py-8 space-y-8">
       <ProfileForm profile={profile} onUpdate={handleProfileUpdate} />
-      <Separator />
-      <PerformanceMetrics profile={profile} />
       <Separator />
       <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
     </div>

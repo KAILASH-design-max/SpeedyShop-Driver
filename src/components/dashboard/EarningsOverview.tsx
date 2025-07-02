@@ -161,7 +161,7 @@ export function EarningsOverview() {
             subtext: "Your average customer rating",
             icon: Star,
             color: "text-yellow-500",
-            href: "/profile",
+            href: "/ratings",
             isCurrency: false,
             isLoading: isLoadingRating,
         },
