@@ -3,10 +3,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  Card,
-  CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
@@ -35,7 +32,7 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Order } from "@/types";
-import { Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Package } from "lucide-react";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -125,86 +122,87 @@ export function RecentDeliveries() {
   };
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Delivery History</CardTitle>
-        <CardDescription>
-          Select a date to view your delivery history.
-        </CardDescription>
-        <div className="pt-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full sm:w-[280px] justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-                disabled={(date) => date > new Date()}
-              />
-            </PopoverContent>
-          </Popover>
+    <div>
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div>
+                <CardTitle className="text-2xl font-bold flex items-center"><Package className="mr-2 h-6 w-6"/>Delivery History</CardTitle>
+                <CardDescription className="mt-1">
+                Select a date to view your delivery records.
+                </CardDescription>
+            </div>
+            <Popover>
+                <PopoverTrigger asChild>
+                <Button
+                    variant={"outline"}
+                    className={cn(
+                    "w-full sm:w-[280px] justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                    )}
+                >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    initialFocus
+                    disabled={(date) => date > new Date()}
+                />
+                </PopoverContent>
+            </Popover>
         </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center items-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2">Loading delivery history...</p>
-          </div>
-        ) : deliveries.length === 0 ? (
-          <div className="text-center text-muted-foreground p-8">
-            <p>No deliveries found for this date.</p>
-          </div>
-        ) : (
-          <div className="border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer Name</TableHead>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Amount Earned</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deliveries.map((delivery) => (
-                  <TableRow key={delivery.id}>
-                    <TableCell className="font-medium">
-                      #{delivery.id.substring(0, 6)}
-                    </TableCell>
-                    <TableCell>{delivery.customerName}</TableCell>
-                    <TableCell>{formatTimestamp(delivery.completedAt)}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={cn("capitalize", getStatusBadgeClass(delivery.orderStatus))}
-                      >
-                        {delivery.orderStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-green-600">
-                      ₹{(delivery.estimatedEarnings || 0).toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      
+        <div className="mt-6">
+            {loading ? (
+            <div className="flex justify-center items-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-2">Loading delivery history...</p>
+            </div>
+            ) : deliveries.length === 0 ? (
+            <div className="text-center text-muted-foreground p-8 border rounded-lg">
+                <p>No deliveries found for this date.</p>
+            </div>
+            ) : (
+            <div className="border rounded-md">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Customer Name</TableHead>
+                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount Earned</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {deliveries.map((delivery) => (
+                    <TableRow key={delivery.id}>
+                        <TableCell className="font-medium">
+                        #{delivery.id.substring(0, 6)}
+                        </TableCell>
+                        <TableCell>{delivery.customerName}</TableCell>
+                        <TableCell>{formatTimestamp(delivery.completedAt)}</TableCell>
+                        <TableCell>
+                        <Badge
+                            variant="outline"
+                            className={cn("capitalize", getStatusBadgeClass(delivery.orderStatus))}
+                        >
+                            {delivery.orderStatus}
+                        </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-green-600">
+                        ₹{(delivery.estimatedEarnings || 0).toFixed(2)}
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </div>
+            )}
+        </div>
+    </div>
   );
 }

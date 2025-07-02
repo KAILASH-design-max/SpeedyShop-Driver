@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -12,14 +12,15 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { Wallet } from "lucide-react";
 
 
 const transactions = [
-    { description: "Base Pay", id: "TXN001", type: "Delivery", amount: 45.00 },
-    { description: "Customer Tip", id: "TXN002", type: "Tip", amount: 10.00 },
-    { description: "Peak Hour Bonus", id: "TXN003", type: "Bonus", amount: 50.00 },
-    { description: "Base Pay + Distance Pay", id: "TXN004", type: "Delivery", amount: 62.50 },
-    { description: "Base Pay", id: "TXN005", type: "Delivery", amount: 52.00 },
+    { title: "Base Pay", transactionId: "TXN001", type: "Delivery", amount: 45.00 },
+    { title: "Customer Tip", transactionId: "TXN002", type: "Tip", amount: 10.00 },
+    { title: "Peak Hour Bonus", transactionId: "TXN003", type: "Bonus", amount: 50.00 },
+    { title: "Base Pay + Distance Pay", transactionId: "TXN004", type: "Delivery", amount: 62.50 },
+    { title: "Base Pay", transactionId: "TXN005", type: "Delivery", amount: 52.00 },
 ];
 
 const getBadgeClass = (type: string) => {
@@ -33,27 +34,24 @@ const getBadgeClass = (type: string) => {
 
 export function PayoutHistoryTable() {
     return (
-        <Card className="shadow-xl">
-            <CardHeader>
-                <CardTitle>Transaction History</CardTitle>
-                <CardDescription>A detailed breakdown of your recent earnings and deductions.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+        <div>
+            <CardTitle className="text-2xl font-bold flex items-center"><Wallet className="mr-2 h-6 w-6"/>Transaction Summary</CardTitle>
+            <CardDescription className="mt-1">A detailed breakdown of transactions for the selected day.</CardDescription>
+            <div className="mt-6 border rounded-md">
                 <Table>
                     <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                            <TableHead>Transaction</TableHead>
+                        <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Transaction ID</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {transactions.map((transaction) => (
-                            <TableRow key={transaction.id} className="border-b-0">
-                                <TableCell>
-                                    <div className="font-medium">{transaction.description}</div>
-                                    <div className="text-xs text-muted-foreground">{transaction.id}</div>
-                                </TableCell>
+                            <TableRow key={transaction.transactionId}>
+                                <TableCell className="font-medium">{transaction.title}</TableCell>
+                                <TableCell className="text-muted-foreground">{transaction.transactionId}</TableCell>
                                 <TableCell>
                                     <Badge variant="outline" className={cn("capitalize font-normal", getBadgeClass(transaction.type))}>{transaction.type}</Badge>
                                 </TableCell>
@@ -64,7 +62,7 @@ export function PayoutHistoryTable() {
                         ))}
                     </TableBody>
                 </Table>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }
