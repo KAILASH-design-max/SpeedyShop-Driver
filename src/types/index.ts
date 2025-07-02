@@ -149,3 +149,13 @@ export interface Session {
   logoutTimestamp?: any | null;
   date: string; // YYYY-MM-DD
 }
+
+export interface MonthlyEarning {
+  id: string; // "YYYY-MM"
+  month: string; // "YYYY-MM"
+  total: number;
+  breakdown: {
+    [key: string]: number; // e.g., week1, week2, tips, bonuses
+  };
+  createdAt?: any;
+}

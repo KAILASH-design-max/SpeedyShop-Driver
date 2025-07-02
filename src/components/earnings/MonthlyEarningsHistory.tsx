@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -8,18 +7,47 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Calendar, Wallet, Loader2 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Calendar, Wallet, Loader2, Star, Gift, ShoppingBag, TrendingUp } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
 import type { User } from 'firebase/auth';
-import type { Order } from '@/types';
-import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
+import type { MonthlyEarning } from '@/types';
 
-interface MonthlyEarning {
-    month: string;
-    earnings: string;
+// Helper function to format the month string
+const formatMonth = (monthStr: string) => {
+  try {
+    const [year, month] = monthStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return format(date, 'MMMM yyyy');
+  } catch {
+    return monthStr; // Fallback
+  }
+};
+
+const formatCurrency = (amount: number) => {
+    return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+const breakdownIcons: { [key: string]: React.ElementType } = {
+  week: ShoppingBag,
+  bonuses: Gift,
+  tips: Star,
+};
+
+const getBreakdownItemIcon = (key: string) => {
+    if (key.startsWith('week')) return breakdownIcons.week;
+    return breakdownIcons[key] || Wallet;
+}
+
+const formatBreakdownKey = (key: string) => {
+    if (key.startsWith('week')) {
+        const weekNum = key.replace('week', '');
+        return `Week ${weekNum}`;
+    }
+    return key.charAt(0).toUpperCase() + key.slice(1);
 }
 
 export function MonthlyEarningsHistory() {
@@ -42,55 +70,33 @@ export function MonthlyEarningsHistory() {
     }
 
     setLoading(true);
-
+    
+    // As per your request, this now queries the user-specific subcollection.
+    // Note: This collection must be populated by a backend process (e.g., a Cloud Function).
     const historyQuery = query(
-        collection(db, "orders"),
-        where("deliveryPartnerId", "==", currentUser.uid),
-        where("orderStatus", "==", "delivered"),
-        orderBy("completedAt", "desc")
+        collection(db, `users/${currentUser.uid}/monthlyEarnings`),
+        orderBy("month", "desc")
     );
 
-    const unsubscribe = onSnapshot(historyQuery, async (snapshot) => {
+    const unsubscribe = onSnapshot(historyQuery, (snapshot) => {
         if (snapshot.empty) {
             setMonthlyEarnings([]);
             setLoading(false);
             return;
         }
 
-        const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-        const orders: Order[] = await Promise.all(ordersDataPromises);
-        
-        const earningsByMonth: { [key: string]: number } = {};
+        const earningsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            month: doc.data().month,
+            total: doc.data().total,
+            breakdown: doc.data().breakdown || {},
+            createdAt: doc.data().createdAt,
+        } as MonthlyEarning));
 
-        orders.forEach(order => {
-            if (order.completedAt && order.completedAt.toDate) {
-                const date = order.completedAt.toDate();
-                const monthKey = format(date, 'yyyy-MM'); // e.g., "2025-07"
-                const earning = order.estimatedEarnings || 0;
-                
-                if (earningsByMonth[monthKey]) {
-                    earningsByMonth[monthKey] += earning;
-                } else {
-                    earningsByMonth[monthKey] = earning;
-                }
-            }
-        });
-
-        const formattedEarnings = Object.entries(earningsByMonth).map(([monthKey, total]) => {
-            const [year, month] = monthKey.split('-');
-            const date = new Date(parseInt(year), parseInt(month) - 1);
-            return {
-                month: format(date, 'MMMM yyyy'), // "July 2025"
-                earnings: total.toFixed(2),
-            };
-        });
-        
-        formattedEarnings.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
-
-        setMonthlyEarnings(formattedEarnings);
+        setMonthlyEarnings(earningsData);
         setLoading(false);
     }, (error) => {
-        console.error("Error fetching earnings history:", error);
+        console.error("Error fetching monthly earnings history:", error);
         setLoading(false);
     });
 
@@ -102,11 +108,11 @@ export function MonthlyEarningsHistory() {
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="flex items-center text-2xl font-bold text-primary">
-          <Calendar className="mr-3 h-6 w-6" />
+          <TrendingUp className="mr-3 h-6 w-6" />
           Monthly Earnings History
         </CardTitle>
         <CardDescription>
-          A summary of your earnings from previous months.
+          Track your monthly income trends and compare past performance.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -117,23 +123,44 @@ export function MonthlyEarningsHistory() {
              </div>
         ) : monthlyEarnings.length === 0 ? (
              <div className="text-center text-muted-foreground p-8">
-                <p>No earnings history found.</p>
+                <p>No monthly earnings history found.</p>
+                <p className="text-xs mt-2">(This data is typically calculated and stored at the end of each month by a backend process)</p>
              </div>
         ) : (
-            <div className="space-y-4">
-            {monthlyEarnings.map((item, index) => (
-                <div
-                key={index}
-                className="flex items-center justify-between rounded-lg border bg-muted/30 p-4"
-                >
-                <div className="flex items-center">
-                    <Wallet className="mr-3 h-5 w-5 text-muted-foreground" />
-                    <p className="font-semibold">{item.month}</p>
-                </div>
-                <p className="font-bold text-lg text-green-600">₹{parseFloat(item.earnings).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-            ))}
-            </div>
+            <Accordion type="single" collapsible className="w-full">
+                {monthlyEarnings.map((item) => (
+                    <AccordionItem value={item.id} key={item.id}>
+                        <AccordionTrigger className="hover:no-underline">
+                           <div className="flex items-center justify-between w-full pr-4">
+                             <div className="flex items-center">
+                                 <Calendar className="mr-3 h-5 w-5 text-muted-foreground" />
+                                 <p className="font-semibold">{formatMonth(item.month)}</p>
+                             </div>
+                             <p className="font-bold text-lg text-green-600">{formatCurrency(item.total)}</p>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                           <div className="p-4 bg-muted/30 rounded-md">
+                             <h4 className="font-semibold mb-3 text-sm">Earnings Breakdown:</h4>
+                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {Object.entries(item.breakdown).map(([key, value]) => {
+                                   const Icon = getBreakdownItemIcon(key);
+                                   return (
+                                        <div key={key} className="flex items-center">
+                                            <Icon className="h-4 w-4 mr-2 text-primary" />
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">{formatBreakdownKey(key)}</p>
+                                                <p className="font-semibold">{formatCurrency(value)}</p>
+                                            </div>
+                                        </div>
+                                   );
+                                })}
+                             </div>
+                           </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
         )}
       </CardContent>
     </Card>
