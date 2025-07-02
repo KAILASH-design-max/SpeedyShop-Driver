@@ -100,6 +100,8 @@ export default function AuthenticatedLayout({
     }
   };
 
+  const isHistoryPage = pathname.includes('/earnings/history');
+
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
@@ -144,8 +146,12 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
             <div className="flex items-center gap-4">
                 <MobileNav />
-                 <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span>
-                 {currentUser && <ActiveTimeTracker userId={currentUser.uid} />}
+                {!isHistoryPage && (
+                  <>
+                    <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span>
+                    {currentUser && <ActiveTimeTracker userId={currentUser.uid} />}
+                  </>
+                )}
             </div>
             {/* Replaced UserNav with Notification Bell Icon */}
             <Button variant="ghost" size="icon" aria-label="Notifications">
