@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs, limit, doc, setDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs, limit, doc, setDoc, orderBy } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -79,7 +79,7 @@ export function SupportChat() {
         if (!chatSessionId) return;
 
         const messagesRef = collection(db, `supportChats/${chatSessionId}/messages`);
-        const q = query(messagesRef, "orderBy", "timestamp", "asc");
+        const q = query(messagesRef, orderBy("timestamp", "asc"));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedMessages: ChatMessage[] = [];
