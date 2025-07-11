@@ -78,7 +78,7 @@ export function LoginForm() {
           <LogIn className="h-10 w-10 text-primary" />
         </div>
         <CardTitle className="text-3xl font-bold text-primary">Welcome Back!</CardTitle>
-        <CardDescription>Log in to continue to Velocity Driver.</CardDescription>
+        <CardDescription>Log in to continue to SpeedyShop Driver.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

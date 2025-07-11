@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Velocity Driver',
+  title: 'SpeedyShop Driver',
   description: 'Quick Commerce Delivery Partner App',
 };
 

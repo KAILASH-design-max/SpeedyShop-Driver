@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { endSession } from "@/lib/sessionManager";
 import { ActiveTimeTracker } from "@/components/dashboard/ActiveTimeTracker";
+import { SheetTitle } from "../ui/sheet";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -105,11 +106,12 @@ export default function AuthenticatedLayout({
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
+        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
         <SidebarHeader className="p-4 border-b border-sidebar-border">
           <Link href="/dashboard" className="flex items-center gap-2">
             <Truck className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
-              Velocity
+              SpeedyShop
             </h1>
           </Link>
         </SidebarHeader>
@@ -148,7 +150,7 @@ export default function AuthenticatedLayout({
                 <MobileNav />
                 {!isHistoryPage && (
                   <>
-                    <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span>
+                    <span className="text-xl font-semibold text-primary hidden md:block">SpeedyShop Driver</span>
                     {currentUser && <ActiveTimeTracker userId={currentUser.uid} />}
                   </>
                 )}
