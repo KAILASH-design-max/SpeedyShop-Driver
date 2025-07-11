@@ -71,7 +71,7 @@ export interface ProofOfInsuranceDocument extends DocumentMetadata {
   expirationDate?: string;
 }
 
-export interface ProfileDocuments {
+export type ProfileDocuments = {
   driverLicense?: DriverLicenseDocument;
   vehicleRegistration?: VehicleRegistrationDocument;
   proofOfInsurance?: ProofOfInsuranceDocument;

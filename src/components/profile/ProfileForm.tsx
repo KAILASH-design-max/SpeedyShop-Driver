@@ -48,7 +48,7 @@ const profileFormSchema = z.object({
 
 interface ProfileFormProps {
   profile: Profile;
-  onUpdate: (data: Partial<Profile>) => Promise<void>;
+  onUpdate: (data: Partial<Profile> | Record<string,any>) => Promise<void>;
 }
 
 export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {

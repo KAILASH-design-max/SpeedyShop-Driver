@@ -7,7 +7,7 @@ import { DocumentManagement } from "@/components/profile/DocumentManagement";
 import type { Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -51,7 +51,11 @@ export default function ProfilePage() {
                 vehicleRegistrationNumber: '',
                 verificationStatus: 'pending',
                 profilePictureUrl: "",
-                documents: {},
+                documents: {
+                    driverLicense: undefined,
+                    vehicleRegistration: undefined,
+                    proofOfInsurance: undefined,
+                },
                 bankDetails: {
                   accountHolderName: "",
                   accountNumber: "",
@@ -82,11 +86,23 @@ export default function ProfilePage() {
     if (!currentUser) return;
     const profileRef = doc(db, "users", currentUser.uid); 
     try {
+      // Handle server timestamps for nested document uploads
+      if (updatedData.documents?.driverLicense?.uploadedAt) {
+          updatedData.documents.driverLicense.uploadedAt = serverTimestamp();
+      }
+      if (updatedData.documents?.vehicleRegistration?.uploadedAt) {
+          updatedData.documents.vehicleRegistration.uploadedAt = serverTimestamp();
+      }
+      if (updatedData.documents?.proofOfInsurance?.uploadedAt) {
+          updatedData.documents.proofOfInsurance.uploadedAt = serverTimestamp();
+      }
+
       const dataWithTimestamp = {
         ...updatedData,
-        updatedAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
       };
-      await updateDoc(profileRef, dataWithTimestamp);
+      await setDoc(profileRef, dataWithTimestamp, { merge: true });
+
       toast({ title: "Profile Updated", description: "Your changes have been saved.", className: "bg-green-500 text-white" });
     } catch (error) {
       console.error("Error updating profile:", error);

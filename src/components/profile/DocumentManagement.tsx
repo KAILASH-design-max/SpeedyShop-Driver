@@ -13,6 +13,7 @@ import type { Profile, ProfileDocuments, DocumentMetadata, DriverLicenseDocument
 import { storage } from "@/lib/firebase";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from "firebase/storage";
 import { Badge } from "@/components/ui/badge";
+import imageCompression from 'browser-image-compression';
 
 type DocumentObject = DriverLicenseDocument | VehicleRegistrationDocument | ProofOfInsuranceDocument;
 type DocumentTypeKey = keyof ProfileDocuments;
@@ -56,11 +57,29 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
 
     setIsUploading(true);
     setUploadProgress(0);
+
+    let fileToUpload = file;
+
+    // Compress image if it's an image file
+    if (file.type.startsWith('image/')) {
+        try {
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+                useWebWorker: true,
+            }
+            fileToUpload = await imageCompression(file, options);
+            toast({ title: "Image Compressed", description: `Original size: ${(file.size / 1024 / 1024).toFixed(2)} MB, New size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`});
+        } catch (error) {
+            console.error('Image compression error:', error);
+            toast({ variant: "destructive", title: "Compression Failed", description: "Could not compress image, uploading original." });
+        }
+    }
     
-    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${file.name}`;
+    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${fileToUpload.name}`;
     const fileStorageRef = storageRef(storage, documentPath);
     
-    const uploadTask = uploadBytesResumable(fileStorageRef, file);
+    const uploadTask = uploadBytesResumable(fileStorageRef, fileToUpload);
 
     uploadTask.on('state_changed', 
       (snapshot: UploadTaskSnapshot) => {
@@ -78,10 +97,10 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           
           const documentData: DocumentMetadata = {
-            fileName: file.name,
+            fileName: fileToUpload.name,
             fileUrl: downloadURL,
             storagePath: documentPath,
-            uploadedAt: new Date().toISOString(), // This will be converted to server timestamp by the parent
+            uploadedAt: new Date(), // This will be converted to server timestamp by the parent
             verificationStatus: 'pending',
           };
 
@@ -119,7 +138,7 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
     return "Not Uploaded";
   }
 
-  const getBadgeVariant = (status?: string) => {
+  const getBadgeVariant = (status?: 'pending' | 'approved' | 'rejected') => {
     switch(status) {
         case 'approved': return 'default';
         case 'pending': return 'secondary';
