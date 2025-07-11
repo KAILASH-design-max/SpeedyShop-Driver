@@ -85,9 +85,9 @@ export function ChatInterface() {
 
    useEffect(() => {
     if (scrollAreaRef.current) {
-        const scrollDiv = scrollAreaRef.current.querySelector('div:first-child');
-        if(scrollDiv) {
-            scrollDiv.scrollTop = scrollDiv.scrollHeight;
+        const scrollViewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+        if (scrollViewport) {
+          scrollViewport.scrollTop = scrollViewport.scrollHeight;
         }
     }
   }, [messages]);
@@ -135,7 +135,7 @@ export function ChatInterface() {
     return {
       id: otherId,
       name: thread.participantNames[otherId] || "Unknown User",
-      avatarUrl: thread.participantAvatars[otherId] || `https://placehold.co/100x100.png?text=${(thread.participantNames[otherId] || "U").substring(0,2).toUpperCase()}`,
+      avatarUrl: thread.participantAvatars[otherId] || `https://placehold.co/100x100.png`,
     };
   };
 
@@ -159,6 +159,7 @@ export function ChatInterface() {
             </Avatar>
             <div>
                 <CardTitle className="text-lg">{otherParticipant.name}</CardTitle>
+                <CardDescription>Order #{selectedThread.id.substring(0,8)}</CardDescription>
             </div>
         </CardHeader>
         <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>
@@ -219,33 +220,35 @@ export function ChatInterface() {
         ) : chatThreads.length === 0 ? (
             <p className="text-center text-muted-foreground p-8">No active chats.</p>
         ) : (
-            chatThreads.map(thread => {
-                if (!currentUser) return null;
-                const otherParticipant = getOtherParticipant(thread, currentUser.uid);
-                return (
-                    <div 
-                        key={thread.id} 
-                        onClick={() => handleSelectThread(thread)}
-                        className="flex items-center p-3 mb-2 rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                        role="button"
-                        tabIndex={0}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSelectThread(thread)}
-                        aria-label={`Open chat with ${otherParticipant.name}`}
-                    >
-                        <Avatar className="mr-3">
-                        <AvatarImage src={otherParticipant.avatarUrl} alt={otherParticipant.name} data-ai-hint="person avatar list" />
-                        <AvatarFallback>{otherParticipant.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-grow">
-                        <p className="font-semibold">{otherParticipant.name}</p>
-                        <p className="text-sm text-muted-foreground truncate max-w-xs">{thread.lastMessage}</p>
+            <div className="space-y-1">
+                {chatThreads.map(thread => {
+                    if (!currentUser) return null;
+                    const otherParticipant = getOtherParticipant(thread, currentUser.uid);
+                    return (
+                        <div 
+                            key={thread.id} 
+                            onClick={() => handleSelectThread(thread)}
+                            className="flex items-center p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                            role="button"
+                            tabIndex={0}
+                            onKeyPress={(e) => e.key === 'Enter' && handleSelectThread(thread)}
+                            aria-label={`Open chat with ${otherParticipant.name}`}
+                        >
+                            <Avatar className="mr-3 h-10 w-10">
+                            <AvatarImage src={otherParticipant.avatarUrl} alt={otherParticipant.name} data-ai-hint="person avatar list" />
+                            <AvatarFallback>{otherParticipant.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-grow">
+                            <p className="font-semibold">{otherParticipant.name}</p>
+                            <p className="text-sm text-muted-foreground truncate max-w-xs">{thread.lastMessage}</p>
+                            </div>
+                            <div className="text-right text-xs text-muted-foreground">
+                                <p>{formatTimestamp(thread.lastMessageTimestamp)}</p>
+                            </div>
                         </div>
-                        <div className="text-right">
-                        <p className="text-xs text-muted-foreground">{formatTimestamp(thread.lastMessageTimestamp)}</p>
-                        </div>
-                    </div>
-                );
-            })
+                    );
+                })}
+            </div>
         )}
       </CardContent>
     </Card>

@@ -75,6 +75,10 @@ export type ProfileDocuments = {
   driverLicense?: DriverLicenseDocument;
   vehicleRegistration?: VehicleRegistrationDocument;
   proofOfInsurance?: ProofOfInsuranceDocument;
+  // For legacy string-based URLs, deprecated but kept for compatibility
+  driverLicenseUrl?: string; 
+  vehicleRegistrationUrl?: string;
+  proofOfInsuranceUrl?: string;
 }
 
 
@@ -139,7 +143,6 @@ export interface ChatThread {
   participantAvatars: { [key:string]: string }; // Maps UID to avatar URL
   lastMessage: string;
   lastMessageTimestamp: any; // Firestore ServerTimestamp
-  unreadCount?: number; // This can be added later
 }
 
 export interface Session {
