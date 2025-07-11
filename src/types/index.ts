@@ -42,43 +42,16 @@ export interface Payout {
   transactionId?: string;
 }
 
-// Detailed Document Metadata Types
+// Simplified Document Metadata Type
 export interface DocumentMetadata {
   fileName: string;
-  fileUrl: string;
-  storagePath: string;
-  uploadedAt: any; // Firestore ServerTimestamp
-  verificationStatus: 'pending' | 'approved' | 'rejected';
-}
-
-export interface DriverLicenseDocument extends DocumentMetadata {
-  licenseNumber?: string;
-  issueDate?: string;
-  expiryDate?: string;
-}
-
-export interface VehicleRegistrationDocument extends DocumentMetadata {
-  registrationNumber?: string;
-  make?: string;
-  model?: string;
-  year?: number;
-}
-
-export interface ProofOfInsuranceDocument extends DocumentMetadata {
-  policyNumber?: string;
-  provider?: string;
-  effectiveDate?: string;
-  expirationDate?: string;
+  url: string;
 }
 
 export type ProfileDocuments = {
-  driverLicense?: DriverLicenseDocument;
-  vehicleRegistration?: VehicleRegistrationDocument;
-  proofOfInsurance?: ProofOfInsuranceDocument;
-  // For legacy string-based URLs, deprecated but kept for compatibility
-  driverLicenseUrl?: string; 
-  vehicleRegistrationUrl?: string;
-  proofOfInsuranceUrl?: string;
+  driverLicense?: DocumentMetadata;
+  vehicleRegistration?: DocumentMetadata;
+  proofOfInsurance?: DocumentMetadata;
 }
 
 

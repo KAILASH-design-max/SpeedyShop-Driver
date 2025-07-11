@@ -6,22 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { FileText, UploadCloud, CheckCircle, AlertTriangle, LinkIcon, Loader2, ShieldQuestion } from "lucide-react";
+import { FileText, UploadCloud, CheckCircle, AlertTriangle, LinkIcon, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { Profile, ProfileDocuments, DocumentMetadata, DriverLicenseDocument, VehicleRegistrationDocument, ProofOfInsuranceDocument } from "@/types";
+import type { Profile, ProfileDocuments, DocumentMetadata } from "@/types";
 import { storage } from "@/lib/firebase";
-import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, UploadTaskSnapshot } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, UploadTaskSnapshot } from "firebase/storage";
 import { Badge } from "@/components/ui/badge";
 import imageCompression from 'browser-image-compression';
 
-type DocumentObject = DriverLicenseDocument | VehicleRegistrationDocument | ProofOfInsuranceDocument;
 type DocumentTypeKey = keyof ProfileDocuments;
 
 interface DocumentUploadItemProps {
   docName: string;
   docKey: DocumentTypeKey;
-  document?: DocumentObject;
+  document?: DocumentMetadata;
   profileUid: string;
   onUpdate: (data: Record<string, any>) => Promise<void>; 
 }
@@ -60,7 +59,6 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
 
     let fileToUpload = file;
 
-    // Compress image if it's an image file
     if (file.type.startsWith('image/')) {
         try {
             const options = {
@@ -76,7 +74,7 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
         }
     }
     
-    const documentPath = `partnerDocuments/${profileUid}/${docKey}/${fileToUpload.name}`;
+    const documentPath = `deliveryDocs/${profileUid}/${docKey}.${fileToUpload.name.split('.').pop()}`;
     const fileStorageRef = storageRef(storage, documentPath);
     
     const uploadTask = uploadBytesResumable(fileStorageRef, fileToUpload);
@@ -98,10 +96,7 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
           
           const documentData: DocumentMetadata = {
             fileName: fileToUpload.name,
-            fileUrl: downloadURL,
-            storagePath: documentPath,
-            uploadedAt: new Date(), // This will be converted to server timestamp by the parent
-            verificationStatus: 'pending',
+            url: downloadURL,
           };
 
           const updatePayload = { 
@@ -126,25 +121,18 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
   
   const getStatusIcon = () => {
     if (isUploading) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-    if (document?.verificationStatus === 'approved') return <CheckCircle className="h-5 w-5 text-green-500" />;
-    if (document?.verificationStatus === 'rejected') return <AlertTriangle className="h-5 w-5 text-red-500" />;
-    if (document?.verificationStatus === 'pending') return <ShieldQuestion className="h-5 w-5 text-yellow-500" />;
+    if (document?.url) return <CheckCircle className="h-5 w-5 text-green-500" />;
     return <AlertTriangle className="h-5 w-5 text-orange-400" />;
   };
   
   const getStatusText = () => {
     if (isUploading) return `Uploading... ${Math.round(uploadProgress)}%`;
-    if (document?.verificationStatus) return `Verification: ${document.verificationStatus.charAt(0).toUpperCase() + document.verificationStatus.slice(1)}`;
+    if (document?.url) return "Uploaded";
     return "Not Uploaded";
   }
 
-  const getBadgeVariant = (status?: 'pending' | 'approved' | 'rejected') => {
-    switch(status) {
-        case 'approved': return 'default';
-        case 'pending': return 'secondary';
-        case 'rejected': return 'destructive';
-        default: return 'outline';
-    }
+  const getBadgeVariant = (isUploaded?: boolean) => {
+    return isUploaded ? 'default' : 'outline';
   }
 
   return (
@@ -153,19 +141,13 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
         <div>
           <h3 className="font-semibold text-lg">{docName}</h3>
           <div className="flex items-center text-sm gap-2 mt-1">
-             {document ? (
-                <Badge variant={getBadgeVariant(document.verificationStatus)} className="capitalize">
-                    {getStatusIcon()}
-                    <span className="ml-2">{getStatusText()}</span>
-                </Badge>
-             ) : (
-                <Badge variant="outline">
-                    <AlertTriangle className="h-4 w-4 mr-1"/> Not Uploaded
-                </Badge>
-             )}
+             <Badge variant={getBadgeVariant(!!document?.url)} className="capitalize">
+                {getStatusIcon()}
+                <span className="ml-2">{getStatusText()}</span>
+             </Badge>
           </div>
-          {document?.fileUrl && !isUploading && (
-            <a href={document.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center mt-1">
+          {document?.url && !isUploading && (
+            <a href={document.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center mt-1">
               <LinkIcon className="mr-1 h-3 w-3" /> View {document.fileName}
             </a>
           )}
