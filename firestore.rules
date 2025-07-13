@@ -1,0 +1,107 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if the user is authenticated.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the requesting user is the owner of a document.
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Products can be read by anyone, but only admins should write.
+    // For this prototype, we'll allow any authenticated user to write for seeding purposes.
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Promo codes can be read by anyone.
+    match /promoCodes/{promoId} {
+      allow read: if true;
+      allow write: if isAuthenticated(); // For seeding/admin purposes.
+    }
+    
+    // Reviews can be read by anyone, but only created by authenticated users.
+    match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+    }
+
+    // Users collection can only be accessed by the user themselves.
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // User-specific sub-collections (e.g., monthlyEarnings).
+    match /users/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Application forms can only be created by logged-in users.
+    match /Franchise/{docId} {
+        allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+    }
+    match /PartnerWithUs/{docId} {
+        allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+    }
+     match /Seller/{docId} {
+        allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+    }
+
+    // Chat threads can be read/written by participants.
+    match /chatThreads/{threadId} {
+      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+    }
+
+    // Messages within a chat thread can be accessed by participants.
+    match /chatThreads/{threadId}/messages/{messageId} {
+      allow read, create: if isAuthenticated() && get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
+    }
+
+    // Support chat sessions are accessible by the user who created it.
+    // A more robust rule would allow a specific 'support_agent' role to also access.
+    match /supportChats/{chatId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    match /supportChats/{chatId}/messages/{messageId} {
+      allow read, create: if isOwner(get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId);
+    }
+
+    // Session data is private to the user.
+    match /sessions/{sessionId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Orders have rules for both customers and delivery partners.
+    match /orders/{orderId} {
+      // CUSTOMER RULES: Customers can create orders and read/update their own.
+      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isOwner(resource.data.userId);
+
+      // DELIVERY PARTNER RULES:
+      // Allow a partner to update an order if:
+      // 1. They are accepting it (deliveryPartnerId is changing from null to their ID).
+      // 2. The order is already assigned to them.
+      allow update: if isAuthenticated() && 
+                      (
+                        (resource.data.deliveryPartnerId == null && request.resource.data.deliveryPartnerId == request.auth.uid) ||
+                        (resource.data.deliveryPartnerId == request.auth.uid)
+                      );
+      
+      // Allow listing orders if:
+      // 1. It's a customer querying their own orders.
+      // 2. It's a partner querying orders assigned to them.
+      // 3. It's a partner querying for new, unassigned orders.
+      allow list: if (isAuthenticated() && request.query.where.userId == request.auth.uid) ||
+                   (isAuthenticated() && request.query.where.deliveryPartnerId == request.auth.uid) ||
+                   (isAuthenticated() && request.query.where.orderStatus == "Placed" && request.query.where.deliveryPartnerId == null);
+    }
+  }
+}
