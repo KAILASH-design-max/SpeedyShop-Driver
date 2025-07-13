@@ -11,6 +11,10 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
+    
+    function isDeliveryPartner(order) {
+        return isAuthenticated() && request.auth.uid == order.deliveryPartnerId;
+    }
 
     // --- Public Collections ---
     match /products/{productId} {
@@ -18,103 +22,98 @@ service cloud.firestore {
       allow write: if isAuthenticated(); 
     }
 
-    match /promoCodes/{promoId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
+    match /promoCodes/{promoCodeId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
     }
-    
-    // --- User-Centric Collections ---
+
+    // --- User-Centric & Partner Collections ---
+
+    function isQueryingOwnData() {
+      return isAuthenticated() && request.query.where.userId == request.auth.uid;
+    }
+
     match /addresses/{addressId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow list: if isAuthenticated() && request.query.where.userId == request.auth.uid;
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow list: if isQueryingOwnData();
     }
-    
+
     match /paymentMethods/{paymentMethodId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow list: if isAuthenticated() && request.query.where.userId == request.auth.uid;
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow list: if isQueryingOwnData();
     }
 
     match /MyWishlist/{wishlistId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow list: if isAuthenticated() && request.query.where.userId == request.auth.uid;
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow list: if isQueryingOwnData();
     }
-    
+
     match /reviews/{reviewId} {
         allow read: if true;
+        allow list: if true;
         allow create: if isOwner(request.resource.data.userId);
-        allow list: if request.query.where.productId is string || (isAuthenticated() && request.query.where.userId == request.auth.uid);
-    }
-
-    // --- App-Specific Collections ---
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-
-      // User subcollections
-      match /monthlyEarnings/{month} {
-          allow read, write: if isOwner(userId);
-      }
-    }
-
-    match /sessions/{sessionId} {
-        allow create: if isOwner(request.resource.data.userId);
-        allow update: if isOwner(resource.data.userId);
     }
     
-    match /supportChats/{chatId} {
-        allow create: if isOwner(request.resource.data.userId);
-        match /messages/{messageId} {
-            allow write: if isOwner(get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId);
-            allow read: if isOwner(get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId);
-        }
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    match /users/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
     }
 
-    match /chatThreads/{threadId} {
-        allow read, update: if request.auth.uid in resource.data.participantIds;
-        match /messages/{messageId} {
-            allow read, write: if request.auth.uid in get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds;
-        }
-    }
-
-    // --- Orders Collection ---
-    // This is the most complex rule set. It must handle customers and delivery partners.
+    // Orders:
+    // - Customers can manage their own orders.
+    // - Delivery partners can manage assigned orders or accept unassigned ones.
     match /orders/{orderId} {
-      // CUSTOMER permissions: A customer can create an order for themselves, and can read/update their own orders.
+      // Create: Only the customer can create an order.
       allow create: if isOwner(request.resource.data.userId);
-      allow read, update: if isOwner(resource.data.userId);
 
-      // DELIVERY PARTNER permissions:
-      // An authenticated user (a driver) can read/update an order IF they are the assigned delivery partner.
-      allow read, update: if isAuthenticated() && resource.data.deliveryPartnerId == request.auth.uid;
+      // Read: The customer or the assigned delivery partner can read.
+      allow read: if isOwner(resource.data.userId) || isDeliveryPartner(resource.data);
+
+      // Update:
+      // - The customer can update their own order.
+      // - A delivery partner can accept an order (deliveryPartnerId is changing from null to their UID).
+      // - An assigned delivery partner can update the order (e.g., change status).
+      allow update: if isOwner(resource.data.userId) || 
+                     (isAuthenticated() && request.resource.data.deliveryPartnerId == request.auth.uid && resource.data.deliveryPartnerId == null) ||
+                     isDeliveryPartner(resource.data);
       
-      // A driver can ACCEPT an order if it's unassigned (deliveryPartnerId is null)
-      // and the update is only changing the deliveryPartnerId to their own and status to 'accepted'.
-      allow update: if isAuthenticated() 
-                      && resource.data.deliveryPartnerId == null
-                      && request.resource.data.deliveryPartnerId == request.auth.uid
-                      && request.resource.data.orderStatus == 'accepted';
+      // List:
+      // - Customers can list their own orders.
+      // - Delivery partners can list unassigned orders.
+      // - Delivery partners can list orders assigned to them.
+      allow list: if (isAuthenticated() && request.query.where.userId == request.auth.uid) ||
+                   (isAuthenticated() && request.query.where.deliveryPartnerId == null) ||
+                   (isAuthenticated() && request.query.where.deliveryPartnerId == request.auth.uid);
+    }
 
-      // LIST permissions for queries. This is where permission errors often happen.
-      allow list: if 
-        // Allow CUSTOMERS to query for their own orders.
-        (isAuthenticated() && request.query.where.userId == request.auth.uid) ||
-        
-        // Allow DRIVERS to query for unassigned orders.
-        (isAuthenticated() 
-            && request.query.where.orderStatus == 'Placed' 
-            && request.query.where.deliveryPartnerId == null) ||
-            
-        // Allow DRIVERS to query for their assigned active orders.
-        (isAuthenticated() 
-            && request.query.where.deliveryPartnerId == request.auth.uid
-            && request.query.where.orderStatus in ['accepted', 'picked-up', 'out-for-delivery']) ||
-            
-        // Allow DRIVERS to query for their completed/cancelled orders on a specific date.
-        (isAuthenticated()
-            && request.query.where.deliveryPartnerId == request.auth.uid
-            && request.query.where.orderStatus in ['delivered', 'cancelled']);
+    // --- Other Private Collections ---
+    match /SecuritySupport/{userId} {
+        allow read, write: if isOwner(userId);
+    }
+    match /NotificationSettings/{userId} {
+        allow read, write: if isOwner(userId);
+    }
+    
+    match /Franchise/{docId} {
+        allow create: if isOwner(request.resource.data.userId);
+    }
+    match /PartnerWithUs/{docId} {
+        allow create: if isOwner(request.resource.data.userId);
+    }
+     match /Seller/{docId} {
+        allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /returns/{returnId} {
+        allow create: if isOwner(request.resource.data.userId);
+        allow read, update: if isOwner(resource.data.userId);
+        allow list: if isAuthenticated() && request.query.where.userId == request.auth.uid;
     }
   }
 }
