@@ -23,10 +23,11 @@ export interface Order {
   estimatedTime: number; 
   deliveryInstructions?: string;
   customerContact?: string; 
-  deliveryPartnerId?: string; 
+  deliveryPartnerId?: string | null;
   completedAt?: any;
   noContactDelivery?: boolean; // Flag for no-contact delivery
   proofImageURL?: string; // URL for the proof of delivery image
+  accessibleTo?: string[]; // Array of UIDs that can access this order
 }
 
 export interface EarningSummary {
