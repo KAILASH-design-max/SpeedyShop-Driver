@@ -59,7 +59,9 @@ export default function DashboardPage() {
         setIsAvailabilityLoading(false);
       }, (error) => {
         console.error("Error fetching user profile for availability:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not load availability status." });
+        if (error.code !== 'permission-denied') {
+          toast({ variant: "destructive", title: "Error", description: "Could not load availability status." });
+        }
         setAvailabilityStatus('offline');
         setIsAvailabilityLoading(false);
       });
