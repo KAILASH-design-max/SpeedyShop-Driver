@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -11,107 +12,79 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
+    
+    function isDeliveryPartner() {
+      // In a real app, you would check a custom claim or a role in the user's profile document.
+      // For this prototype, we'll assume any authenticated user could be a partner.
+      return isAuthenticated();
+    }
+    
+    function isAssignedPartner(order) {
+      return isDeliveryPartner() && request.auth.uid == order.deliveryPartnerId;
+    }
 
     // --- Public Collections ---
     match /products/{productId} {
       allow read: if true;
-      // Allow writes for seeding/admin in this prototype
       allow write: if isAuthenticated(); 
     }
 
     match /promoCodes/{promoId} {
       allow read: if true;
-      // Allow writes for seeding/admin
       allow write: if isAuthenticated();
     }
     
-    // --- User-Centric Collections ---
-
-    // Generic rule for collections where documents contain a `userId` field
-    // and queries will always filter by it.
-    function isQueryingOwnData() {
-      return isAuthenticated() && request.query.where.userId == request.auth.uid;
-    }
-
-    // Addresses: Users can manage their own addresses.
-    match /addresses/{addressId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-      allow list: if isQueryingOwnData();
-    }
-    
-    // Payment Methods: Users can manage their own payment methods.
-    match /paymentMethods/{paymentMethodId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-      allow list: if isQueryingOwnData();
-    }
-
-    // Wishlists: Users can manage their own wishlists.
-    match /MyWishlist/{wishlistId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-      allow list: if isQueryingOwnData();
-    }
-    
-    // Reviews: Users can create their own reviews. Anyone can read reviews.
-    match /reviews/{reviewId} {
-        allow read: if true;
-        allow create: if isOwner(request.resource.data.userId);
-        allow list: if request.query.where.productId is string || isQueryingOwnData();
-    }
-
-    // Security & Notifications: Settings are private to the user.
-    match /SecuritySupport/{userId} {
-        allow read, write: if isOwner(userId);
-    }
-    match /NotificationSettings/{userId} {
-        allow read, write: if isOwner(userId);
-    }
-    
-    // Application Forms: Authenticated users can submit applications.
-    match /Franchise/{docId} {
-        allow create: if isOwner(request.resource.data.userId);
-    }
-    match /PartnerWithUs/{docId} {
-        allow create: if isOwner(request.resource.data.userId);
-    }
-     match /Seller/{docId} {
-        allow create: if isOwner(request.resource.data.userId);
-    }
-
-    // Orders:
-    // This rule allows a user OR a delivery partner to access an order.
-    // This is achieved by having an `accessibleTo` array field on each order
-    // document containing the UIDs of users who can access it (customer, partner).
-    match /orders/{orderId} {
-      // Allow read/write if the user's UID is in the `accessibleTo` array.
-      allow read, update: if isAuthenticated() && request.auth.uid in resource.data.accessibleTo;
-
-      // Allow create if the user is the one creating it.
-      // A backend function should then populate accessibleTo with the customer's UID.
-      allow create: if isOwner(request.resource.data.userId);
-      
-      // Allow list operations (queries) only if filtering by the accessibleTo array.
-      // This is the key change for dashboard queries.
-      allow list: if isAuthenticated() && request.query.where.accessibleTo is array;
-    }
-    
-    // --- Legacy and Other Collections ---
-    // Customer/User profiles
-    match /customers/{userId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // A general 'users' collection, if used for delivery partners or other roles.
+    // --- User & Partner Collections ---
     match /users/{userId} {
-        allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId);
+      // Allow partners to read a limited set of their own subcollections
+      match /monthlyEarnings/{earningId} {
+        allow read: if isOwner(userId);
+      }
     }
-
-    // Sessions are private to the user who created them
     match /sessions/{sessionId} {
       allow create: if isOwner(request.resource.data.userId);
-      allow read, update: if isOwner(resource.data.userId);
+      allow update: if isOwner(resource.data.userId);
+    }
+    
+    match /chatThreads/{threadId} {
+      allow read, update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+      match /messages/{messageId} {
+        allow read, create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds;
+      }
+    }
+    
+    match /supportChats/{chatId} {
+      allow read, create: if isOwner(resource.data.userId);
+      match /messages/{messageId} {
+        allow read, create: if isOwner(get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId);
+      }
+    }
+
+    // --- Orders Collection: The Core Logic ---
+    match /orders/{orderId} {
+      // 1. CREATE: Only a customer can create their own order.
+      allow create: if isOwner(request.resource.data.userId);
+
+      // 2. READ: 
+      //    - The customer can always read their own order.
+      //    - An assigned delivery partner can read the order.
+      allow read: if isOwner(resource.data.userId) || isAssignedPartner(resource.data);
+      
+      // 3. UPDATE:
+      //    - The customer can update their order (e.g., add instructions) before it's assigned.
+      //    - A delivery partner can accept an order (update deliveryPartnerId from null).
+      //    - An assigned partner can update the order status (e.g., to 'delivered').
+      allow update: if (isOwner(resource.data.userId) && resource.data.deliveryPartnerId == null) ||
+                     (isDeliveryPartner() && request.resource.data.deliveryPartnerId == request.auth.uid);
+
+      // 4. LIST (Queries):
+      //    - Customers can list their own orders.
+      //    - Partners can list unassigned orders.
+      //    - Partners can list orders assigned to them.
+      allow list: if (isOwner(request.query.where.userId)) ||
+                   (isDeliveryPartner() && request.query.where.deliveryPartnerId == request.auth.uid) ||
+                   (isDeliveryPartner() && request.query.where.deliveryPartnerId == null && request.query.where.orderStatus == 'Placed');
     }
   }
 }

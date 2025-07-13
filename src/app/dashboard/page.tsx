@@ -100,12 +100,6 @@ export default function DashboardPage() {
     }
 
     setLoadingNew(true);
-    // This query is designed to fail if rules require checking `accessibleTo`
-    // as we cannot query for what's NOT in an array.
-    // The proper implementation requires a backend to create a separate "publicOrders" pool.
-    // For now, we will assume new orders are not directly visible and handle the empty state.
-    // In a real app, this might query a different collection `availableOrders`
-    // that a backend function populates and secures.
     const newOrdersQuery = query(
       collection(db, "orders"),
       where("orderStatus", "==", "Placed"),
@@ -118,11 +112,11 @@ export default function DashboardPage() {
       setNewOrders(ordersData);
       setLoadingNew(false);
     }, (error: any) => {
-      if (error.code === 'permission-denied') {
+      console.error("Error fetching new orders:", error);
+       if (error.code === 'permission-denied') {
         // This is expected if rules prevent querying all new orders.
         // Silently handle this by showing "no new orders".
       } else {
-        console.error("Error fetching new orders:", error);
         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
       }
       setNewOrders([]);
@@ -140,25 +134,20 @@ export default function DashboardPage() {
     }
 
     setLoadingActive(true);
-    // Updated query to use `array-contains` for security rule compliance
     const activeOrdersQuery = query(
       collection(db, "orders"),
-      where("accessibleTo", "array-contains", currentUser.uid),
+      where("deliveryPartnerId", "==", currentUser.uid),
       where("orderStatus", "in", ["accepted", "picked-up", "out-for-delivery"])
     );
 
     const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
       const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
       const ordersData = await Promise.all(ordersDataPromises);
-      // Further filter on the client, as Firestore doesn't support 'not-in' for array-contains
-      const filteredActiveOrders = ordersData.filter(o => o.deliveryPartnerId === currentUser.uid);
-      setActiveOrders(filteredActiveOrders);
+      setActiveOrders(ordersData);
       setLoadingActive(false);
     }, (error: any) => {
-      if (error.code === 'permission-denied') {
-        // This can happen if rules are not set up correctly.
-      } else {
-        console.error("Error fetching active orders:", error);
+      console.error("Error fetching active orders:", error);
+       if (error.code !== 'permission-denied') {
         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders." });
       }
       setActiveOrders([]);
