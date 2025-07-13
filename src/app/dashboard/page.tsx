@@ -126,11 +126,35 @@ export default function DashboardPage() {
   }, [currentUser, toast]);
 
   useEffect(() => {
-    // This query is being removed to solve permission errors.
-    // In a production app, this would be replaced with a Cloud Function or a different, secure data-fetching strategy.
-    setLoadingNew(false);
-    setNewOrders([]);
-  }, [currentUser, availabilityStatus]);
+    if (!currentUser || availabilityStatus !== 'online') {
+      setNewOrders([]);
+      setLoadingNew(false);
+      return;
+    }
+    setLoadingNew(true);
+
+    const newOrdersQuery = query(
+      collection(db, "orders"),
+      where("deliveryPartnerId", "==", null),
+      where("orderStatus", "==", "Placed")
+    );
+
+    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
+      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+      const ordersData = await Promise.all(ordersDataPromises);
+      setNewOrders(ordersData);
+      setLoadingNew(false);
+    }, (error) => {
+      console.error("Error fetching new orders:", error);
+      if (error.code !== 'permission-denied') {
+        toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new order alerts." });
+      }
+      setNewOrders([]);
+      setLoadingNew(false);
+    });
+
+    return () => unsubscribeNew();
+  }, [currentUser, availabilityStatus, toast]);
 
   return (
     <div className="container mx-auto py-8">
@@ -149,9 +173,24 @@ export default function DashboardPage() {
              <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
               <BellDot className="mr-2 h-6 w-6" /> New Order Alerts
             </h2>
-            <p className="text-muted-foreground text-center p-4">
-              Go online to be ready for new assignments!
-            </p>
+            {loadingNew ? (
+              <div className="flex justify-center items-center p-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-2">Searching for new orders...</p>
+              </div>
+            ) : availabilityStatus !== 'online' ? (
+                <p className="text-muted-foreground text-center p-4">
+                  Go online to see new assignments!
+                </p>
+            ) : newOrders.length > 0 && currentUser ? (
+              <div className="space-y-4">
+                {newOrders.map((order) => (
+                  <NewOrderCard key={order.id} order={order} currentUserId={currentUser.uid} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center p-4">No new orders available right now. We'll notify you!</p>
+            )}
           </div>
         </div>
 
