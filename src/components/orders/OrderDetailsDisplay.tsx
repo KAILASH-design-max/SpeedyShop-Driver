@@ -80,6 +80,13 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
                 </div>
             </div>
         </div>
+        
+        {order.deliveryInstructions && (
+          <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+            <h3 className="font-semibold text-lg mb-2 flex items-center text-blue-800"><Info className="mr-2 h-5 w-5"/>Delivery Instructions</h3>
+            <p className="text-sm text-blue-700 font-medium">{order.deliveryInstructions}</p>
+          </div>
+        )}
 
         {/* Order Items Card */}
         <div className="p-4 border rounded-lg bg-muted/30">
@@ -94,12 +101,6 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
           </ul>
         </div>
         
-        {order.deliveryInstructions && (
-          <div className="p-4 border rounded-lg bg-accent/10 border-accent/30">
-            <h3 className="font-semibold text-lg mb-2 flex items-center"><Info className="mr-2 h-5 w-5 text-accent" />Delivery Instructions</h3>
-            <p className="text-sm text-accent-foreground/80">{order.deliveryInstructions}</p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
