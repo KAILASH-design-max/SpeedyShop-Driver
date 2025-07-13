@@ -13,6 +13,7 @@ import type { Order } from "@/types";
 import { storage } from "@/lib/firebase";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Checkbox } from "@/components/ui/checkbox";
+import imageCompression from 'browser-image-compression';
 
 interface DeliveryConfirmationProps {
   order: Order;
@@ -110,10 +111,26 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
   };
 
   const uploadProofPhoto = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const filePath = `deliveryProofs/${order.id}/${file.name}`;
+    return new Promise(async (resolve, reject) => {
+      let fileToUpload = file;
+      if (file.type.startsWith('image/')) {
+        try {
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+          }
+          fileToUpload = await imageCompression(file, options);
+          toast({ title: "Image Compressed", description: `Original: ${(file.size / 1024 / 1024).toFixed(2)} MB, New: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB` });
+        } catch (error) {
+          console.error('Image compression error:', error);
+          toast({ variant: "destructive", title: "Compression Failed", description: "Could not compress image, uploading original." });
+        }
+      }
+
+      const filePath = `deliveryProofs/${order.id}/${fileToUpload.name}`;
       const fileRef = storageRef(storage, filePath);
-      const uploadTask = uploadBytesResumable(fileRef, file);
+      const uploadTask = uploadBytesResumable(fileRef, fileToUpload);
 
       uploadTask.on('state_changed',
         () => {}, // We can add progress indicator logic here if needed
