@@ -105,7 +105,11 @@ export default function DashboardPage() {
     
     if (availabilityStatus === 'online' || availabilityStatus === 'on_break') {
       setLoadingNew(true);
-      const newOrdersQuery = query(collection(db, "orders"), where("orderStatus", "==", "Placed"));
+      const newOrdersQuery = query(
+        collection(db, "orders"), 
+        where("orderStatus", "==", "Placed"),
+        where("deliveryPartnerId", "==", null) // Query for unassigned orders
+      );
       const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
         const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
         const ordersData = await Promise.all(ordersDataPromises);
@@ -113,7 +117,11 @@ export default function DashboardPage() {
         setLoadingNew(false);
       }, (error) => {
         console.error("Error fetching new orders:", error);
-        toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
+        // Do not show a toast for permission denied, as it's expected if there are no open orders.
+        if (error.code !== 'permission-denied') {
+          toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
+        }
+        setNewOrders([]); // Clear orders on error
         setLoadingNew(false);
       });
       return () => unsubscribeNew();
