@@ -107,7 +107,6 @@ export default function AuthenticatedLayout({
     <SidebarProvider defaultOpen>
       <Sidebar>
         <SidebarHeader className="p-4 border-b border-sidebar-border">
-          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <Link href="/dashboard" className="flex items-center gap-2">
             <Truck className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
