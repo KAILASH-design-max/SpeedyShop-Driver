@@ -96,7 +96,7 @@ export default function DashboardPage() {
     if (!currentUser || availabilityStatus !== 'online') {
       setNewOrders([]);
       setLoadingNew(false);
-      return;
+      return () => {};
     }
 
     setLoadingNew(true);
@@ -113,7 +113,9 @@ export default function DashboardPage() {
       setLoadingNew(false);
     }, (error: any) => {
       console.error("Error fetching new orders:", error);
-       if (error.code !== 'permission-denied') {
+      if (error.code === 'permission-denied') {
+        // This is expected if rules are strict. Silently fail.
+      } else {
         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
       }
       setNewOrders([]);
@@ -127,7 +129,7 @@ export default function DashboardPage() {
     if (!currentUser) {
       setActiveOrders([]);
       setLoadingActive(false);
-      return;
+      return () => {};
     }
 
     setLoadingActive(true);
@@ -144,7 +146,9 @@ export default function DashboardPage() {
       setLoadingActive(false);
     }, (error: any) => {
       console.error("Error fetching active orders:", error);
-       if (error.code !== 'permission-denied') {
+       if (error.code === 'permission-denied') {
+          // This can happen if rules are misconfigured, handle gracefully.
+       } else {
         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders." });
       }
       setActiveOrders([]);
