@@ -117,7 +117,7 @@ export default function DashboardPage() {
         setLoadingNew(false);
       }, (error) => {
         console.error("Error fetching new orders:", error);
-        // Do not show a toast for permission denied, as it's expected if there are no open orders.
+        // Do not show a toast for permission denied, as it's expected if there are no open orders or rules restrict access.
         if (error.code !== 'permission-denied') {
           toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
         }
