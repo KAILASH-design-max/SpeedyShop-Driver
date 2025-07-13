@@ -1,65 +1,40 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is authenticated
+    // Helper Functions
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Rules for the 'users' collection (driver profiles)
-    // A user can read and write to their own profile document.
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // User profile documents
     match /users/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      // Users can read and write to their own document
+      allow read, write: if isOwner(userId);
     }
 
-    // Rules for the 'orders' collection
+    // Orders collection
     match /orders/{orderId} {
-      // READ: An order can be read by the assigned delivery partner.
-      allow read: if isAuthenticated() && resource.data.deliveryPartnerId == request.auth.uid;
+      // Allow a driver to accept an order by updating the deliveryPartnerId
+      allow update: if isAuthenticated()
+                    && request.resource.data.deliveryPartnerId == request.auth.uid
+                    && resource.data.deliveryPartnerId == null;
 
-      // UPDATE: 
-      // 1. An unassigned order can be accepted by any authenticated driver.
-      // 2. An assigned order can be updated by the assigned delivery partner.
-      allow update: if isAuthenticated() && 
-                    ( (resource.data.deliveryPartnerId == null && request.resource.data.deliveryPartnerId == request.auth.uid) || 
-                      (resource.data.deliveryPartnerId == request.auth.uid) );
+      // Allow a driver to update an order they are assigned to
+      allow update: if isAuthenticated()
+                    && resource.data.deliveryPartnerId == request.auth.uid;
+      
+      // Allow a driver to read an order assigned to them
+      allow read: if isAuthenticated() 
+                  && resource.data.deliveryPartnerId == request.auth.uid;
 
-      // LIST (QUERY):
-      // Allows the two specific queries used by the driver dashboard.
-      allow list: if isAuthenticated() && 
-                  ( (request.query.where.deliveryPartnerId == null && request.query.where.orderStatus == 'Placed') || 
-                    (request.query.where.deliveryPartnerId == request.auth.uid && request.query.where.orderStatus in ['accepted', 'picked-up', 'out-for-delivery']) );
-    }
-
-    // Rules for the 'chatThreads' collection and its messages
-    match /chatThreads/{threadId} {
-        allow read, update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
-        
-        match /messages/{messageId} {
-            allow read, create: if isAuthenticated() && get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
-        }
-    }
-    
-    // Rules for the 'supportChats' collection
-    match /supportChats/{sessionId} {
-      allow read, create, update: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || resource.data.userId == request.auth.uid);
-
-      match /messages/{messageId} {
-        allow read, create: if isAuthenticated() && get(/databases/$(database)/documents/supportChats/$(sessionId)).data.userId == request.auth.uid;
-      }
-    }
-
-    // Rules for the 'sessions' collection (for active time tracking)
-    match /sessions/{sessionId} {
-      allow read, create, update: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || resource.data.userId == request.auth.uid);
-    }
-    
-    // Allow read access to user-specific monthly earnings subcollection
-    match /users/{userId}/monthlyEarnings/{earningId} {
-        allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Allow authenticated users to query for orders under specific conditions
+      allow list: if isAuthenticated();
     }
   }
 }
