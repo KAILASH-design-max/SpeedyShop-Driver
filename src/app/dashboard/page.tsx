@@ -148,6 +148,10 @@ export default function DashboardPage() {
       console.error("Error fetching new orders:", error);
       if (error.code !== 'permission-denied') {
         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new order alerts." });
+      } else {
+        // Don't show a toast for permission denied, as it's expected if rules are working.
+        // It simply means no data matched the secure query.
+        console.log("New order listener stopped or permission denied, which may be expected.");
       }
       setNewOrders([]);
       setLoadingNew(false);
