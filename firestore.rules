@@ -1,66 +1,107 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // 🔐 Helper Functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function isDeliveryPartner(orderId) {
-      return get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId == request.auth.uid;
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
-    function isBecomingOwner(orderId) {
-        let after = get(/databases/$(database)/documents/orders/$(orderId));
-        let before = resource;
-        
-        return before.data.deliveryPartnerId == null &&
-               after.data.deliveryPartnerId == request.auth.uid;
+    function isDeliveryPartner(order) {
+        return isAuthenticated() && request.auth.uid == order.deliveryPartnerId;
     }
 
-    // --- User Profile Rules ---
+    // ✅ Publicly Readable Collections
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAuthenticated(); // for admin/seeding
+    }
+
+    match /promoCodes/{promoId} {
+      allow read: if true;
+      allow write: if isAuthenticated(); // for admin/seeding
+    }
+    
+    // ✅ User Profiles (Drivers & Customers)
     match /users/{userId} {
-      // Users can read and write to their own profile.
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
     }
     
-    // --- Session Tracking Rules ---
-    match /sessions/{sessionId} {
-        // Users can create their own sessions.
-        allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-        // Users can update their own sessions (to add logout timestamp).
-        allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    match /customers/{userId} {
+        allow read, write: if isOwner(userId);
+    }
+
+    // ✅ Orders: Accessible by customer, or by assigned delivery partner.
+    // Delivery partners can also query for unassigned orders.
+    match /orders/{orderId} {
+      allow create: if isOwner(request.resource.data.userId);
+      
+      // Read access for owner or assigned partner
+      allow read: if resource.data != null && (isOwner(resource.data.userId) || isDeliveryPartner(resource.data));
+
+      // Update access for owner or assigned partner.
+      // Also allow a partner to accept an order (moving deliveryPartnerId from null to their UID).
+      allow update: if resource.data != null && (isOwner(resource.data.userId) || isDeliveryPartner(resource.data) || isDeliveryPartner(request.resource.data));
+      
+      // List access for specific, secure queries
+      allow list: if isAuthenticated() && (
+        // Customer querying their own orders
+        request.query.where.userId == request.auth.uid ||
+        // Driver querying for unassigned orders
+        (request.query.where.deliveryPartnerId == null && request.query.where.orderStatus == 'Placed') ||
+        // Driver querying for their active orders
+        (request.query.where.deliveryPartnerId == request.auth.uid && request.query.where.orderStatus in ['accepted', 'picked-up', 'out-for-delivery'])
+      );
     }
     
-    // --- Chat Rules ---
+     // ✅ Chat Threads
     match /chatThreads/{threadId} {
       allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+      
       match /messages/{messageId} {
-        allow read, write: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds;
+        allow read, create: if isAuthenticated() && get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
       }
     }
-    
-    // --- Support Chat Rules ---
-    match /supportChats/{sessionId} {
-        allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+    // ✅ Sessions for tracking driver active time
+    match /sessions/{sessionId} {
+        allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+        allow update: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // ✅ Support Chats
+    match /supportChats/{chatId} {
+        allow read, create, write: if isAuthenticated() && isOwner(resource.data.userId);
         match /messages/{messageId} {
-            allow read, write: if isAuthenticated() && get(/databases/$(database)/documents/supportChats/$(sessionId)).data.userId == request.auth.uid;
+            allow read, create: if isAuthenticated() && get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid;
         }
     }
 
-    // --- Order Rules ---
-    match /orders/{orderId} {
-      // A delivery partner can READ an order IF they are the assigned partner.
-      allow read: if isAuthenticated() && isDeliveryPartner(orderId);
-      
-      // A delivery partner can UPDATE an order IF:
-      // 1. They are accepting an unassigned order.
-      // 2. They are already the owner and are updating the status (e.g., to picked-up, delivered).
-      allow update: if isAuthenticated() && (isBecomingOwner(orderId) || isDeliveryPartner(orderId));
-
-      // Listing orders is now controlled by the read rule. 
-      // The client MUST query by deliveryPartnerId to get results.
+    // --- Other rules from original file ---
+    
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() && resource.data != null && isOwner(resource.data.userId);
+    }
+    
+    match /Franchise/{docId} { allow create: if isAuthenticated() && isOwner(request.resource.data.userId); }
+    match /PartnerWithUs/{docId} { allow create: if isAuthenticated() && isOwner(request.resource.data.userId); }
+    match /Seller/{docId} { allow create: if isAuthenticated() && isOwner(request.resource.data.userId); }
+    match /SecuritySupport/{userId} { allow read, write: if isOwner(userId); }
+    match /NotificationSettings/{userId} { allow read, write: if isOwner(userId); }
+    match /addresses/{addressId} { allow read, create, update, delete: if isAuthenticated(); allow list: if isAuthenticated(); }
+    match /paymentMethods/{methodId} { allow read, create, update, delete: if isAuthenticated(); allow list: if isAuthenticated(); }
+    match /MyWishlist/{wishlistId} { allow read, create, update, delete: if isAuthenticated(); allow list: if isAuthenticated(); }
+    match /returns/{returnId} {
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow read, update: if isAuthenticated() && resource.data != null && isOwner(resource.data.userId);
       allow list: if isAuthenticated();
     }
   }

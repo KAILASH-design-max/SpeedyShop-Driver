@@ -6,13 +6,14 @@ import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
-import { PackageCheck, Loader2 } from "lucide-react";
+import { PackageCheck, Loader2, BellDot } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
+import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -21,6 +22,9 @@ export default function DashboardPage() {
   
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [loadingActive, setLoadingActive] = useState(true);
+
+  const [newOrders, setNewOrders] = useState<Order[]>([]);
+  const [loadingNew, setLoadingNew] = useState(true);
   
   const { toast } = useToast();
 
@@ -31,7 +35,9 @@ export default function DashboardPage() {
         setIsAvailabilityLoading(false);
         setAvailabilityStatus(undefined);
         setActiveOrders([]);
+        setNewOrders([]);
         setLoadingActive(false);
+        setLoadingNew(false);
       }
     });
     return () => unsubscribeAuth();
@@ -88,6 +94,7 @@ export default function DashboardPage() {
     }
   };
 
+  // Listener for ACTIVE orders
   useEffect(() => {
     if (!currentUser) {
       setActiveOrders([]);
@@ -111,9 +118,6 @@ export default function DashboardPage() {
       console.error("Error fetching active orders:", error);
        if (error.code !== 'permission-denied') {
           toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders." });
-       } else {
-          // This specific error is now handled by the simplified security rules.
-          // We don't need to show a toast for it as it's an expected outcome if there are no orders.
        }
       setActiveOrders([]);
       setLoadingActive(false);
@@ -121,6 +125,41 @@ export default function DashboardPage() {
 
     return () => unsubscribeActive();
   }, [currentUser, toast]);
+
+  // Listener for NEW orders
+  useEffect(() => {
+    if (!currentUser || availabilityStatus !== 'online') {
+      setNewOrders([]);
+      setLoadingNew(false);
+      return () => {};
+    }
+
+    setLoadingNew(true);
+    const newOrdersQuery = query(
+      collection(db, "orders"),
+      where("deliveryPartnerId", "==", null),
+      where("orderStatus", "==", "Placed")
+    );
+    
+    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
+      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+      const ordersData = await Promise.all(ordersDataPromises);
+      setNewOrders(ordersData);
+      setLoadingNew(false);
+    }, (error) => {
+      console.error("Error fetching new orders:", error);
+       if (error.code !== 'permission-denied') {
+          toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new order alerts." });
+       }
+      setNewOrders([]);
+      setLoadingNew(false);
+    });
+    
+    return () => unsubscribeNew();
+
+  }, [currentUser, availabilityStatus, toast]);
+
+  const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
   return (
     <div className="container mx-auto py-8">
@@ -137,11 +176,23 @@ export default function DashboardPage() {
           
            <div>
              <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
-              Notice
+              <BellDot className="mr-2 h-6 w-6" /> New Order Alerts
             </h2>
-            <p className="text-muted-foreground text-center p-4">
-              Order assignments are now handled automatically. Go online to be ready for new assignments!
-            </p>
+            {isLoading ? (
+               <div className="flex justify-center items-center p-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : availabilityStatus !== 'online' ? (
+                <p className="text-muted-foreground text-center p-4">Go online to see new order alerts.</p>
+            ) : newOrders.length > 0 && currentUser ? (
+              <div className="space-y-4">
+                {newOrders.map(order => (
+                  <NewOrderCard key={order.id} order={order} currentUserId={currentUser.uid} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center p-4">No new orders available right now. We'll notify you!</p>
+            )}
           </div>
 
         </div>
@@ -150,15 +201,10 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
             <PackageCheck className="mr-2 h-6 w-6" /> Your Active Orders
           </h2>
-          {isAvailabilityLoading ? (
+          {isLoading ? (
             <div className="flex justify-center items-center p-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="ml-2">Loading...</p>
-            </div>
-          ) : loadingActive ? (
-            <div className="flex justify-center items-center p-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="ml-2">Loading active orders...</p>
             </div>
           ) : activeOrders.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -167,7 +213,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center p-4">You have no active orders. Go online to be ready for new assignments!</p>
+            <p className="text-muted-foreground text-center p-4">You have no active orders. Accept a new order to get started!</p>
           )}
         </div>
       </div>
