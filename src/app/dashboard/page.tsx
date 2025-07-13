@@ -6,7 +6,7 @@ import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, PackageCheck, Loader2, Info } from "lucide-react";
+import { PackageCheck, Loader2 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -18,9 +18,7 @@ export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus'] | undefined>(undefined);
   const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(true);
-  const [newOrders, setNewOrders] = useState<Order[]>([]);
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
-  const [loadingNew, setLoadingNew] = useState(true);
   const [loadingActive, setLoadingActive] = useState(true);
   const { toast } = useToast();
 
@@ -30,9 +28,7 @@ export default function DashboardPage() {
       if (!user) {
         setIsAvailabilityLoading(false);
         setAvailabilityStatus(undefined);
-        setNewOrders([]);
         setActiveOrders([]);
-        setLoadingNew(false);
         setLoadingActive(false);
       }
     });
@@ -59,9 +55,7 @@ export default function DashboardPage() {
         setIsAvailabilityLoading(false);
       }, (error) => {
         console.error("Error fetching user profile for availability:", error);
-        if (error.code !== 'permission-denied') {
-          toast({ variant: "destructive", title: "Error", description: "Could not load availability status." });
-        }
+        toast({ variant: "destructive", title: "Error", description: "Could not load availability status." });
         setAvailabilityStatus('offline');
         setIsAvailabilityLoading(false);
       });
@@ -93,39 +87,6 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (!currentUser || availabilityStatus !== 'online') {
-      setNewOrders([]);
-      setLoadingNew(false);
-      return () => {};
-    }
-
-    setLoadingNew(true);
-    const newOrdersQuery = query(
-      collection(db, "orders"),
-      where("orderStatus", "==", "Placed"),
-      where("deliveryPartnerId", "==", null)
-    );
-
-    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
-      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-      const ordersData = await Promise.all(ordersDataPromises);
-      setNewOrders(ordersData);
-      setLoadingNew(false);
-    }, (error: any) => {
-      console.error("Error fetching new orders:", error);
-      if (error.code === 'permission-denied') {
-        // This is expected if rules are strict. Silently fail.
-      } else {
-        toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
-      }
-      setNewOrders([]);
-      setLoadingNew(false);
-    });
-
-    return () => unsubscribeNew();
-  }, [currentUser, availabilityStatus, toast]);
-
-  useEffect(() => {
     if (!currentUser) {
       setActiveOrders([]);
       setLoadingActive(false);
@@ -144,10 +105,11 @@ export default function DashboardPage() {
       const ordersData = await Promise.all(ordersDataPromises);
       setActiveOrders(ordersData);
       setLoadingActive(false);
-    }, (error: any) => {
+    }, (error) => {
       console.error("Error fetching active orders:", error);
        if (error.code === 'permission-denied') {
           // This can happen if rules are misconfigured, handle gracefully.
+          toast({ variant: "destructive", title: "Permission Error", description: "You do not have permission to view active orders." });
        } else {
         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders." });
       }
@@ -172,58 +134,28 @@ export default function DashboardPage() {
         </div>
 
         <div className="md:col-span-2 space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold mb-4 flex items-center text-destructive">
-              <AlertCircle className="mr-2 h-6 w-6" /> New Order Alerts
-            </h2>
-            {isAvailabilityLoading ? (
-                 <div className="flex justify-center items-center p-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="ml-2">Checking availability...</p>
-                 </div>
-            ) : availabilityStatus === 'offline' ? (
-              <div className="flex flex-col items-center justify-center p-4 text-center bg-muted rounded-lg">
-                <Info className="h-10 w-10 text-primary mb-2" />
-                <p className="font-semibold text-lg">You are currently offline.</p>
-                <p className="text-muted-foreground">Go online using the toggle to start receiving new order alerts.</p>
-              </div>
-            ) : loadingNew ? (
-              <div className="flex justify-center items-center p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="ml-2">Loading new orders...</p>
-              </div>
-            ) : newOrders.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {newOrders.map((order) => (
-                  <OrderCard key={order.id} order={order} type="new" currentUserId={currentUser?.uid} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No new orders at the moment. You're all caught up!</p>
-            )}
-          </div>
-
-          <Separator />
-
-          <div>
-            <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
-              <PackageCheck className="mr-2 h-6 w-6" /> Active Orders
-            </h2>
-            {loadingActive ? (
-              <div className="flex justify-center items-center p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                 <p className="ml-2">Loading active orders...</p>
-              </div>
-            ) : activeOrders.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {activeOrders.map((order) => (
-                  <OrderCard key={order.id} order={order} type="active" />
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">You have no active orders.</p>
-            )}
-          </div>
+          <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
+            <PackageCheck className="mr-2 h-6 w-6" /> Active Orders
+          </h2>
+          {isAvailabilityLoading ? (
+            <div className="flex justify-center items-center p-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="ml-2">Loading...</p>
+            </div>
+          ) : loadingActive ? (
+            <div className="flex justify-center items-center p-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-2">Loading active orders...</p>
+            </div>
+          ) : activeOrders.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {activeOrders.map((order) => (
+                <OrderCard key={order.id} order={order} type="active" />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">You have no active orders. Go online to be ready for new assignments!</p>
+          )}
         </div>
       </div>
     </div>
