@@ -26,6 +26,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   if (dropOffLocationString.endsWith(',')) dropOffLocationString = dropOffLocationString.slice(0, -1).trim();
   if (dropOffLocationString === ',' || !dropOffLocationString) dropOffLocationString = "N/A";
 
+  // Use top-level 'name' from the order document as the primary source for customer name.
   let customerName = data.name || data.customerName || "Customer";
   if (!customerName && data.userId) {
     try {
@@ -38,26 +39,27 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     }
   }
 
+  // Use deliveryCharge for earnings.
   const estimatedEarnings = data.deliveryCharge ?? 0;
 
   return {
     id: docSnap.id,
     customerName: customerName,
-    pickupLocation: data.pickupLocation || "GrocerMart", // Default pickup location
+    pickupLocation: "GrocerMart", // Default pickup location
     dropOffLocation: dropOffLocationString,
     items: items,
     orderStatus: data.orderStatus || "Placed",
     estimatedEarnings: estimatedEarnings,
     deliveryCharge: data.deliveryCharge,
-    total: data.total,
-    estimatedTime: data.estimatedTime || 30, 
+    total: data.totalAmount, // Use totalAmount from the provided structure
+    estimatedTime: 30, // Default estimated time
     deliveryInstructions: data.deliveryInstructions,
     customerContact: data.phoneNumber || address.phoneNumber,
     deliveryPartnerId: data.deliveryPartnerId,
     completedAt: data.completedAt,
     noContactDelivery: data.noContactDelivery ?? false,
     proofImageURL: data.proofImageURL,
-    accessibleTo: data.accessibleTo || [],
     userId: data.userId,
+    accessibleTo: [], // Kept for type consistency, but may not be used by rules
   };
 };
