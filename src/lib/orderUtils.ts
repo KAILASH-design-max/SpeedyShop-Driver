@@ -27,7 +27,8 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   if (dropOffLocationString === ',' || !dropOffLocationString) dropOffLocationString = "N/A";
 
   // Use top-level 'name' from the order document as the primary source for customer name.
-  let customerName = data.name || data.customerName || "Customer";
+  // The 'name' inside the address object is also a fallback.
+  let customerName = data.name || address.name || "Customer";
   if (!customerName && data.userId) {
     try {
       const userDoc = await getDoc(doc(db, "users", data.userId));
@@ -56,7 +57,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     deliveryInstructions: data.deliveryInstructions,
     customerContact: data.phoneNumber || address.phoneNumber,
     deliveryPartnerId: data.deliveryPartnerId,
-    completedAt: data.completedAt,
+    completedAt: data.completedAt || data.orderDate,
     noContactDelivery: data.noContactDelivery ?? false,
     proofImageURL: data.proofImageURL,
     userId: data.userId,
