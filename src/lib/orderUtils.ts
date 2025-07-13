@@ -26,8 +26,8 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   if (dropOffLocationString.endsWith(',')) dropOffLocationString = dropOffLocationString.slice(0, -1).trim();
   if (dropOffLocationString === ',' || !dropOffLocationString) dropOffLocationString = "N/A";
 
-  let customerName = data.customerName || "Customer";
-  if (!data.customerName && data.userId) {
+  let customerName = data.name || data.customerName || "Customer";
+  if (!customerName && data.userId) {
     try {
       const userDoc = await getDoc(doc(db, "users", data.userId));
       if (userDoc.exists()) {
@@ -38,12 +38,12 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     }
   }
 
-  const estimatedEarnings = data.estimatedEarnings ?? data.deliveryCharge ?? 0;
+  const estimatedEarnings = data.deliveryCharge ?? 0;
 
   return {
     id: docSnap.id,
     customerName: customerName,
-    pickupLocation: data.pickupLocation || "Restaurant/Store Address", 
+    pickupLocation: data.pickupLocation || "GrocerMart", // Default pickup location
     dropOffLocation: dropOffLocationString,
     items: items,
     orderStatus: data.orderStatus || "Placed",
