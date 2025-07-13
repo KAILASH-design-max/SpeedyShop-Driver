@@ -113,10 +113,7 @@ export default function DashboardPage() {
       setLoadingNew(false);
     }, (error: any) => {
       console.error("Error fetching new orders:", error);
-       if (error.code === 'permission-denied') {
-        // This is expected if rules prevent querying all new orders.
-        // Silently handle this by showing "no new orders".
-      } else {
+       if (error.code !== 'permission-denied') {
         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new orders." });
       }
       setNewOrders([]);
