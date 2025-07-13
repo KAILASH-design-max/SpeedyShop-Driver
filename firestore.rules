@@ -4,70 +4,84 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is authenticated
+    // HELPER FUNCTIONS
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Helper function to check if the user is the owner of the document
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Rules for the 'users' collection (delivery partner profiles)
-    // A user can read and write to their own document.
+    // --- USER & PROFILE DATA ---
+    // Users can read and write to their own user document.
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
     
-    // Rules for user-specific subcollections like monthlyEarnings
-    match /users/{userId}/{subcollection}/{docId} {
-        allow read, write: if isOwner(userId);
-    }
-
-    // Rules for the 'orders' collection
-    match /orders/{orderId} {
-      // READ: An order can be read by the assigned delivery partner OR the customer.
-      allow read: if isAuthenticated() && 
-                    (resource.data.deliveryPartnerId == request.auth.uid || resource.data.userId == request.auth.uid);
-
-      // UPDATE: 
-      // 1. An unassigned order can be accepted by a driver.
-      // 2. An assigned order can be updated by that specific driver.
-      allow update: if isAuthenticated() &&
-                     ((request.resource.data.deliveryPartnerId == request.auth.uid && resource.data.deliveryPartnerId == null) || 
-                      (resource.data.deliveryPartnerId == request.auth.uid));
-
-      // LIST:
-      // 1. A driver can query for their own active orders.
-      // 2. Any authenticated driver can query for new, unassigned orders.
-      allow list: if isAuthenticated() && 
-                   ((request.query.where.deliveryPartnerId == request.auth.uid) || 
-                    (request.query.where.deliveryPartnerId == null && request.query.where.orderStatus == 'Placed'));
-    }
-
-    // Rules for chat functionality
-    match /chatThreads/{threadId} {
-      // Allow read/write if the user is a participant in the chat
-      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
-    }
-    match /chatThreads/{threadId}/messages/{messageId} {
-       // Allow read/write to messages subcollection if user is participant in parent thread
-      allow read, write: if isAuthenticated() && get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
-    }
-
-    // Rules for support chat
-     match /supportChats/{chatId} {
-        allow read, create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || resource.data.userId == request.auth.uid);
-     }
-     match /supportChats/{chatId}/messages/{messageId} {
-        allow read, create: if isAuthenticated() && get(/databases/$(database)/documents/supportChats/$(chatId)).data.userId == request.auth.uid;
-     }
-
-    // Rules for login/logout sessions
+    // Users can manage their own session documents.
     match /sessions/{sessionId} {
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read, create: if isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId);
+    }
+
+    // --- ORDERS COLLECTION ---
+    match /orders/{orderId} {
+      // READ:
+      // A user can read an order if they are the customer who placed it
+      // OR the delivery partner assigned to it.
+      allow read: if isAuthenticated() && 
+                   (resource.data.userId == request.auth.uid || 
+                    resource.data.deliveryPartnerId == request.auth.uid);
+
+      // UPDATE:
+      // - A driver can accept an unassigned order.
+      // - An assigned driver can update the order status.
+      allow update: if isAuthenticated() && 
+                     (
+                       (request.resource.data.deliveryPartnerId == request.auth.uid && resource.data.deliveryPartnerId == null) || // Accepting order
+                       (resource.data.deliveryPartnerId == request.auth.uid) // Updating status
+                     );
+      
+      // LIST (QUERIES):
+      // This is the most critical part for the dashboard functionality.
+      allow list: if isAuthenticated() &&
+                   (
+                     // Rule for querying NEW, unassigned orders
+                     (request.query.where.deliveryPartnerId == null && request.query.where.orderStatus == 'Placed')
+                     ||
+                     // Rule for querying ACTIVE orders assigned to the current driver
+                     (request.query.where.deliveryPartnerId == request.auth.uid && request.query.where.orderStatus in ['accepted', 'picked-up', 'out-for-delivery'])
+                   );
+      
+      // No one can create orders from the driver app. This is handled by a different system.
+      allow create: if false;
+      // No one can delete orders.
+      allow delete: if false;
+    }
+
+    // --- CHAT & SUPPORT ---
+    match /chatThreads/{threadId} {
+      // Participants of a chat can read/update it (for last message, etc.)
+      allow read, update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+
+      match /messages/{messageId} {
+        // Participants of a chat can read messages and create new ones.
+        allow read, create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds;
+      }
+    }
+    
+    match /supportChats/{sessionId} {
+        allow read, create: if isOwner(request.resource.data.userId);
+
+        match /messages/{messageId} {
+            allow read, create: if isOwner(get(/databases/$(database)/documents/supportChats/$(sessionId)).data.userId);
+        }
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
