@@ -71,15 +71,27 @@ export default function OrderPage() {
       }
   };
 
-  const handleDeliveryConfirmed = async () => {
+  const handleDeliveryConfirmed = async (proof?: {type: 'photo' | 'signature', value: string}) => {
     if (order) {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { 
-            orderStatus: "delivered",
-            completedAt: serverTimestamp() 
-        }); 
+        
+        const updateData: any = {
+          orderStatus: "delivered",
+          completedAt: serverTimestamp(),
+        };
+
+        if (proof?.type === 'photo') {
+            updateData.proofImageURL = proof.value;
+        }
+        // A signature could also be saved if needed in the future
+        // if (proof?.type === 'signature') {
+        //     updateData.signature = proof.value;
+        // }
+
+        await updateDoc(orderRef, updateData); 
+        
         toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
         router.push("/dashboard");
       } catch (error) {
@@ -127,7 +139,7 @@ export default function OrderPage() {
         </div>
 
         {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
-          <DeliveryConfirmation orderId={order.id} onConfirm={handleDeliveryConfirmed} />
+          <DeliveryConfirmation order={order} onConfirm={handleDeliveryConfirmed} isUpdating={isUpdating} />
         )}
       </div>
 
@@ -136,6 +148,14 @@ export default function OrderPage() {
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />
             <p className="text-xl font-semibold text-green-800">This order has been successfully delivered!</p>
+            {order.proofImageURL && (
+                <div className="mt-4">
+                    <p className="text-sm text-green-700">Proof of delivery:</p>
+                    <a href={order.proofImageURL} target="_blank" rel="noopener noreferrer">
+                         <img src={order.proofImageURL} alt="Proof of delivery" className="rounded-md max-h-48 w-auto object-contain border mx-auto mt-2 shadow-sm" />
+                    </a>
+                </div>
+            )}
           </CardContent>
         </Card>
       )}

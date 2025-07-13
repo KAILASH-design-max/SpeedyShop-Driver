@@ -25,6 +25,8 @@ export interface Order {
   customerContact?: string; 
   deliveryPartnerId?: string; 
   completedAt?: any;
+  noContactDelivery?: boolean; // Flag for no-contact delivery
+  proofImageURL?: string; // URL for the proof of delivery image
 }
 
 export interface EarningSummary {
@@ -121,7 +123,7 @@ export interface ChatThread {
 export interface Session {
   id: string;
   userId: string;
-  loginTimestamp: any; // Firestore ServerTimestamp
+  loginTimestamp: any; // Firestore Timestamp
   logoutTimestamp?: any | null;
   date: string; // YYYY-MM-DD
 }

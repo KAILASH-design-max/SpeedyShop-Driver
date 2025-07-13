@@ -4,7 +4,7 @@
 import type { Order } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, MapPin, Package, Phone, Info, Check, Store } from "lucide-react";
+import { User, MapPin, Package, Phone, Info, Check, Store, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OrderDetailsDisplayProps {
@@ -46,6 +46,14 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-6 pt-0">
+        {order.noContactDelivery && (
+          <div className="p-3 border rounded-lg bg-yellow-50 border-yellow-200 text-yellow-800 flex items-center gap-3">
+              <ShieldAlert className="h-6 w-6 text-yellow-600" />
+              <div className="font-semibold">
+                This is a no-contact delivery. Please follow the customer's instructions.
+              </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Customer Details Card */}
             <div className="p-4 border rounded-lg bg-muted/30">
