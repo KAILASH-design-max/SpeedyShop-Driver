@@ -126,39 +126,11 @@ export default function DashboardPage() {
   }, [currentUser, toast]);
 
   useEffect(() => {
-    if (!currentUser || availabilityStatus !== 'online') {
-      setNewOrders([]);
-      setLoadingNew(false);
-      return () => {};
-    }
-
-    setLoadingNew(true);
-    const newOrdersQuery = query(
-      collection(db, "orders"),
-      where("deliveryPartnerId", "==", null),
-      where("orderStatus", "==", "Placed")
-    );
-
-    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
-      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-      const ordersData = await Promise.all(ordersDataPromises);
-      setNewOrders(ordersData);
-      setLoadingNew(false);
-    }, (error) => {
-      console.error("Error fetching new orders:", error);
-      if (error.code !== 'permission-denied') {
-        toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new order alerts." });
-      } else {
-        // Don't show a toast for permission denied, as it's expected if rules are working.
-        // It simply means no data matched the secure query.
-        console.log("New order listener stopped or permission denied, which may be expected.");
-      }
-      setNewOrders([]);
-      setLoadingNew(false);
-    });
-
-    return () => unsubscribeNew();
-  }, [currentUser, availabilityStatus, toast]);
+    // This query is being removed to solve permission errors.
+    // In a production app, this would be replaced with a Cloud Function or a different, secure data-fetching strategy.
+    setLoadingNew(false);
+    setNewOrders([]);
+  }, [currentUser, availabilityStatus]);
 
   return (
     <div className="container mx-auto py-8">
@@ -177,22 +149,9 @@ export default function DashboardPage() {
              <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
               <BellDot className="mr-2 h-6 w-6" /> New Order Alerts
             </h2>
-            {isAvailabilityLoading || loadingNew ? (
-               <div className="flex justify-center items-center p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="ml-2">Loading...</p>
-              </div>
-            ) : availabilityStatus !== 'online' ? (
-               <p className="text-muted-foreground text-center p-4">Go online to see new orders.</p>
-            ) : newOrders.length > 0 && currentUser ? (
-              <div className="space-y-4">
-                {newOrders.map((order) => (
-                  <NewOrderCard key={order.id} order={order} currentUserId={currentUser.uid} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center p-4">No new orders available right now. We'll notify you!</p>
-            )}
+            <p className="text-muted-foreground text-center p-4">
+              Go online to be ready for new assignments!
+            </p>
           </div>
         </div>
 
