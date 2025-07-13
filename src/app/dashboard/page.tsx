@@ -115,7 +115,7 @@ export default function DashboardPage() {
         const ordersData = await Promise.all(ordersDataPromises);
         setNewOrders(ordersData);
         setLoadingNew(false);
-      }, (error) => {
+      }, (error: any) => {
         console.error("Error fetching new orders:", error);
         // Do not show a toast for permission denied, as it's expected if there are no open orders or rules restrict access.
         if (error.code !== 'permission-denied') {
@@ -149,9 +149,13 @@ export default function DashboardPage() {
       const ordersData = await Promise.all(ordersDataPromises);
       setActiveOrders(ordersData);
       setLoadingActive(false);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Error fetching active orders:", error);
-      toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders." });
+      // Do not show a toast for permission denied, as it's expected if there are no open orders or rules restrict access.
+      if (error.code !== 'permission-denied') {
+        toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders." });
+      }
+      setActiveOrders([]); // Clear orders on error
       setLoadingActive(false);
     });
 
