@@ -57,7 +57,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     deliveryInstructions: data.deliveryInstructions,
     customerContact: data.phoneNumber || address.phoneNumber,
     deliveryPartnerId: data.deliveryPartnerId,
-    completedAt: data.completedAt || data.orderDate,
+    completedAt: data.completedAt || data.orderDate, // Fallback to orderDate if completedAt is missing
     noContactDelivery: data.noContactDelivery ?? false,
     proofImageURL: data.proofImageURL,
     userId: data.userId,

@@ -31,12 +31,13 @@ import {
   orderBy,
   doc,
   getDoc,
+  Timestamp,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Order, Profile, DeliveryRating } from "@/types";
 import { Loader2, Calendar as CalendarIcon, Package } from "lucide-react";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/components/earnings/PayoutHistoryTable";
 
@@ -47,7 +48,8 @@ interface RecentDeliveriesProps {
 
 export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated }: RecentDeliveriesProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [deliveries, setDeliveries] = useState<Order[]>([]);
+  const [allDeliveries, setAllDeliveries] = useState<Order[]>([]);
+  const [filteredDeliveries, setFilteredDeliveries] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
@@ -63,29 +65,20 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
     return () => unsubscribeAuth();
   }, []);
 
+  // Effect to fetch ALL deliveries for the user
   useEffect(() => {
-    if (!currentUser || !selectedDate) {
+    if (!currentUser) {
       setLoading(false);
-      setDeliveries([]);
-      onDeliveriesFetched([]);
-      onTransactionsCalculated([]);
+      setAllDeliveries([]);
       return;
     }
 
     setLoading(true);
 
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
     const deliveriesQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
       where("orderStatus", "in", ["delivered", "cancelled"]),
-      where("completedAt", ">=", startOfDay),
-      where("completedAt", "<=", endOfDay),
       orderBy("completedAt", "desc")
     );
 
@@ -99,18 +92,55 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
           );
           fetchedDeliveries = await Promise.all(ordersDataPromises);
         }
-        setDeliveries(fetchedDeliveries);
-        onDeliveriesFetched(fetchedDeliveries);
-        
-        // Now calculate transactions
-        const deliveryTransactions: Transaction[] = fetchedDeliveries.map(d => ({
+        setAllDeliveries(fetchedDeliveries);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching delivery history:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Effect to filter deliveries and calculate transactions when date or allDeliveries change
+  useEffect(() => {
+    if (loading || !selectedDate) {
+        setFilteredDeliveries([]);
+        onDeliveriesFetched([]);
+        onTransactionsCalculated([]);
+        return
+    };
+
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const deliveriesForDate = allDeliveries.filter(delivery => {
+        if (!delivery.completedAt?.toDate) return false;
+        const completedDate = delivery.completedAt.toDate();
+        return isSameDay(completedDate, selectedDate);
+    });
+
+    setFilteredDeliveries(deliveriesForDate);
+    onDeliveriesFetched(deliveriesForDate);
+
+    const calculateTransactions = async () => {
+        const deliveryTransactions: Transaction[] = deliveriesForDate.map(d => ({
             title: `Delivery Pay (Order #${d.id.substring(0,6)})`,
             transactionId: d.id,
             type: 'Delivery',
             amount: d.estimatedEarnings
         }));
+
+        if (!currentUser) {
+            onTransactionsCalculated(deliveryTransactions);
+            return;
+        }
         
-        // Fetch tips for the same day
         const userDocRef = doc(db, "users", currentUser.uid);
         const userDocSnap = await getDoc(userDocRef);
         let tipTransactions: Transaction[] = [];
@@ -121,7 +151,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             ratings.forEach((rating: DeliveryRating) => {
                 if(rating.tip && rating.tip > 0 && rating.ratedAt) {
                     const ratedDate = rating.ratedAt.toDate();
-                    if (ratedDate >= startOfDay && ratedDate <= endOfDay) {
+                    if (isSameDay(ratedDate, selectedDate)) {
                          tipTransactions.push({
                             title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
                             transactionId: `${rating.orderId}-tip`,
@@ -135,17 +165,12 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
         
         const allTransactions = [...deliveryTransactions, ...tipTransactions];
         onTransactionsCalculated(allTransactions);
+    };
 
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching delivery history:", error);
-        setLoading(false);
-      }
-    );
+    calculateTransactions();
 
-    return () => unsubscribe();
-  }, [currentUser, selectedDate, onDeliveriesFetched, onTransactionsCalculated]);
+  }, [selectedDate, allDeliveries, currentUser, loading, onDeliveriesFetched, onTransactionsCalculated]);
+
 
   const formatTimestamp = (timestamp: any): string => {
     if (!timestamp || !timestamp.toDate) {
@@ -211,7 +236,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="ml-2">Loading delivery history...</p>
             </div>
-            ) : deliveries.length === 0 ? (
+            ) : filteredDeliveries.length === 0 ? (
             <div className="text-center text-muted-foreground p-8 border rounded-lg">
                 <p>No deliveries found for this date.</p>
             </div>
@@ -228,7 +253,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {deliveries.map((delivery) => (
+                    {filteredDeliveries.map((delivery) => (
                     <TableRow key={delivery.id}>
                         <TableCell className="font-medium">
                         #{delivery.id.substring(0, 6)}
