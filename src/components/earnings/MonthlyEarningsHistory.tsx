@@ -9,13 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, Wallet, Loader2, Star, Gift, ShoppingBag, TrendingUp } from "lucide-react";
+import { Calendar, Wallet, Loader2, Star, Gift, ShoppingBag, TrendingUp, Package } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { collection, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
+import { format, getWeekOfMonth, startOfMonth } from 'date-fns';
 import type { User } from 'firebase/auth';
-import type { MonthlyEarning } from '@/types';
+import type { MonthlyEarning, Order } from '@/types';
+import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 
 // Helper function to format the month string
 const formatMonth = (monthStr: string) => {
@@ -72,32 +73,59 @@ export function MonthlyEarningsHistory() {
 
     setLoading(true);
     
-    // As per your request, this now queries the user-specific subcollection.
-    // Note: This collection must be populated by a backend process (e.g., a Cloud Function).
-    const historyQuery = query(
-        collection(db, `users/${currentUser.uid}/monthlyEarnings`),
-        orderBy("month", "desc")
+    const deliveriesQuery = query(
+      collection(db, "orders"),
+      where("deliveryPartnerId", "==", currentUser.uid),
+      where("orderStatus", "==", "delivered")
     );
 
-    const unsubscribe = onSnapshot(historyQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(deliveriesQuery, async (snapshot) => {
         if (snapshot.empty) {
             setMonthlyEarnings([]);
             setLoading(false);
             return;
         }
 
-        const earningsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            month: doc.data().month,
-            total: doc.data().total,
-            breakdown: doc.data().breakdown || {},
-            createdAt: doc.data().createdAt,
-        } as MonthlyEarning));
+        const ordersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+        const allOrders = await Promise.all(ordersPromises);
 
-        setMonthlyEarnings(earningsData);
+        const earningsByMonth: { [key: string]: MonthlyEarning } = {};
+
+        allOrders.forEach(order => {
+            if (!order.completedAt?.toDate) return;
+
+            const completedDate = order.completedAt.toDate();
+            const monthKey = format(completedDate, 'yyyy-MM');
+            const earning = order.estimatedEarnings || 0;
+
+            if (!earningsByMonth[monthKey]) {
+                earningsByMonth[monthKey] = {
+                    id: monthKey,
+                    month: monthKey,
+                    total: 0,
+                    breakdown: {},
+                };
+            }
+
+            // Add to total for the month
+            earningsByMonth[monthKey].total += earning;
+
+            // Add to weekly breakdown
+            const weekOfMonth = getWeekOfMonth(completedDate, { weekStartsOn: 1 });
+            const weekKey = `week${weekOfMonth}`;
+            
+            if (!earningsByMonth[monthKey].breakdown[weekKey]) {
+                earningsByMonth[monthKey].breakdown[weekKey] = 0;
+            }
+            earningsByMonth[monthKey].breakdown[weekKey] += earning;
+        });
+
+        const sortedEarnings = Object.values(earningsByMonth).sort((a, b) => b.month.localeCompare(a.month));
+
+        setMonthlyEarnings(sortedEarnings);
         setLoading(false);
     }, (error) => {
-        console.error("Error fetching monthly earnings history:", error);
+        console.error("Error fetching delivery history for earnings:", error);
         setLoading(false);
     });
 
@@ -124,8 +152,9 @@ export function MonthlyEarningsHistory() {
              </div>
         ) : monthlyEarnings.length === 0 ? (
              <div className="text-center text-muted-foreground p-8">
-                <p>No monthly earnings history found.</p>
-                <p className="text-xs mt-2">(This data is typically calculated and stored at the end of each month by a backend process)</p>
+                <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <p className="font-semibold">No earnings history found.</p>
+                <p className="text-sm mt-1">Your earnings will appear here after you complete deliveries.</p>
              </div>
         ) : (
             <Accordion type="single" collapsible className="w-full">
@@ -142,9 +171,9 @@ export function MonthlyEarningsHistory() {
                         </AccordionTrigger>
                         <AccordionContent>
                            <div className="p-4 bg-muted/30 rounded-md">
-                             <h4 className="font-semibold mb-3 text-sm">Earnings Breakdown:</h4>
+                             <h4 className="font-semibold mb-3 text-sm">Weekly Breakdown:</h4>
                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {Object.entries(item.breakdown).map(([key, value]) => {
+                                {Object.entries(item.breakdown).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)).map(([key, value]) => {
                                    const Icon = getBreakdownItemIcon(key);
                                    return (
                                         <div key={key} className="flex items-center">
