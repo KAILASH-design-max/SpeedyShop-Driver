@@ -28,6 +28,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import imageCompression from 'browser-image-compression';
 
 
 const profileFormSchema = z.object({
@@ -108,9 +109,26 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
       }
       setIsUploadingPicture(true);
       setPictureUploadProgress(0);
-      const pictureStorageRef = storageRef(storage, `profilePictures/${profile.uid}/${file.name}`);
+
+      let fileToUpload = file;
+       if (file.type.startsWith('image/')) {
+        try {
+            const options = {
+                maxSizeMB: 0.5, // Compress to max 500KB
+                maxWidthOrHeight: 1024,
+                useWebWorker: true,
+            }
+            fileToUpload = await imageCompression(file, options);
+             toast({ title: "Image Compressed", description: `New size: ${(fileToUpload.size / 1024).toFixed(2)} KB`});
+        } catch (error) {
+            console.error('Image compression error:', error);
+            toast({ variant: "destructive", title: "Compression Failed", description: "Could not compress image, uploading original." });
+        }
+      }
+
+      const pictureStorageRef = storageRef(storage, `profilePictures/${profile.uid}/${fileToUpload.name}`);
       
-      const uploadTask = uploadBytesResumable(pictureStorageRef, file);
+      const uploadTask = uploadBytesResumable(pictureStorageRef, fileToUpload);
 
       uploadTask.on('state_changed',
         (snapshot: UploadTaskSnapshot) => {
@@ -126,9 +144,9 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
         async () => {
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            setProfilePicturePreview(downloadURL);
+            // No need to set preview here, useEffect will handle it when profile updates
             await onUpdate({ profilePictureUrl: downloadURL });
-            toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
+            toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved.", className: "bg-green-500 text-white" });
           } catch (error) {
             console.error("Error finalizing profile picture upload:", error);
             toast({ variant: "destructive", title: "Update Failed", description: "Could not save new profile picture." });
@@ -157,7 +175,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
         <div className="flex flex-col sm:flex-row items-center gap-6 mb-4">
             <div className="relative">
               <Avatar className="h-24 w-24 border-4 border-primary">
-                  <AvatarImage src={profilePicturePreview || "https://placehold.co/150x150.png"} alt={profile.name} data-ai-hint="person face" />
+                  <AvatarImage src={profilePicturePreview || undefined} alt={profile.name} data-ai-hint="person face" />
                   <AvatarFallback>{profile.name?.substring(0,2).toUpperCase() || "JD"}</AvatarFallback>
               </Avatar>
               {isUploadingPicture && (
