@@ -68,6 +68,8 @@ export interface DeliveryRating {
   orderId: string;
   ratedAt: any; // Firestore Timestamp
   rating: number;
+  comment?: string;
+  tip?: number;
 }
 
 export interface Profile {

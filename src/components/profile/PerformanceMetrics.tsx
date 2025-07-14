@@ -18,22 +18,9 @@ interface PerformanceMetricsProps {
 interface FeedbackItem {
     name: string;
     rating: number;
-    comment: string;
+    comment?: string;
     timestamp: any;
 }
-
-const mockPositiveComments = [
-    "Delivered safely and on time. Very professional.",
-    "Quick delivery and polite!",
-    "Excellent service, thank you!",
-    "Very fast and followed instructions perfectly.",
-];
-
-const mockNeutralComments = [
-    "Good service.",
-    "Delivery was okay.",
-    "No issues with the delivery.",
-];
 
 const improvementTips = [
     "Be polite and professional with customers.",
@@ -93,7 +80,13 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
       
       setLoadingFeedback(true);
       
+      // Prioritize ratings with comments, then sort by date
       const sortedRatings = [...validRatings].sort((a, b) => {
+        const aHasComment = !!a.comment;
+        const bHasComment = !!b.comment;
+        if (aHasComment !== bHasComment) {
+          return aHasComment ? -1 : 1;
+        }
         if (!a.ratedAt || !b.ratedAt) return 0;
         return b.ratedAt.seconds - a.ratedAt.seconds;
       });
@@ -111,17 +104,10 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
              customerName = orderData.customerName || "A Customer";
           }
           
-          let comment: string;
-          if (rating.rating >= 4) {
-              comment = mockPositiveComments[Math.floor(Math.random() * mockPositiveComments.length)];
-          } else {
-              comment = mockNeutralComments[Math.floor(Math.random() * mockNeutralComments.length)];
-          }
-
           return {
             name: customerName,
             rating: rating.rating,
-            comment: comment,
+            comment: rating.comment, // Use actual comment from data
             timestamp: rating.ratedAt,
           };
         });
@@ -191,7 +177,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
 
         {/* Recent Customer Feedback */}
         <div>
-            <h3 className="text-lg font-semibold mb-3">Customer Feedback</h3>
+            <h3 className="text-lg font-semibold mb-3">Recent Customer Feedback</h3>
             {loadingFeedback ? (
               <div className="flex justify-center items-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -210,7 +196,11 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
                                         <div className="flex">{renderStars(feedback.rating)}</div>
                                     </div>
                                 </div>
-                                <p className="text-sm text-foreground mt-1 italic">"{feedback.comment}"</p>
+                                {feedback.comment ? (
+                                    <p className="text-sm text-foreground mt-1 italic">"{feedback.comment}"</p>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground mt-1 italic">No comment left.</p>
+                                )}
                                 <p className="text-xs text-muted-foreground mt-2">{formatTimestamp(feedback.timestamp)}</p>
                             </div>
                         </div>
