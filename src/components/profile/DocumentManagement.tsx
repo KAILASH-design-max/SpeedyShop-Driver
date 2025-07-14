@@ -97,10 +97,13 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
           const documentData: DocumentMetadata = {
             fileName: fileToUpload.name,
             url: downloadURL,
+            uploadedAt: true, // Placeholder for serverTimestamp
           };
 
           const updatePayload = { 
-            [`documents.${docKey}`]: documentData,
+            documents: {
+              [docKey]: documentData,
+            }
           };
 
           await onUpdate(updatePayload);

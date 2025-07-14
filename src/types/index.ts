@@ -49,6 +49,7 @@ export interface Payout {
 export interface DocumentMetadata {
   fileName: string;
   url: string;
+  uploadedAt?: any; // Should be Firestore ServerTimestamp on write
 }
 
 export type ProfileDocuments = {
