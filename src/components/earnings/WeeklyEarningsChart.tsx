@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ChartTooltip, ChartTooltipContent, ChartContainer, ChartConfig } from '@/components/ui/chart';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Timestamp, doc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import type { Profile } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
 
@@ -41,10 +42,19 @@ export function WeeklyEarningsChart() {
     setIsLoading(true);
 
     const today = new Date();
-    // Setting Monday as the first day of the week
     const weekStart = startOfWeek(today, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
 
+    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+    const dailyEarnings: { [key: string]: number } = {};
+    weekDays.forEach(day => {
+        const dayKey = format(day, 'E'); // Mon, Tue, etc.
+        dailyEarnings[dayKey] = 0;
+    });
+
+    const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    // Listener for deliveries
     const weekDeliveriesQuery = query(
         collection(db, "orders"),
         where("deliveryPartnerId", "==", currentUser.uid),
@@ -52,16 +62,7 @@ export function WeeklyEarningsChart() {
         where("completedAt", ">=", weekStart),
         where("completedAt", "<=", weekEnd)
     );
-
-    const unsubscribe = onSnapshot(weekDeliveriesQuery, (snapshot) => {
-        const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
-        const dailyEarnings: { [key: string]: number } = {};
-
-        weekDays.forEach(day => {
-            const dayKey = format(day, 'E'); // Mon, Tue, etc.
-            dailyEarnings[dayKey] = 0;
-        });
-
+    const unsubscribeDeliveries = onSnapshot(weekDeliveriesQuery, (snapshot) => {
         snapshot.forEach(doc => {
             const orderData = doc.data();
             const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
@@ -74,24 +75,44 @@ export function WeeklyEarningsChart() {
                 }
             }
         });
+        updateChartData();
+    });
 
+    // Listener for user profile (tips)
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const profile = docSnap.data() as Profile;
+            profile.deliveryRatings?.forEach(rating => {
+                if (rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
+                    const ratedDate = rating.ratedAt.toDate();
+                    if (ratedDate >= weekStart && ratedDate <= weekEnd) {
+                        const dayKey = format(ratedDate, 'E');
+                        if (dailyEarnings.hasOwnProperty(dayKey)) {
+                            dailyEarnings[dayKey] += rating.tip;
+                        }
+                    }
+                }
+            });
+        }
+        updateChartData();
+    });
+
+    const updateChartData = () => {
         const formattedChartData = Object.entries(dailyEarnings).map(([day, earnings]) => ({
             day,
             earnings,
         }));
-        
-        // Ensure the order is Mon, Tue, Wed...
-        const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         formattedChartData.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
-        
         setChartData(formattedChartData);
         setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching weekly earnings for chart:", error);
-        setIsLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
+
+    return () => {
+        unsubscribeDeliveries();
+        unsubscribeProfile();
+    };
   }, [currentUser]);
 
   const maxEarning = chartData.length > 0 ? Math.max(...chartData.map(d => d.earnings)) : 0;
@@ -101,7 +122,7 @@ export function WeeklyEarningsChart() {
     <Card className="shadow-xl">
       <CardHeader>
         <CardTitle>Weekly Earnings</CardTitle>
-        <CardDescription>Your earnings for the current week.</CardDescription>
+        <CardDescription>Your earnings for the current week, including tips.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

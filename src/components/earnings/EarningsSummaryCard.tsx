@@ -6,8 +6,9 @@ import { Calendar, PiggyBank, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Timestamp, doc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import type { Profile } from "@/types";
 
 export function EarningsSummaryCard() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -37,36 +38,72 @@ export function EarningsSummaryCard() {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
+        let totalLifetimeDeliveryEarnings = 0;
+        let totalMonthDeliveryEarnings = 0;
+
+        // Listener for all deliveries
         const allDeliveriesQuery = query(
             collection(db, "orders"),
             where("deliveryPartnerId", "==", currentUser.uid),
             where("orderStatus", "==", "delivered")
         );
         
-        const unsubscribe = onSnapshot(allDeliveriesQuery, (snapshot) => {
-            let totalLifetime = 0;
-            let totalMonth = 0;
+        const unsubscribeDeliveries = onSnapshot(allDeliveriesQuery, (snapshot) => {
+            totalLifetimeDeliveryEarnings = 0;
+            totalMonthDeliveryEarnings = 0;
 
             snapshot.forEach(doc => {
                 const orderData = doc.data();
                 const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
-                totalLifetime += earning;
+                totalLifetimeDeliveryEarnings += earning;
                 
                 const completedAtTimestamp = orderData.completedAt as Timestamp;
                 if (completedAtTimestamp && completedAtTimestamp.toDate() >= startOfMonth) {
-                    totalMonth += earning;
+                    totalMonthDeliveryEarnings += earning;
                 }
             });
-
-            setMonthlyEarnings(totalMonth);
-            setLifetimeEarnings(totalLifetime);
-            setIsLoading(false);
+            // Initially set earnings without tips
+            setLifetimeEarnings(totalLifetimeDeliveryEarnings);
+            setMonthlyEarnings(totalMonthDeliveryEarnings);
         }, (error) => {
             console.error("Error fetching earnings summary:", error);
             setIsLoading(false);
         });
 
-        return () => unsubscribe();
+        // Listener for user profile to get tips
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const profile = docSnap.data() as Profile;
+                const ratings = profile.deliveryRatings || [];
+
+                let totalLifetimeTips = 0;
+                let totalMonthTips = 0;
+
+                ratings.forEach(rating => {
+                    if (rating.tip && rating.tip > 0) {
+                        totalLifetimeTips += rating.tip;
+                        if (rating.ratedAt?.toDate && rating.ratedAt.toDate() >= startOfMonth) {
+                            totalMonthTips += rating.tip;
+                        }
+                    }
+                });
+
+                // Combine delivery earnings with tips
+                setLifetimeEarnings(totalLifetimeDeliveryEarnings + totalLifetimeTips);
+                setMonthlyEarnings(totalMonthDeliveryEarnings + totalMonthTips);
+            }
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching profile for tips:", error);
+            setIsLoading(false); // still stop loading on error
+        });
+
+
+        return () => {
+            unsubscribeDeliveries();
+            unsubscribeProfile();
+        };
     }, [currentUser]);
 
 
@@ -74,7 +111,7 @@ export function EarningsSummaryCard() {
         {
             title: "This Month’s Earnings",
             amount: isLoading ? null : monthlyEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            description: "As of today",
+            description: "Includes tips",
             icon: Calendar,
             color: "text-green-500",
             href: "/earnings/history",
@@ -83,7 +120,7 @@ export function EarningsSummaryCard() {
         {
             title: "Total Lifetime Earnings",
             amount: isLoading ? null : lifetimeEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            description: "Since joining",
+            description: "Includes tips",
             icon: PiggyBank,
             color: "text-purple-500",
             href: "/orders",

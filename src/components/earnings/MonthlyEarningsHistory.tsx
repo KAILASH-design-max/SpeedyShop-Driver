@@ -12,17 +12,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Calendar, Wallet, Loader2, Star, Gift, ShoppingBag, TrendingUp, Package } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
-import { format, getWeekOfMonth, startOfMonth } from 'date-fns';
+import { collection, query, where, onSnapshot, orderBy, Timestamp, doc } from 'firebase/firestore';
+import { format, getWeekOfMonth, startOfMonth, parse } from 'date-fns';
 import type { User } from 'firebase/auth';
-import type { MonthlyEarning, Order } from '@/types';
+import type { MonthlyEarning, Order, Profile } from '@/types';
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 
 // Helper function to format the month string
 const formatMonth = (monthStr: string) => {
   try {
-    const [year, month] = monthStr.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
+    const date = parse(monthStr, 'yyyy-MM', new Date());
     return format(date, 'MMMM yyyy');
   } catch {
     return monthStr; // Fallback
@@ -35,7 +34,6 @@ const formatCurrency = (amount: number) => {
 
 const breakdownIcons: { [key: string]: React.ElementType } = {
   week: ShoppingBag,
-  bonuses: Gift,
   tips: Star,
 };
 
@@ -73,24 +71,33 @@ export function MonthlyEarningsHistory() {
 
     setLoading(true);
     
-    const deliveriesQuery = query(
-      collection(db, "orders"),
-      where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "==", "delivered")
-    );
-
-    const unsubscribe = onSnapshot(deliveriesQuery, async (snapshot) => {
-        if (snapshot.empty) {
-            setMonthlyEarnings([]);
-            setLoading(false);
-            return;
-        }
-
-        const ordersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+    // Combined data fetching
+    const fetchData = async () => {
+      try {
+        // Fetch all delivered orders
+        const deliveriesQuery = query(
+          collection(db, "orders"),
+          where("deliveryPartnerId", "==", currentUser.uid),
+          where("orderStatus", "==", "delivered")
+        );
+        const deliveriesSnapshot = await new Promise<any>((resolve, reject) => {
+            onSnapshot(deliveriesQuery, resolve, reject);
+        });
+        
+        const ordersPromises = deliveriesSnapshot.docs.map((doc: any) => mapFirestoreDocToOrder(doc));
         const allOrders = await Promise.all(ordersPromises);
 
+        // Fetch user profile for tips
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDocSnap = await new Promise<any>((resolve, reject) => {
+            onSnapshot(userDocRef, resolve, reject);
+        });
+        const profile: Profile | null = userDocSnap.exists() ? userDocSnap.data() as Profile : null;
+        
+        // --- Process Data ---
         const earningsByMonth: { [key: string]: MonthlyEarning } = {};
 
+        // Process delivery earnings
         allOrders.forEach(order => {
             if (!order.completedAt?.toDate) return;
 
@@ -107,10 +114,8 @@ export function MonthlyEarningsHistory() {
                 };
             }
 
-            // Add to total for the month
             earningsByMonth[monthKey].total += earning;
 
-            // Add to weekly breakdown
             const weekOfMonth = getWeekOfMonth(completedDate, { weekStartsOn: 1 });
             const weekKey = `week${weekOfMonth}`;
             
@@ -120,16 +125,41 @@ export function MonthlyEarningsHistory() {
             earningsByMonth[monthKey].breakdown[weekKey] += earning;
         });
 
+        // Process tips
+        if (profile?.deliveryRatings) {
+          profile.deliveryRatings.forEach(rating => {
+            if (rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
+              const ratedDate = rating.ratedAt.toDate();
+              const monthKey = format(ratedDate, 'yyyy-MM');
+              
+              if (earningsByMonth[monthKey]) {
+                earningsByMonth[monthKey].total += rating.tip;
+                if (!earningsByMonth[monthKey].breakdown.tips) {
+                  earningsByMonth[monthKey].breakdown.tips = 0;
+                }
+                earningsByMonth[monthKey].breakdown.tips += rating.tip;
+              }
+            }
+          });
+        }
+        
         const sortedEarnings = Object.values(earningsByMonth).sort((a, b) => b.month.localeCompare(a.month));
 
         setMonthlyEarnings(sortedEarnings);
-        setLoading(false);
-    }, (error) => {
-        console.error("Error fetching delivery history for earnings:", error);
-        setLoading(false);
-    });
+      } catch (error) {
+          console.error("Error fetching earnings history:", error);
+      } finally {
+          setLoading(false);
+      }
+    };
+    
+    fetchData();
 
-    return () => unsubscribe();
+    // The onSnapshot listener is useful for real-time but complex for this combined logic.
+    // A fetch-on-load approach (like in fetchData) is simpler here.
+    // To keep it real-time, you'd set up two separate onSnapshot listeners
+    // and a useEffect to combine their results, which adds complexity.
+
   }, [currentUser]);
 
 
@@ -141,7 +171,7 @@ export function MonthlyEarningsHistory() {
           Monthly Earnings History
         </CardTitle>
         <CardDescription>
-          Track your monthly income trends and compare past performance.
+          Track your monthly income trends and compare past performance. Includes tips.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -171,7 +201,7 @@ export function MonthlyEarningsHistory() {
                         </AccordionTrigger>
                         <AccordionContent>
                            <div className="p-4 bg-muted/30 rounded-md">
-                             <h4 className="font-semibold mb-3 text-sm">Weekly Breakdown:</h4>
+                             <h4 className="font-semibold mb-3 text-sm">Breakdown:</h4>
                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                 {Object.entries(item.breakdown).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)).map(([key, value]) => {
                                    const Icon = getBreakdownItemIcon(key);
