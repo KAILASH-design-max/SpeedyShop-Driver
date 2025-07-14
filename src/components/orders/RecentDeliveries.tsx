@@ -29,15 +29,23 @@ import {
   where,
   onSnapshot,
   orderBy,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
-import type { Order } from "@/types";
+import type { Order, Profile, DeliveryRating } from "@/types";
 import { Loader2, Calendar as CalendarIcon, Package } from "lucide-react";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { Transaction } from "@/components/earnings/PayoutHistoryTable";
 
-export function RecentDeliveries() {
+interface RecentDeliveriesProps {
+    onDeliveriesFetched: (deliveries: Order[]) => void;
+    onTransactionsCalculated: (transactions: Transaction[]) => void;
+}
+
+export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated }: RecentDeliveriesProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [deliveries, setDeliveries] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +62,8 @@ export function RecentDeliveries() {
     if (!currentUser) {
       setLoading(false);
       setDeliveries([]);
+      onDeliveriesFetched([]);
+      onTransactionsCalculated([]);
       return;
     }
 
@@ -77,15 +87,50 @@ export function RecentDeliveries() {
     const unsubscribe = onSnapshot(
       deliveriesQuery,
       async (snapshot) => {
-        if (snapshot.empty) {
-          setDeliveries([]);
-        } else {
+        let fetchedDeliveries: Order[] = [];
+        if (!snapshot.empty) {
           const ordersDataPromises = snapshot.docs.map((doc) =>
             mapFirestoreDocToOrder(doc)
           );
-          const ordersData = await Promise.all(ordersDataPromises);
-          setDeliveries(ordersData);
+          fetchedDeliveries = await Promise.all(ordersDataPromises);
         }
+        setDeliveries(fetchedDeliveries);
+        onDeliveriesFetched(fetchedDeliveries);
+        
+        // Now calculate transactions
+        const deliveryTransactions: Transaction[] = fetchedDeliveries.map(d => ({
+            title: `Delivery Pay (Order #${d.id.substring(0,6)})`,
+            transactionId: d.id,
+            type: 'Delivery',
+            amount: d.estimatedEarnings
+        }));
+        
+        // Fetch tips for the same day
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        let tipTransactions: Transaction[] = [];
+        if (userDocSnap.exists()) {
+            const profile = userDocSnap.data() as Profile;
+            const ratings = profile.deliveryRatings || [];
+            
+            ratings.forEach((rating: DeliveryRating) => {
+                if(rating.tip && rating.tip > 0 && rating.ratedAt) {
+                    const ratedDate = rating.ratedAt.toDate();
+                    if (ratedDate >= startOfDay && ratedDate <= endOfDay) {
+                         tipTransactions.push({
+                            title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
+                            transactionId: `${rating.orderId}-tip`,
+                            type: 'Tip',
+                            amount: rating.tip
+                        });
+                    }
+                }
+            });
+        }
+        
+        const allTransactions = [...deliveryTransactions, ...tipTransactions];
+        onTransactionsCalculated(allTransactions);
+
         setLoading(false);
       },
       (error) => {
@@ -95,7 +140,7 @@ export function RecentDeliveries() {
     );
 
     return () => unsubscribe();
-  }, [currentUser, selectedDate]);
+  }, [currentUser, selectedDate, onDeliveriesFetched, onTransactionsCalculated]);
 
   const formatTimestamp = (timestamp: any): string => {
     if (!timestamp || !timestamp.toDate) {

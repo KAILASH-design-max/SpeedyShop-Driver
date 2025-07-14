@@ -13,15 +13,19 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Wallet } from "lucide-react";
+import type { Order } from "@/types";
 
+export interface Transaction {
+  title: string;
+  transactionId: string;
+  type: 'Delivery' | 'Tip' | 'Bonus' | 'Adjustment';
+  amount: number;
+}
 
-const transactions = [
-    { title: "Base Pay", transactionId: "TXN001", type: "Delivery", amount: 45.00 },
-    { title: "Customer Tip", transactionId: "TXN002", type: "Tip", amount: 10.00 },
-    { title: "Peak Hour Bonus", transactionId: "TXN003", type: "Bonus", amount: 50.00 },
-    { title: "Base Pay + Distance Pay", transactionId: "TXN004", type: "Delivery", amount: 62.50 },
-    { title: "Base Pay", transactionId: "TXN005", type: "Delivery", amount: 52.00 },
-];
+interface PayoutHistoryTableProps {
+    transactions: Transaction[];
+    deliveries: Order[]; // Keep deliveries to check if there's anything to show
+}
 
 const getBadgeClass = (type: string) => {
     switch(type.toLowerCase()) {
@@ -32,7 +36,9 @@ const getBadgeClass = (type: string) => {
     }
 }
 
-export function PayoutHistoryTable() {
+export function PayoutHistoryTable({ transactions, deliveries }: PayoutHistoryTableProps) {
+    const totalEarned = transactions.reduce((acc, t) => acc + t.amount, 0);
+
     return (
         <div>
             <CardTitle className="text-2xl font-bold flex items-center"><Wallet className="mr-2 h-6 w-6"/>Transaction Summary</CardTitle>
@@ -42,24 +48,44 @@ export function PayoutHistoryTable() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Title</TableHead>
-                            <TableHead>Transaction ID</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {transactions.map((transaction) => (
-                            <TableRow key={transaction.transactionId}>
-                                <TableCell className="font-medium">{transaction.title}</TableCell>
-                                <TableCell className="text-muted-foreground">{transaction.transactionId}</TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className={cn("capitalize font-normal", getBadgeClass(transaction.type))}>{transaction.type}</Badge>
+                        {transactions.length > 0 ? (
+                            transactions.map((transaction) => (
+                                <TableRow key={transaction.transactionId}>
+                                    <TableCell className="font-medium">{transaction.title}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className={cn("capitalize font-normal", getBadgeClass(transaction.type))}>{transaction.type}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right font-semibold text-green-600">
+                                        +₹{transaction.amount.toFixed(2)}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : deliveries.length > 0 ? (
+                             <TableRow>
+                                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                    No tips or other transactions for this day.
                                 </TableCell>
-                                <TableCell className="text-right font-semibold text-green-600">
-                                    +₹{transaction.amount.toFixed(2)}
+                             </TableRow>
+                        ) : (
+                             <TableRow>
+                                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                    No transactions found for the selected date.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )}
+                         {transactions.length > 0 && (
+                            <TableRow className="bg-muted/50 font-bold">
+                                <TableCell colSpan={2}>Total Earned Today</TableCell>
+                                <TableCell className="text-right text-lg text-green-700">
+                                    ₹{totalEarned.toFixed(2)}
+                                </TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </div>
