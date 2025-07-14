@@ -86,6 +86,7 @@ export function EarningsSummaryCard() {
             description: "Since joining",
             icon: PiggyBank,
             color: "text-purple-500",
+            href: "/orders",
             isLoading: isLoading,
         },
     ];
