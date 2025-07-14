@@ -109,10 +109,15 @@ export function EarningsOverview() {
                 if (docSnap.exists()) {
                     const profileData = docSnap.data() as Profile;
                     const ratings = profileData.deliveryRatings;
-                    if (ratings && ratings.length > 0) {
-                        const totalRatingValue = ratings.reduce((acc, r) => acc + r.rating, 0);
-                        const avgRating = totalRatingValue / ratings.length;
-                        setOverallRating(avgRating);
+                     if (ratings && ratings.length > 0) {
+                        const validRatings = ratings.filter(r => typeof r.rating === 'number' && r.rating >= 0);
+                        if (validRatings.length > 0) {
+                            const totalRatingValue = validRatings.reduce((acc, r) => acc + r.rating, 0);
+                            const avgRating = totalRatingValue / validRatings.length;
+                            setOverallRating(avgRating);
+                        } else {
+                            setOverallRating(0);
+                        }
                     } else {
                         setOverallRating(0);
                     }
