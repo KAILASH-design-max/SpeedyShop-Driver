@@ -2,9 +2,9 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wallet, Truck, Badge, Star, Loader2 } from "lucide-react";
+import { Wallet, Truck, Badge, Star, Loader2, IndianRupee } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
@@ -160,7 +160,7 @@ export function EarningsOverview() {
             title: "Current Week Earnings",
             value: isLoadingWeekEarnings ? null : currentWeekEarnings.toFixed(2),
             subtext: "Includes deliveries and tips",
-            icon: Wallet,
+            icon: IndianRupee,
             color: "text-green-500",
             href: "/earnings",
             isCurrency: true,
