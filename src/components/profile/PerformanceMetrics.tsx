@@ -7,13 +7,7 @@ import { BarChart, Star, ThumbsUp, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect, useMemo } from 'react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, DocumentData } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
-
-interface PerformanceMetricsProps {
-  profile: Profile;
-}
 
 interface FeedbackItem {
     name: string;
@@ -71,16 +65,15 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   }, [profile.deliveryRatings]);
   
   useEffect(() => {
-    const fetchFeedback = async () => {
+    const processFeedback = () => {
+      setLoadingFeedback(true);
       const validRatings = profile.deliveryRatings?.filter(r => typeof r.rating === 'number') || [];
       if (validRatings.length === 0) {
         setLoadingFeedback(false);
+        setFeedbackList([]);
         return;
       }
       
-      setLoadingFeedback(true);
-      
-      // Prioritize ratings with comments, then sort by date
       const sortedRatings = [...validRatings].sort((a, b) => {
         const aHasComment = !!a.comment;
         const bHasComment = !!b.comment;
@@ -93,36 +86,18 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
 
       const recentRatings = sortedRatings.slice(0, 3);
 
-      try {
-        const feedbackPromises = recentRatings.map(async (rating) => {
-          const orderRef = doc(db, "orders", rating.orderId);
-          const orderSnap = await getDoc(orderRef);
+      const feedbackData = recentRatings.map(rating => ({
+        name: "A Customer", // Defaulting name to simplify and prevent fetch failures
+        rating: rating.rating,
+        comment: rating.comment,
+        timestamp: rating.ratedAt,
+      }));
 
-          let customerName = "A Customer";
-          if (orderSnap.exists()) {
-             const orderData = orderSnap.data() as DocumentData;
-             customerName = orderData.customerName || "A Customer";
-          }
-          
-          return {
-            name: customerName,
-            rating: rating.rating,
-            comment: rating.comment, // Use actual comment from data
-            timestamp: rating.ratedAt,
-          };
-        });
-
-        const resolvedFeedback = await Promise.all(feedbackPromises);
-        setFeedbackList(resolvedFeedback);
-
-      } catch (error) {
-        console.error("Error fetching customer feedback:", error);
-      } finally {
-        setLoadingFeedback(false);
-      }
+      setFeedbackList(feedbackData);
+      setLoadingFeedback(false);
     };
 
-    fetchFeedback();
+    processFeedback();
   }, [profile.deliveryRatings]);
   
   const renderStars = (rating: number, size: "sm" | "lg" = "sm") => {
