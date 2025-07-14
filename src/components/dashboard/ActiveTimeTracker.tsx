@@ -2,13 +2,10 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
-import { Clock } from 'lucide-react';
-
-interface ActiveTimeTrackerProps {
-  userId: string;
-}
+import type { User } from 'firebase/auth';
+import { Clock, Loader2 } from 'lucide-react';
 
 const formatDuration = (totalSeconds: number) => {
   if (totalSeconds < 0) totalSeconds = 0;
@@ -17,7 +14,6 @@ const formatDuration = (totalSeconds: number) => {
   return `${hours}h ${minutes}m`;
 };
 
-// Use UTC to avoid timezone issues where the date might change overnight during a session.
 const getTodayDateString = () => {
     const today = new Date();
     const year = today.getUTCFullYear();
@@ -26,19 +22,30 @@ const getTodayDateString = () => {
     return `${year}-${month}-${day}`;
 }
 
-export function ActiveTimeTracker({ userId }: ActiveTimeTrackerProps) {
+export function ActiveTimeTracker() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [baseSeconds, setBaseSeconds] = useState(0);
-  const [currentSessionStart, setCurrentSessionStart] = useState<number | null>(null); // Unix timestamp in seconds
+  const [currentSessionStart, setCurrentSessionStart] = useState<number | null>(null);
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser?.uid) {
+        setIsLoaded(false);
+        return;
+    }
 
     const todayStr = getTodayDateString();
     const sessionsQuery = query(
       collection(db, "sessions"),
-      where("userId", "==", userId),
+      where("userId", "==", currentUser.uid),
       where("date", "==", todayStr)
     );
 
@@ -60,14 +67,21 @@ export function ActiveTimeTracker({ userId }: ActiveTimeTrackerProps) {
       
       setBaseSeconds(accumulatedSeconds);
       setCurrentSessionStart(activeSessionLoginTime ? activeSessionLoginTime.seconds : null);
-      setIsLoaded(true); // Mark as loaded once we have data
+      setIsLoaded(true);
+    }, (error) => {
+        console.error("Error in ActiveTimeTracker snapshot listener:", error);
+        setIsLoaded(false);
     });
 
-    return () => unsubscribe();
-  }, [userId]);
+    return () => {
+        // Ensure unsubscribe is only called if it was successfully created.
+        if (unsubscribe) {
+            unsubscribe();
+        }
+    };
+  }, [currentUser]);
 
   useEffect(() => {
-    // Only run the timer if the initial data has been loaded.
     if (!isLoaded) {
         setDisplaySeconds(baseSeconds);
         return;
@@ -86,6 +100,17 @@ export function ActiveTimeTracker({ userId }: ActiveTimeTrackerProps) {
     return () => clearInterval(timer);
   }, [baseSeconds, currentSessionStart, isLoaded]);
 
+  if (!currentUser) {
+    return null;
+  }
+  
+  if (!isLoaded) {
+    return (
+        <div className="flex items-center gap-2">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2">

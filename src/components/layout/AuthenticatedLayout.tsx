@@ -31,12 +31,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/firebase";
-import { signOut, type User } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { endSession } from "@/lib/sessionManager";
 import { ActiveTimeTracker } from "@/components/dashboard/ActiveTimeTracker";
-import { SheetTitle } from "../ui/sheet";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -66,14 +65,6 @@ export default function AuthenticatedLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -150,7 +141,7 @@ export default function AuthenticatedLayout({
                 {!isHistoryPage && (
                   <>
                     <span className="text-xl font-semibold text-primary hidden md:block">SpeedyShop Driver</span>
-                    {currentUser && <ActiveTimeTracker userId={currentUser.uid} />}
+                    <ActiveTimeTracker />
                   </>
                 )}
             </div>
