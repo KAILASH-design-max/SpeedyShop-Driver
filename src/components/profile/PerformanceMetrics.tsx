@@ -47,7 +47,8 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   const [loadingFeedback, setLoadingFeedback] = useState(true);
 
   const { overallRating, ratingBreakdown, totalRatings } = useMemo(() => {
-    const ratings = profile.deliveryRatings;
+    const ratings = profile.deliveryRatings?.filter(r => typeof r.rating === 'number') || [];
+    
     if (!ratings || ratings.length === 0) {
       return {
         overallRating: 0,
@@ -84,14 +85,15 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   
   useEffect(() => {
     const fetchFeedback = async () => {
-      if (!profile.deliveryRatings || profile.deliveryRatings.length === 0) {
+      const validRatings = profile.deliveryRatings?.filter(r => typeof r.rating === 'number') || [];
+      if (validRatings.length === 0) {
         setLoadingFeedback(false);
         return;
       }
       
       setLoadingFeedback(true);
       
-      const sortedRatings = [...profile.deliveryRatings].sort((a, b) => {
+      const sortedRatings = [...validRatings].sort((a, b) => {
         if (!a.ratedAt || !b.ratedAt) return 0;
         return b.ratedAt.seconds - a.ratedAt.seconds;
       });
