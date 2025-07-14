@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Route,
-  DollarSign,
+  IndianRupee,
   User as UserIcon,
   MessagesSquare,
   LogOut,
@@ -40,7 +40,7 @@ import { ActiveTimeTracker } from "@/components/dashboard/ActiveTimeTracker";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/smart-routing", label: "Smart Routing", icon: Route },
-  { href: "/earnings", label: "Earnings", icon: DollarSign },
+  { href: "/earnings", label: "Earnings", icon: IndianRupee },
   { href: "/communication", label: "Messages", icon: MessagesSquare },
   { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/profile", label: "Profile", icon: UserIcon },

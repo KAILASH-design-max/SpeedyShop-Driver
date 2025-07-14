@@ -16,9 +16,10 @@ const formatDuration = (totalSeconds: number) => {
 
 const getTodayDateString = () => {
     const today = new Date();
-    const year = today.getUTCFullYear();
-    const month = (today.getUTCMonth() + 1).toString().padStart(2, '0');
-    const day = today.getUTCDate().toString().padStart(2, '0');
+    // Use local date for this to match user's day
+    const year = today.getFullYear();
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const day = today.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
 
@@ -32,6 +33,9 @@ export function ActiveTimeTracker() {
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
+      if (!user) {
+        setIsLoaded(false);
+      }
     });
     return () => unsubscribeAuth();
   }, []);
@@ -73,20 +77,20 @@ export function ActiveTimeTracker() {
         setIsLoaded(false);
     });
 
-    return () => {
-        // Ensure unsubscribe is only called if it was successfully created.
-        if (unsubscribe) {
-            unsubscribe();
-        }
-    };
+    return () => unsubscribe();
   }, [currentUser]);
 
   useEffect(() => {
-    if (!isLoaded) {
+    // Initial display update
+    if (currentSessionStart) {
+        const now = Math.floor(Date.now() / 1000);
+        const currentDuration = now - currentSessionStart;
+        setDisplaySeconds(baseSeconds + currentDuration);
+    } else {
         setDisplaySeconds(baseSeconds);
-        return;
-    };
+    }
 
+    // Set up interval to update timer
     const timer = setInterval(() => {
         if (currentSessionStart) {
             const now = Math.floor(Date.now() / 1000);
