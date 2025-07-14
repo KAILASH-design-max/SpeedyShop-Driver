@@ -78,8 +78,9 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
     const deliveriesQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "in", ["delivered", "cancelled"]),
-      orderBy("completedAt", "desc")
+      where("orderStatus", "in", ["delivered", "cancelled"])
+      // NOTE: Removed orderBy clause to avoid needing a composite index.
+      // Sorting will be handled client-side.
     );
 
     const unsubscribe = onSnapshot(
@@ -91,6 +92,13 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             mapFirestoreDocToOrder(doc)
           );
           fetchedDeliveries = await Promise.all(ordersDataPromises);
+          
+          // Sort deliveries by date client-side
+          fetchedDeliveries.sort((a, b) => {
+            const dateA = a.completedAt?.toDate ? a.completedAt.toDate() : new Date(0);
+            const dateB = b.completedAt?.toDate ? b.completedAt.toDate() : new Date(0);
+            return dateB.getTime() - dateA.getTime();
+          });
         }
         setAllDeliveries(fetchedDeliveries);
         setLoading(false);
