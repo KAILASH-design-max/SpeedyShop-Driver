@@ -49,7 +49,12 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [deliveries, setDeliveries] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+
+  useEffect(() => {
+    // Set the initial date only on the client side to avoid hydration mismatch
+    setSelectedDate(new Date());
+  }, []);
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -59,7 +64,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
   }, []);
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser || !selectedDate) {
       setLoading(false);
       setDeliveries([]);
       onDeliveriesFetched([]);
@@ -194,7 +199,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                     selected={selectedDate}
                     onSelect={(date) => date && setSelectedDate(date)}
                     initialFocus
-                    disabled={(date) => date > new Date()}
+                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                 />
                 </PopoverContent>
             </Popover>
