@@ -17,11 +17,12 @@ const formatDuration = (totalSeconds: number) => {
   return `${hours}h ${minutes}m`;
 };
 
+// Use UTC to avoid timezone issues where the date might change overnight during a session.
 const getTodayDateString = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, '0');
-    const day = today.getDate().toString().padStart(2, '0');
+    const year = today.getUTCFullYear();
+    const month = (today.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = today.getUTCDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
 
@@ -29,6 +30,7 @@ export function ActiveTimeTracker({ userId }: ActiveTimeTrackerProps) {
   const [baseSeconds, setBaseSeconds] = useState(0);
   const [currentSessionStart, setCurrentSessionStart] = useState<number | null>(null); // Unix timestamp in seconds
   const [displaySeconds, setDisplaySeconds] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -58,12 +60,19 @@ export function ActiveTimeTracker({ userId }: ActiveTimeTrackerProps) {
       
       setBaseSeconds(accumulatedSeconds);
       setCurrentSessionStart(activeSessionLoginTime ? activeSessionLoginTime.seconds : null);
+      setIsLoaded(true); // Mark as loaded once we have data
     });
 
     return () => unsubscribe();
   }, [userId]);
 
   useEffect(() => {
+    // Only run the timer if the initial data has been loaded.
+    if (!isLoaded) {
+        setDisplaySeconds(baseSeconds);
+        return;
+    };
+
     const timer = setInterval(() => {
         if (currentSessionStart) {
             const now = Math.floor(Date.now() / 1000);
@@ -75,7 +84,7 @@ export function ActiveTimeTracker({ userId }: ActiveTimeTrackerProps) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [baseSeconds, currentSessionStart]);
+  }, [baseSeconds, currentSessionStart, isLoaded]);
 
 
   return (

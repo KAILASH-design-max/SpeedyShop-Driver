@@ -4,11 +4,12 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 
+// Use UTC to avoid timezone issues where the date might change overnight during a session.
 const getTodayDateString = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, '0');
-    const day = today.getDate().toString().padStart(2, '0');
+    const year = today.getUTCFullYear();
+    const month = (today.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = today.getUTCDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
 
