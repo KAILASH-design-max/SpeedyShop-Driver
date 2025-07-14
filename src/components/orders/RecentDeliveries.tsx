@@ -106,35 +106,28 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
 
   // Effect to filter deliveries and calculate transactions when date or allDeliveries change
   useEffect(() => {
-    if (loading || !selectedDate) {
-        setFilteredDeliveries([]);
-        onDeliveriesFetched([]);
-        onTransactionsCalculated([]);
-        return
-    };
-
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    if (!selectedDate || loading) {
+      return;
+    }
 
     const deliveriesForDate = allDeliveries.filter(delivery => {
-        if (!delivery.completedAt?.toDate) return false;
-        const completedDate = delivery.completedAt.toDate();
-        return isSameDay(completedDate, selectedDate);
+      if (!delivery.completedAt?.toDate) return false;
+      const completedDate = delivery.completedAt.toDate();
+      return isSameDay(completedDate, selectedDate);
     });
 
     setFilteredDeliveries(deliveriesForDate);
     onDeliveriesFetched(deliveriesForDate);
 
     const calculateTransactions = async () => {
-        const deliveryTransactions: Transaction[] = deliveriesForDate.map(d => ({
-            title: `Delivery Pay (Order #${d.id.substring(0,6)})`,
-            transactionId: d.id,
-            type: 'Delivery',
-            amount: d.estimatedEarnings
-        }));
+        const deliveryTransactions: Transaction[] = deliveriesForDate
+            .filter(d => d.orderStatus === 'delivered') // only include delivered orders in transactions
+            .map(d => ({
+                title: `Delivery Pay (Order #${d.id.substring(0,6)})`,
+                transactionId: d.id,
+                type: 'Delivery',
+                amount: d.estimatedEarnings
+            }));
 
         if (!currentUser) {
             onTransactionsCalculated(deliveryTransactions);
@@ -144,12 +137,13 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
         const userDocRef = doc(db, "users", currentUser.uid);
         const userDocSnap = await getDoc(userDocRef);
         let tipTransactions: Transaction[] = [];
+
         if (userDocSnap.exists()) {
             const profile = userDocSnap.data() as Profile;
             const ratings = profile.deliveryRatings || [];
             
             ratings.forEach((rating: DeliveryRating) => {
-                if(rating.tip && rating.tip > 0 && rating.ratedAt) {
+                if(rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
                     const ratedDate = rating.ratedAt.toDate();
                     if (isSameDay(ratedDate, selectedDate)) {
                          tipTransactions.push({
@@ -269,7 +263,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                         </Badge>
                         </TableCell>
                         <TableCell className="text-right font-semibold text-green-600">
-                        ₹{(delivery.estimatedEarnings || 0).toFixed(2)}
+                          {delivery.orderStatus === 'delivered' ? `₹${(delivery.estimatedEarnings || 0).toFixed(2)}` : 'N/A'}
                         </TableCell>
                     </TableRow>
                     ))}
