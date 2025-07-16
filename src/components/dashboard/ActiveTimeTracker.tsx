@@ -14,12 +14,12 @@ const formatDuration = (totalSeconds: number) => {
   return `${hours}h ${minutes}m`;
 };
 
+// Use UTC to match the session manager and avoid timezone issues.
 const getTodayDateString = () => {
     const today = new Date();
-    // Use local date for this to match user's day
-    const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, '0');
-    const day = today.getDate().toString().padStart(2, '0');
+    const year = today.getUTCFullYear();
+    const month = (today.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = today.getUTCDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
 
