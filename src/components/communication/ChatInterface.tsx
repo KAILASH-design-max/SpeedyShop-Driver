@@ -102,7 +102,7 @@ export function ChatInterface() {
 
     const messagePayload = {
       senderId: currentUser.uid,
-      content: newMessage,
+      text: newMessage,
       timestamp: serverTimestamp(),
     };
     
@@ -122,7 +122,7 @@ export function ChatInterface() {
     } catch (error) {
       console.error("Error sending message:", error);
       toast({ variant: "destructive", title: "Error", description: "Could not send message." });
-      setNewMessage(messagePayload.content); // Restore message on error
+      setNewMessage(messagePayload.text); // Restore message on error
     }
   };
 
@@ -176,7 +176,7 @@ export function ChatInterface() {
                     msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
                   )}
                 >
-                  <p>{msg.content}</p>
+                  <p>{msg.text}</p>
                   <p className={cn("text-xs mt-1", msg.senderId === currentUser.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
                     {formatTimestamp(msg.timestamp)}
                   </p>

@@ -111,7 +111,7 @@ export interface Profile {
 export interface CommunicationMessage {
   id: string;
   senderId: string;
-  content: string;
+  text: string;
   timestamp: any; // Firestore ServerTimestamp
 }
 
