@@ -73,6 +73,14 @@ export interface DeliveryRating {
   tip?: number;
 }
 
+export interface MaintenanceLogEntry {
+    id: string;
+    serviceType: string;
+    date: any; // Firestore Timestamp
+    cost: number;
+    notes?: string;
+}
+
 export interface Profile {
   uid: string;
   name: string;
@@ -105,6 +113,7 @@ export interface Profile {
   totalDeliveries?: number;
   overallRating?: number;
   deliveryRatings?: DeliveryRating[];
+  maintenanceLog?: MaintenanceLogEntry[];
 }
 
 

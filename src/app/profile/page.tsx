@@ -7,12 +7,13 @@ import { DocumentManagement } from "@/components/profile/DocumentManagement";
 import type { Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { User } from "firebase/auth";
 import { Button } from "@/components/ui/button";
+import { VehicleMaintenanceLog } from "@/components/profile/VehicleMaintenanceLog";
 
 export default function ProfilePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -97,7 +98,23 @@ export default function ProfilePage() {
         ...updatedData,
         updatedAt: serverTimestamp(),
       };
-      await setDoc(profileRef, dataWithTimestamp, { merge: true });
+      
+      // Handle adding a new maintenance log entry using arrayUnion
+      if (updatedData.newMaintenanceLog) {
+        const newLogWithTimestamp = {
+          ...updatedData.newMaintenanceLog,
+          id: doc().id, // Generate a unique ID for the log entry
+          date: serverTimestamp(),
+        };
+        delete dataWithTimestamp.newMaintenanceLog;
+        await updateDoc(profileRef, {
+            ...dataWithTimestamp,
+            maintenanceLog: arrayUnion(newLogWithTimestamp),
+        });
+      } else {
+        await setDoc(profileRef, dataWithTimestamp, { merge: true });
+      }
+
 
       toast({ title: "Profile Updated", description: "Your changes have been saved.", className: "bg-green-500 text-white" });
     } catch (error) {
@@ -126,6 +143,8 @@ export default function ProfilePage() {
       <ProfileForm profile={profile} onUpdate={handleProfileUpdate} />
       <Separator />
       <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
+      <Separator />
+      <VehicleMaintenanceLog profile={profile} onUpdate={handleProfileUpdate} />
     </div>
   );
 }
