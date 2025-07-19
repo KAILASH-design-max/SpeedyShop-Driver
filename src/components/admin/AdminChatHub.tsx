@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, ArrowLeft, Loader2, User } from "lucide-react";
+import { Send, MessageSquare, ArrowLeft, Loader2, User, Package } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -201,8 +201,13 @@ export function AdminChatHub() {
                       <AvatarFallback>{selectedSession.userName?.substring(0,2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <CardTitle className="text-lg">{selectedSession.userName}</CardTitle>
-                        <CardDescription>User ID: {selectedSession.userId}</CardDescription>
+                        <CardTitle className="text-lg">{`Chat with ${selectedSession.userName}`}</CardTitle>
+                        {selectedSession.orderId && (
+                            <CardDescription className="flex items-center">
+                                <Package className="mr-1.5 h-4 w-4" />
+                                Order ID: #{selectedSession.orderId.substring(0,8)}
+                            </CardDescription>
+                        )}
                     </div>
                 </CardHeader>
                 <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>
