@@ -26,7 +26,6 @@ import {
   LogOut,
   Menu,
   Truck,
-  Bell,
   LifeBuoy,
   Trophy,
 } from "lucide-react";
@@ -37,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { endSession } from "@/lib/sessionManager";
 import { ActiveTimeTracker } from "@/components/dashboard/ActiveTimeTracker";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -147,10 +147,7 @@ export default function AuthenticatedLayout({
                   </>
                 )}
             </div>
-            {/* Replaced UserNav with Notification Bell Icon */}
-            <Button variant="ghost" size="icon" aria-label="Notifications">
-              <Bell className="h-6 w-6 text-primary" />
-            </Button>
+            <ThemeToggle />
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
             {children}
