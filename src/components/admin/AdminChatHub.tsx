@@ -39,6 +39,7 @@ export function AdminChatHub() {
   useEffect(() => {
     if (currentUser) {
       setIsLoadingSessions(true);
+      // Removed orderBy from query to avoid needing a composite index
       const sessionsQuery = query(collection(db, "supportChats"));
       
       const unsubscribe = onSnapshot(sessionsQuery, snapshot => {
@@ -47,6 +48,7 @@ export function AdminChatHub() {
           ...doc.data(),
         } as SupportChatSession));
         
+        // Sort client-side
         sessionsData.sort((a, b) => {
           const dateA = a.lastMessageTimestamp?.toDate ? a.lastMessageTimestamp.toDate() : (a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0));
           const dateB = b.lastMessageTimestamp?.toDate ? b.lastMessageTimestamp.toDate() : (b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0));
@@ -221,7 +223,7 @@ export function AdminChatHub() {
                         {selectedSession.orderId && (
                             <CardDescription className="flex items-center text-primary font-medium">
                                 <Package className="mr-1.5 h-4 w-4" />
-                                Order ID: #{selectedSession.orderId.substring(0,8)}
+                                Order ID: #{selectedSession.orderId}
                             </CardDescription>
                         )}
                     </div>
