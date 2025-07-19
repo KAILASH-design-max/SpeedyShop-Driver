@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout';
 
-export default function BonusesLayout({
+export default function AchievementsLayout({
   children,
 }: {
   children: React.ReactNode;

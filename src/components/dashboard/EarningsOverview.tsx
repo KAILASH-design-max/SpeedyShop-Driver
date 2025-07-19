@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wallet, Truck, Badge, Star, Loader2, IndianRupee } from "lucide-react";
+import { Wallet, Truck, Badge, Star, Loader2, IndianRupee, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
@@ -13,12 +13,12 @@ import { startOfWeek, endOfWeek } from 'date-fns';
 
 const staticStats = [
     {
-        title: "Active Bonuses",
-        value: "2",
-        subtext: "Bonuses you're working towards",
-        icon: Badge,
+        title: "Active Achievements",
+        value: "3",
+        subtext: "Challenges you're working towards",
+        icon: Trophy,
         color: "text-orange-500",
-        href: "/bonuses",
+        href: "/achievements",
         isCurrency: false
     },
 ];

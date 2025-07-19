@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { ActiveBonuses } from "@/components/earnings/ActiveBonuses";
+import { AchievementsList } from "@/components/achievements/AchievementsList";
 
-export default function BonusesPage() {
+export default function AchievementsPage() {
   const router = useRouter();
 
   return (
@@ -14,7 +14,7 @@ export default function BonusesPage() {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
-      <ActiveBonuses />
+      <AchievementsList />
     </div>
   );
 }

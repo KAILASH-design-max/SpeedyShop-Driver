@@ -28,6 +28,7 @@ import {
   Truck,
   Bell,
   LifeBuoy,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/firebase";
@@ -41,6 +42,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/smart-routing", label: "Smart Routing", icon: Route },
   { href: "/earnings", label: "Earnings", icon: IndianRupee },
+  { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/communication", label: "Messages", icon: MessagesSquare },
   { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/profile", label: "Profile", icon: UserIcon },
