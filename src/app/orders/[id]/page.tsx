@@ -8,11 +8,24 @@ import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle } from "lucide-react";
+import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 export default function OrderPage() {
   const params = useParams();
@@ -85,11 +98,7 @@ export default function OrderPage() {
         if (proof?.type === 'photo') {
             updateData.proofImageURL = proof.value;
         }
-        // A signature could also be saved if needed in the future
-        // if (proof?.type === 'signature') {
-        //     updateData.signature = proof.value;
-        // }
-
+        
         await updateDoc(orderRef, updateData); 
         
         toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
@@ -100,6 +109,31 @@ export default function OrderPage() {
       } finally {
         setIsUpdating(false);
       }
+    }
+  };
+
+  const handleRedispatch = async () => {
+    if (!order) return;
+    setIsUpdating(true);
+    try {
+      const orderRef = doc(db, "orders", order.id);
+      await updateDoc(orderRef, {
+        deliveryPartnerId: null,
+        orderStatus: "Placed",
+      });
+      toast({
+        title: "Order Released",
+        description: "The order has been returned to the pool for other drivers.",
+      });
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Error redispatching order:", error);
+      toast({
+        variant: "destructive",
+        title: "Redispatch Failed",
+        description: "Could not release the order. Please contact support.",
+      });
+      setIsUpdating(false);
     }
   };
 
@@ -115,6 +149,8 @@ export default function OrderPage() {
   if (!order) {
     return <div className="flex justify-center items-center h-full min-h-[calc(100vh-10rem)]"><p>Order not found or an error occurred.</p></div>;
   }
+
+  const isOrderActive = order.orderStatus === 'accepted' || order.orderStatus === 'picked-up' || order.orderStatus === 'out-for-delivery';
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -136,12 +172,46 @@ export default function OrderPage() {
              <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)} disabled={isUpdating}>
                 <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
             </Button>
+            
+            {isOrderActive && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full" disabled={isUpdating}>
+                    <ShieldX className="mr-2 h-5 w-5" /> Release Order
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to release this order?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. The order will be returned to the pool for other drivers to accept. Only do this if you are unable to complete the delivery.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRedispatch} className="bg-destructive hover:bg-destructive/90">
+                      Yes, Release Order
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
         </div>
 
         {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
           <DeliveryConfirmation order={order} onConfirm={handleDeliveryConfirmed} isUpdating={isUpdating} />
         )}
       </div>
+
+       {order.orderStatus === "cancelled" && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Order Cancelled</AlertTitle>
+          <AlertDescription>
+            This order has been cancelled. No further action is required.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {order.orderStatus === "delivered" && ( 
         <Card className="mt-6 bg-green-100 border-green-300">
