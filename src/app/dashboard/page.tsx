@@ -29,6 +29,18 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Load active orders from cache on initial render
+    try {
+      const cachedActiveOrders = localStorage.getItem('activeOrdersCache');
+      if (cachedActiveOrders) {
+        setActiveOrders(JSON.parse(cachedActiveOrders));
+      }
+    } catch (error) {
+      console.error("Failed to load cached active orders:", error);
+    }
+  }, []);
+
+  useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
       if (!user) {
@@ -114,12 +126,17 @@ export default function DashboardPage() {
       const ordersData = await Promise.all(ordersDataPromises);
       setActiveOrders(ordersData);
       setLoadingActive(false);
+      // Cache the fetched active orders
+      try {
+        localStorage.setItem('activeOrdersCache', JSON.stringify(ordersData));
+      } catch (error) {
+        console.error("Failed to cache active orders:", error);
+      }
     }, (error) => {
       console.error("Error fetching active orders:", error);
        if (error.code !== 'permission-denied') {
-          toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders." });
+          toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders. Showing cached data if available." });
        }
-      setActiveOrders([]);
       setLoadingActive(false);
     });
 
@@ -178,7 +195,7 @@ export default function DashboardPage() {
              <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
               <BellDot className="mr-2 h-6 w-6" /> New Order Alerts
             </h2>
-            {isLoading ? (
+            {isLoading && newOrders.length === 0 ? (
                <div className="flex justify-center items-center p-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
@@ -201,7 +218,7 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
             <PackageCheck className="mr-2 h-6 w-6" /> Your Active Orders
           </h2>
-          {isLoading ? (
+          {isLoading && activeOrders.length === 0 ? (
             <div className="flex justify-center items-center p-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="ml-2">Loading...</p>

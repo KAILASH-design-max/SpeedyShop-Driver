@@ -37,12 +37,33 @@ export default function OrderPage() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
+    // Load order from cache on initial render
+    if (orderId) {
+        try {
+            const cachedOrder = localStorage.getItem(`order-cache-${orderId}`);
+            if (cachedOrder) {
+                setOrder(JSON.parse(cachedOrder));
+            }
+        } catch (error) {
+            console.error(`Failed to load cached order ${orderId}:`, error);
+        }
+    }
+  }, [orderId]);
+
+
+  useEffect(() => {
     if (orderId) {
       const orderRef = doc(db, "orders", orderId);
       const unsubscribe = onSnapshot(orderRef, async (docSnap) => {
         if (docSnap.exists()) {
           const mappedOrder = await mapFirestoreDocToOrder(docSnap);
           setOrder(mappedOrder);
+          // Cache the fetched order details
+          try {
+            localStorage.setItem(`order-cache-${orderId}`, JSON.stringify(mappedOrder));
+          } catch (error) {
+            console.error(`Failed to cache order ${orderId}:`, error);
+          }
         } else {
           setOrder(null);
           toast({ variant: "destructive", title: "Error", description: "Order not found." });
@@ -50,7 +71,7 @@ export default function OrderPage() {
         setLoading(false);
       }, (error) => {
         console.error("Error fetching order details:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not fetch order details." });
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch order details. Showing cached data if available." });
         setLoading(false);
       });
       return () => unsubscribe();
@@ -137,7 +158,7 @@ export default function OrderPage() {
     }
   };
 
-  if (loading) {
+  if (loading && !order) {
     return (
       <div className="flex justify-center items-center h-full min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
