@@ -17,7 +17,7 @@ export function SupportChat() {
             const currentUser = auth.currentUser;
             if (!currentUser) return;
 
-            const sessionsRef = collection(db, "supportChats");
+            const sessionsRef = collection(db, "supportMessages");
             const q = query(sessionsRef, where("userId", "==", currentUser.uid), limit(1));
             
             try {

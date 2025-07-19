@@ -54,7 +54,7 @@ export function AdminChatHub() {
   useEffect(() => {
     if (currentUser) {
       setIsLoadingSessions(true);
-      const sessionsQuery = query(collection(db, "Customer&deliveryboy"));
+      const sessionsQuery = query(collection(db, "supportMessages"));
       
       const unsubscribe = onSnapshot(sessionsQuery, async (snapshot) => {
         const sessionsDataPromises = snapshot.docs.map(async (docSnap) => {
@@ -94,7 +94,7 @@ export function AdminChatHub() {
   useEffect(() => {
     if (selectedSession && currentUser) {
       setIsLoadingMessages(true);
-      const messagesQuery = query(collection(db, `Customer&deliveryboy/${selectedSession.id}/messages`), orderBy("timestamp", "asc"));
+      const messagesQuery = query(collection(db, `supportMessages/${selectedSession.id}/messages`), orderBy("timestamp", "asc"));
 
       const unsubscribe = onSnapshot(messagesQuery, snapshot => {
         const messagesData = snapshot.docs.map(doc => ({
@@ -143,8 +143,8 @@ export function AdminChatHub() {
     setNewMessage("");
 
     try {
-      await addDoc(collection(db, `Customer&deliveryboy/${selectedSession.id}/messages`), messagePayload);
-       const sessionRef = doc(db, "Customer&deliveryboy", selectedSession.id);
+      await addDoc(collection(db, `supportMessages/${selectedSession.id}/messages`), messagePayload);
+       const sessionRef = doc(db, "supportMessages", selectedSession.id);
        await updateDoc(sessionRef, {
            lastMessage: newMessage,
            lastUpdated: serverTimestamp(),

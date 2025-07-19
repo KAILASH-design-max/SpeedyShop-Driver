@@ -91,7 +91,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     });
     
     // Listener for support chats
-    const supportThreadsQuery = query(collection(db, "supportChats"), where("userId", "==", currentUser.uid));
+    const supportThreadsQuery = query(collection(db, "supportMessages"), where("userId", "==", currentUser.uid));
     const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, snapshot => {
         const supportThreads = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -120,7 +120,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   useEffect(() => {
     if (selectedThread && currentUser) {
       setIsLoadingMessages(true);
-      const collectionName = selectedThread.type === 'customer' ? 'Customer&deliveryboy' : 'supportChats';
+      const collectionName = selectedThread.type === 'customer' ? 'Customer&deliveryboy' : 'supportMessages';
       const messagesQuery = query(collection(db, `${collectionName}/${selectedThread.id}/messages`), orderBy("timestamp", "asc"));
 
       const unsubscribe = onSnapshot(messagesQuery, snapshot => {
@@ -155,8 +155,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     if (newMessage.trim() === "" || !selectedThread || !currentUser) return;
 
     const isSupportChat = selectedThread.type === 'support';
-    const collectionName = isSupportChat ? 'supportChats' : 'Customer&deliveryboy';
-    const lastUpdatedField = isSupportChat ? 'lastUpdated' : 'lastUpdated';
+    const collectionName = isSupportChat ? 'supportMessages' : 'Customer&deliveryboy';
+    const lastUpdatedField = 'lastUpdated';
 
     const messagePayload = {
       senderId: currentUser.uid,
