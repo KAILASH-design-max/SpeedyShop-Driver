@@ -155,7 +155,8 @@ export interface SupportChatSession {
   userId: string;
   userName?: string;
   createdAt: any; // Firestore Timestamp
-  status: 'open' | 'closed';
+  status: 'active' | 'waiting' | 'resolved';
   lastMessage?: string;
+  lastMessageTimestamp?: any;
   orderId?: string; // Optional: The order related to the support chat
 }

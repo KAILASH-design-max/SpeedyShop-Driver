@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs, limit, doc, setDoc, orderBy } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs, limit, doc, setDoc, orderBy, updateDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import type { ChatMessage } from "@/types";
@@ -54,7 +54,7 @@ export function SupportChat() {
                         userId: currentUser.uid,
                         createdAt: serverTimestamp(),
                         userName: currentUser.displayName || "Driver",
-                        status: 'open',
+                        status: 'active',
                     });
                     setChatSessionId(newSessionRef.id);
                 }
@@ -118,6 +118,15 @@ export function SupportChat() {
         try {
             const messagesRef = collection(db, `supportChats/${chatSessionId}/messages`);
             await addDoc(messagesRef, messagePayload);
+
+            // Update the last message on the parent session document
+            const sessionRef = doc(db, "supportChats", chatSessionId);
+            await updateDoc(sessionRef, {
+                lastMessage: textToSend,
+                lastMessageTimestamp: serverTimestamp(),
+                status: 'active'
+            });
+
         } catch (error) {
             console.error("Error sending message:", error);
             toast({ variant: "destructive", title: "Send Error", description: "Message could not be sent." });

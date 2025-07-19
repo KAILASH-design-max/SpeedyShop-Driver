@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, ArrowLeft, Loader2, User, Package } from "lucide-react";
+import { Send, MessageSquare, Loader2, Package, User } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -15,6 +15,7 @@ import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, doc } 
 import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
+import { Badge } from "@/components/ui/badge";
 
 export function AdminChatHub() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -46,10 +47,9 @@ export function AdminChatHub() {
           ...doc.data(),
         } as SupportChatSession));
         
-        // Sort sessions by createdAt timestamp on the client side
         sessionsData.sort((a, b) => {
-          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
-          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+          const dateA = a.lastMessageTimestamp?.toDate ? a.lastMessageTimestamp.toDate() : (a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0));
+          const dateB = b.lastMessageTimestamp?.toDate ? b.lastMessageTimestamp.toDate() : (b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0));
           return dateB.getTime() - dateA.getTime();
         });
 
@@ -130,10 +130,9 @@ export function AdminChatHub() {
     }
   };
 
-  const formatTimestamp = (timestamp: any) => {
-    if (!timestamp || !timestamp.seconds) return "";
-    const date = new Date(timestamp.seconds * 1000);
-    return formatDistanceToNow(date, { addSuffix: true });
+  const formatListTimestamp = (timestamp: any) => {
+    if (!timestamp || !timestamp.toDate) return "";
+    return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, includeSeconds: true });
   }
   
   const formatMessageTimestamp = (timestamp: any) => {
@@ -141,6 +140,15 @@ export function AdminChatHub() {
     const date = new Date(timestamp.seconds * 1000);
     return format(date, 'p');
   }
+
+  const getStatusBadgeClass = (status: string = 'active') => {
+    switch(status.toLowerCase()) {
+        case 'active': return 'bg-green-100 text-green-800 border-green-200';
+        case 'waiting': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        case 'resolved': return 'bg-gray-100 text-gray-800 border-gray-200';
+        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+}
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 h-full">
@@ -165,23 +173,31 @@ export function AdminChatHub() {
                                 key={session.id} 
                                 onClick={() => handleSelectSession(session)}
                                 className={cn(
-                                    "flex items-center p-3 rounded-lg cursor-pointer transition-colors",
-                                    selectedSession?.id === session.id ? "bg-muted" : "hover:bg-muted/50"
+                                    "p-3 rounded-lg cursor-pointer transition-colors border border-transparent",
+                                    selectedSession?.id === session.id ? "bg-muted border-primary/50" : "hover:bg-muted/50"
                                 )}
                                 role="button"
                                 tabIndex={0}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSelectSession(session)}
                                 aria-label={`Open chat with ${session.userName}`}
                             >
-                                <Avatar className="mr-3 h-10 w-10">
-                                    <AvatarFallback>{session.userName?.substring(0,1).toUpperCase() || 'U'}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-grow overflow-hidden">
-                                    <p className="font-semibold truncate">{session.userName}</p>
-                                    <p className="text-sm text-muted-foreground truncate">{session.lastMessage || `User ID: ${session.userId.substring(0,10)}...`}</p>
-                                </div>
-                                <div className="text-right text-xs text-muted-foreground flex-shrink-0 ml-2">
-                                    <p>{formatTimestamp(session.createdAt)}</p>
+                                <div className="flex items-start gap-3">
+                                    <Avatar className="h-10 w-10 border">
+                                        <AvatarFallback>{session.userName?.substring(0,1).toUpperCase() || 'U'}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-grow overflow-hidden">
+                                        <div className="flex justify-between items-center">
+                                            <p className="font-semibold truncate">{session.userName}</p>
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(session.lastMessageTimestamp || session.createdAt)}</p>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground truncate">{session.lastMessage || `New session started...`}</p>
+                                        <div className="flex items-center gap-2 mt-1.5">
+                                            <Badge variant="outline" className={cn("capitalize text-xs font-normal", getStatusBadgeClass(session.status))}>
+                                                {session.status || 'Active'}
+                                            </Badge>
+                                            {session.orderId && <Badge variant="secondary" className="font-normal">#{session.orderId.substring(0,6)}</Badge>}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -203,7 +219,7 @@ export function AdminChatHub() {
                     <div>
                         <CardTitle className="text-lg">{`Chat with ${selectedSession.userName}`}</CardTitle>
                         {selectedSession.orderId && (
-                            <CardDescription className="flex items-center">
+                            <CardDescription className="flex items-center text-primary font-medium">
                                 <Package className="mr-1.5 h-4 w-4" />
                                 Order ID: #{selectedSession.orderId.substring(0,8)}
                             </CardDescription>
@@ -217,18 +233,28 @@ export function AdminChatHub() {
                     </div>
                 ) : (
                     messages.map((msg) => (
-                    <div key={msg.id} className={cn("flex mb-3", msg.senderRole === 'agent' ? "justify-end" : "justify-start")}>
-                        <div
-                        className={cn(
-                            "max-w-[70%] p-3 rounded-xl text-sm",
-                            msg.senderRole === 'agent' ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                    <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderRole === 'agent' ? "justify-end" : "justify-start")}>
+                        {msg.senderRole === 'user' && (
+                            <Avatar className="h-8 w-8">
+                                <AvatarFallback>{selectedSession.userName?.substring(0,1).toUpperCase()}</AvatarFallback>
+                            </Avatar>
                         )}
+                        <div
+                            className={cn(
+                                "max-w-[70%] p-3 rounded-xl text-sm",
+                                msg.senderRole === 'agent' ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                            )}
                         >
-                        <p>{msg.message}</p>
-                        <p className={cn("text-xs mt-1", msg.senderRole === 'agent' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
-                            {formatMessageTimestamp(msg.timestamp)}
-                        </p>
+                            <p>{msg.message}</p>
+                            <p className={cn("text-xs mt-1", msg.senderRole === 'agent' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+                                {formatMessageTimestamp(msg.timestamp)}
+                            </p>
                         </div>
+                        {msg.senderRole === 'agent' && (
+                            <Avatar className="h-8 w-8">
+                                <AvatarFallback className="bg-muted-foreground text-white">A</AvatarFallback>
+                            </Avatar>
+                        )}
                     </div>
                     ))
                 )}
@@ -256,7 +282,6 @@ export function AdminChatHub() {
             </div>
         )}
         </Card>
-
     </div>
   );
 }
