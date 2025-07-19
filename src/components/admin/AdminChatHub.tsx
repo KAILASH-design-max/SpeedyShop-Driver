@@ -22,12 +22,12 @@ const fetchUserName = async (userId: string) => {
     try {
         const userDoc = await getDoc(doc(db, "users", userId));
         if (userDoc.exists()) {
-            return userDoc.data().name || "User";
+            return userDoc.data().name || `User ${userId.substring(0,4)}`;
         }
-        return "User";
+        return `User ${userId.substring(0,4)}`;
     } catch (error) {
         console.error("Error fetching user name:", error);
-        return "User";
+        return `User ${userId.substring(0,4)}`;
     }
 }
 
@@ -59,15 +59,12 @@ export function AdminChatHub() {
       const unsubscribe = onSnapshot(sessionsQuery, async (snapshot) => {
         const sessionsDataPromises = snapshot.docs.map(async (docSnap) => {
           const data = docSnap.data();
-          const [userName, riderName] = await Promise.all([
-            fetchUserName(data.userId),
-            fetchUserName(data.riderId)
-          ]);
+          const userName = await fetchUserName(data.userId);
+          
           return {
             id: docSnap.id,
             ...data,
             userName,
-            riderName,
           } as SupportChatSession;
         });
 
@@ -264,8 +261,8 @@ export function AdminChatHub() {
                     </div>
                 ) : (
                     messages.map((msg) => (
-                    <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderRole === 'agent' ? "justify-end" : "justify-start")}>
-                        {msg.senderRole !== 'agent' && (
+                    <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUser.uid ? "justify-end" : "justify-start")}>
+                        {msg.senderId !== currentUser.uid && (
                             <Avatar className="h-8 w-8">
                                 <AvatarFallback>{selectedSession.userName?.substring(0,1).toUpperCase()}</AvatarFallback>
                             </Avatar>
@@ -273,15 +270,15 @@ export function AdminChatHub() {
                         <div
                             className={cn(
                                 "max-w-[70%] p-3 rounded-xl text-sm",
-                                msg.senderRole === 'agent' ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                                msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
                             )}
                         >
                             <p>{msg.message}</p>
-                            <p className={cn("text-xs mt-1", msg.senderRole === 'agent' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+                            <p className={cn("text-xs mt-1", msg.senderId === currentUser.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
                                 {formatMessageTimestamp(msg.timestamp)}
                             </p>
                         </div>
-                        {msg.senderRole === 'agent' && (
+                        {msg.senderId === currentUser.uid && (
                             <Avatar className="h-8 w-8">
                                 <AvatarFallback className="bg-muted-foreground text-white">A</AvatarFallback>
                             </Avatar>

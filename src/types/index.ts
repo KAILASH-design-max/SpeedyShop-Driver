@@ -120,8 +120,7 @@ export interface Profile {
 export interface CommunicationMessage {
   id: string;
   senderId: string;
-  text?: string; // For customer chat
-  message?: string; // For support chat
+  message: string; 
   senderRole?: 'user' | 'agent' | 'driver';
   timestamp: any; // Firestore ServerTimestamp
 }
@@ -157,7 +156,7 @@ export interface ChatMessage {
     id?: string;
     message: string;
     senderId: string;
-    senderRole: 'user' | 'agent';
+    senderRole: 'user' | 'agent' | 'driver';
     timestamp: any;
 }
 

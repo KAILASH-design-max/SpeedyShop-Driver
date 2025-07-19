@@ -52,7 +52,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     setIsLoadingThreads(true);
 
     // Listener for customer chats
-    const customerThreadsQuery = query(collection(db, "chatThreads"), where("participantIds", "array-contains", currentUser.uid));
+    const customerThreadsQuery = query(collection(db, "Customer&deliveryboy"), where("riderId", "==", currentUser.uid));
     const unsubscribeCustomerChats = onSnapshot(customerThreadsQuery, snapshot => {
         const customerThreads = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -72,7 +72,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             
             // Handle pre-selection
             if (preselectedThreadId) {
-                const threadToSelect = allThreads.find(t => t.id === preselectedThreadId);
+                const threadToSelect = allThreads.find(t => t.orderId === preselectedThreadId);
                 if (threadToSelect) {
                     setSelectedThread(threadToSelect);
                 }
@@ -86,35 +86,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
         toast({ variant: "destructive", title: "Error", description: "Could not fetch customer chats." });
     });
 
-    // Listener for support chats (simplified, assumes one support chat per user for now)
-    const supportThreadsQuery = query(collection(db, "supportChats"), where("userId", "==", currentUser.uid));
-    const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, snapshot => {
-         const supportThreads = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            type: 'support'
-        } as UnifiedChatThread));
-        
-        setChatThreads(prev => {
-             const otherThreads = prev.filter(t => t.type !== 'support');
-             const allThreads = [...supportThreads, ...otherThreads].sort((a, b) => {
-                const tsA = a.lastMessageTimestamp || a.lastUpdated;
-                const tsB = b.lastMessageTimestamp || b.lastUpdated;
-                if (!tsA || !tsB) return 0;
-                return tsB.seconds - tsA.seconds;
-            });
-            return allThreads;
-        });
-        setIsLoadingThreads(false);
-    }, error => {
-         console.error("Error fetching support chat threads:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not fetch support chats." });
-    });
-
-
     return () => {
         unsubscribeCustomerChats();
-        unsubscribeSupportChats();
     };
 
   }, [currentUser, toast, preselectedThreadId]);
@@ -123,7 +96,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   useEffect(() => {
     if (selectedThread && currentUser) {
       setIsLoadingMessages(true);
-      const collectionName = selectedThread.type === 'customer' ? 'chatThreads' : 'supportChats';
+      const collectionName = selectedThread.type === 'customer' ? 'Customer&deliveryboy' : 'supportChats';
       const messagesQuery = query(collection(db, `${collectionName}/${selectedThread.id}/messages`), orderBy("timestamp", "asc"));
 
       const unsubscribe = onSnapshot(messagesQuery, snapshot => {
@@ -158,15 +131,13 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     if (newMessage.trim() === "" || !selectedThread || !currentUser) return;
 
     const isSupportChat = selectedThread.type === 'support';
-    const collectionName = isSupportChat ? 'supportChats' : 'chatThreads';
-    const lastMessageTimestampField = isSupportChat ? 'lastMessageTimestamp' : 'lastMessageTimestamp';
-    const lastUpdatedField = isSupportChat ? 'lastUpdated' : 'lastMessageTimestamp';
+    const collectionName = isSupportChat ? 'supportChats' : 'Customer&deliveryboy';
+    const lastUpdatedField = isSupportChat ? 'lastUpdated' : 'lastUpdated';
 
     const messagePayload = {
       senderId: currentUser.uid,
-      message: newMessage, // Support chat uses 'message'
-      text: newMessage, // Customer chat uses 'text'
-      senderRole: isSupportChat ? 'user' : 'driver', // context-specific role
+      message: newMessage,
+      senderRole: isSupportChat ? 'user' : 'driver', 
       timestamp: serverTimestamp(),
     };
     
@@ -179,14 +150,13 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       await updateDoc(threadRef, {
         lastMessage: newMessage,
         [lastUpdatedField]: serverTimestamp(),
-        // For support chat, ensure status is 'active'
         ...(isSupportChat && { status: 'active' })
       });
 
     } catch (error) {
       console.error("Error sending message:", error);
       toast({ variant: "destructive", title: "Error", description: "Could not send message." });
-      setNewMessage(messagePayload.text); // Restore message on error
+      setNewMessage(messagePayload.message); // Restore message on error
     }
   };
   
@@ -196,11 +166,10 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
 
   const getParticipantDetails = (thread: UnifiedChatThread, currentUserId: string) => {
     if (thread.type === 'customer') {
-        const otherId = thread.participantIds.find(id => id !== currentUserId) || "";
         return {
-            name: thread.participantNames[otherId] || "Unknown Customer",
-            avatarUrl: thread.participantAvatars[otherId] || undefined,
-            subtext: `Order #${thread.id.substring(0,8)}`
+            name: thread.userName || "Customer",
+            avatarUrl: undefined,
+            subtext: `Order #${thread.orderId?.substring(0,8)}`
         };
     } else { // Support chat
         return {
@@ -265,7 +234,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                                     <div className="flex-grow overflow-hidden">
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold truncate">{details.name}</p>
-                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastMessageTimestamp || thread.lastUpdated)}</p>
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastUpdated)}</p>
                                         </div>
                                         <p className="text-sm text-muted-foreground truncate">{thread.lastMessage || `New conversation...`}</p>
                                     </div>
@@ -331,7 +300,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                             msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
                         )}
                         >
-                            <p>{msg.text || msg.message}</p>
+                            <p>{msg.message}</p>
                             <p className={cn("text-xs mt-1", msg.senderId === currentUser.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
                                 {formatMessageTimestamp(msg.timestamp)}
                             </p>
