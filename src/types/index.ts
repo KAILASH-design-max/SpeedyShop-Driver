@@ -132,6 +132,8 @@ export interface ChatThread {
   participantAvatars: { [key:string]: string }; // Maps UID to avatar URL
   lastMessage: string;
   lastMessageTimestamp: any; // Firestore ServerTimestamp
+  orderId?: string;
+  lastUpdated?: any;
 }
 
 export interface Session {
