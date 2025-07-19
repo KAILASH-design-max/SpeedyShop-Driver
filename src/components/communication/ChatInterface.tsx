@@ -2,12 +2,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { CommunicationMessage, ChatThread } from "@/types";
+import type { CommunicationMessage, ChatThread, SupportChatSession } from "@/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, ArrowLeft, Loader2 } from "lucide-react";
+import { Send, MessageSquare, ArrowLeft, Loader2, LifeBuoy } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PredefinedMessages } from "./PredefinedMessages";
 import { cn } from "@/lib/utils";
@@ -15,12 +15,18 @@ import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
-export function ChatInterface() {
+type UnifiedChatThread = (ChatThread & { type: 'customer' }) | (SupportChatSession & { type: 'support' });
+
+interface ChatInterfaceProps {
+    preselectedThreadId?: string | null;
+}
+
+export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
-  const [chatThreads, setChatThreads] = useState<ChatThread[]>([]);
+  const [selectedThread, setSelectedThread] = useState<UnifiedChatThread | null>(null);
+  const [chatThreads, setChatThreads] = useState<UnifiedChatThread[]>([]);
   const [messages, setMessages] = useState<CommunicationMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
@@ -35,35 +41,90 @@ export function ChatInterface() {
     return () => unsubscribe();
   }, []);
 
+  // Fetch and combine threads from both collections
   useEffect(() => {
-    if (currentUser) {
-      setIsLoadingThreads(true);
-      const threadsQuery = query(collection(db, "chatThreads"), where("participantIds", "array-contains", currentUser.uid));
-      
-      const unsubscribe = onSnapshot(threadsQuery, snapshot => {
-        const threadsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        } as ChatThread));
-        setChatThreads(threadsData);
+    if (!currentUser) {
         setIsLoadingThreads(false);
-      }, error => {
-        console.error("Error fetching chat threads:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not fetch chat threads." });
-        setIsLoadingThreads(false);
-      });
-
-      return () => unsubscribe();
-    } else {
-      setChatThreads([]);
-      setIsLoadingThreads(false);
+        setChatThreads([]);
+        return;
     }
-  }, [currentUser, toast]);
 
+    setIsLoadingThreads(true);
+
+    // Listener for customer chats
+    const customerThreadsQuery = query(collection(db, "chatThreads"), where("participantIds", "array-contains", currentUser.uid));
+    const unsubscribeCustomerChats = onSnapshot(customerThreadsQuery, snapshot => {
+        const customerThreads = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            type: 'customer'
+        } as UnifiedChatThread));
+        
+        // Combine with other threads if any
+        setChatThreads(prev => {
+            const otherThreads = prev.filter(t => t.type !== 'customer');
+            const allThreads = [...customerThreads, ...otherThreads].sort((a, b) => {
+                const tsA = a.lastMessageTimestamp || a.lastUpdated;
+                const tsB = b.lastMessageTimestamp || b.lastUpdated;
+                if (!tsA || !tsB) return 0;
+                return tsB.seconds - tsA.seconds;
+            });
+            
+            // Handle pre-selection
+            if (preselectedThreadId) {
+                const threadToSelect = allThreads.find(t => t.id === preselectedThreadId);
+                if (threadToSelect) {
+                    setSelectedThread(threadToSelect);
+                }
+            }
+            return allThreads;
+        });
+
+        setIsLoadingThreads(false);
+    }, error => {
+        console.error("Error fetching customer chat threads:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch customer chats." });
+    });
+
+    // Listener for support chats (simplified, assumes one support chat per user for now)
+    const supportThreadsQuery = query(collection(db, "supportChats"), where("userId", "==", currentUser.uid));
+    const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, snapshot => {
+         const supportThreads = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            type: 'support'
+        } as UnifiedChatThread));
+        
+        setChatThreads(prev => {
+             const otherThreads = prev.filter(t => t.type !== 'support');
+             const allThreads = [...supportThreads, ...otherThreads].sort((a, b) => {
+                const tsA = a.lastMessageTimestamp || a.lastUpdated;
+                const tsB = b.lastMessageTimestamp || b.lastUpdated;
+                if (!tsA || !tsB) return 0;
+                return tsB.seconds - tsA.seconds;
+            });
+            return allThreads;
+        });
+        setIsLoadingThreads(false);
+    }, error => {
+         console.error("Error fetching support chat threads:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch support chats." });
+    });
+
+
+    return () => {
+        unsubscribeCustomerChats();
+        unsubscribeSupportChats();
+    };
+
+  }, [currentUser, toast, preselectedThreadId]);
+
+  // Fetch messages for the selected thread
   useEffect(() => {
     if (selectedThread && currentUser) {
       setIsLoadingMessages(true);
-      const messagesQuery = query(collection(db, `chatThreads/${selectedThread.id}/messages`), orderBy("timestamp", "asc"));
+      const collectionName = selectedThread.type === 'customer' ? 'chatThreads' : 'supportChats';
+      const messagesQuery = query(collection(db, `${collectionName}/${selectedThread.id}/messages`), orderBy("timestamp", "asc"));
 
       const unsubscribe = onSnapshot(messagesQuery, snapshot => {
         const messagesData = snapshot.docs.map(doc => ({
@@ -93,30 +154,33 @@ export function ChatInterface() {
   }, [messages]);
 
 
-  const handleSelectThread = (thread: ChatThread) => {
-    setSelectedThread(thread);
-  };
-
   const handleSendMessage = async () => {
     if (newMessage.trim() === "" || !selectedThread || !currentUser) return;
 
+    const isSupportChat = selectedThread.type === 'support';
+    const collectionName = isSupportChat ? 'supportChats' : 'chatThreads';
+    const lastMessageTimestampField = isSupportChat ? 'lastMessageTimestamp' : 'lastMessageTimestamp';
+    const lastUpdatedField = isSupportChat ? 'lastUpdated' : 'lastMessageTimestamp';
+
     const messagePayload = {
       senderId: currentUser.uid,
-      text: newMessage,
+      message: newMessage, // Support chat uses 'message'
+      text: newMessage, // Customer chat uses 'text'
+      senderRole: isSupportChat ? 'user' : 'driver', // context-specific role
       timestamp: serverTimestamp(),
     };
     
     setNewMessage("");
 
     try {
-      // Add new message to subcollection
-      await addDoc(collection(db, `chatThreads/${selectedThread.id}/messages`), messagePayload);
+      await addDoc(collection(db, `${collectionName}/${selectedThread.id}/messages`), messagePayload);
       
-      // Update the last message on the parent thread document
-      const threadRef = doc(db, "chatThreads", selectedThread.id);
+      const threadRef = doc(db, collectionName, selectedThread.id);
       await updateDoc(threadRef, {
         lastMessage: newMessage,
-        lastMessageTimestamp: serverTimestamp(),
+        [lastUpdatedField]: serverTimestamp(),
+        // For support chat, ensure status is 'active'
+        ...(isSupportChat && { status: 'active' })
       });
 
     } catch (error) {
@@ -125,132 +189,185 @@ export function ChatInterface() {
       setNewMessage(messagePayload.text); // Restore message on error
     }
   };
-
+  
   const handleUsePredefinedMessage = (message: string) => {
     setNewMessage(prev => prev ? `${prev} ${message}`: message);
   };
 
-  const getOtherParticipant = (thread: ChatThread, currentUserId: string) => {
-    const otherId = thread.participantIds.find(id => id !== currentUserId) || "";
-    return {
-      id: otherId,
-      name: thread.participantNames[otherId] || "Unknown User",
-      avatarUrl: thread.participantAvatars[otherId] || `https://placehold.co/100x100.png`,
-    };
+  const getParticipantDetails = (thread: UnifiedChatThread, currentUserId: string) => {
+    if (thread.type === 'customer') {
+        const otherId = thread.participantIds.find(id => id !== currentUserId) || "";
+        return {
+            name: thread.participantNames[otherId] || "Unknown Customer",
+            avatarUrl: thread.participantAvatars[otherId] || undefined,
+            subtext: `Order #${thread.id.substring(0,8)}`
+        };
+    } else { // Support chat
+        return {
+            name: "Support Agent",
+            avatarUrl: undefined,
+            subtext: `Support Session`
+        }
+    }
   };
 
-  const formatTimestamp = (timestamp: any) => {
-    if (!timestamp || !timestamp.seconds) return "";
-    const date = new Date(timestamp.seconds * 1000);
-    return format(date, 'p'); // e.g., 4:30 PM
+  const formatListTimestamp = (timestamp: any) => {
+    if (!timestamp || !timestamp.toDate) return "";
+    return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, includeSeconds: true });
   }
 
-  if (selectedThread && currentUser) {
-    const otherParticipant = getOtherParticipant(selectedThread, currentUser.uid);
-    return (
-      <Card className="w-full h-[calc(100vh-10rem)] md:h-[calc(100vh-12rem)] flex flex-col shadow-xl">
-        <CardHeader className="flex flex-row items-center gap-4 p-4 border-b">
-            <Button variant="ghost" size="icon" onClick={() => setSelectedThread(null)} className="mr-2">
-                <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <Avatar>
-              <AvatarImage src={otherParticipant.avatarUrl} alt={otherParticipant.name} data-ai-hint="person avatar chat"/>
-              <AvatarFallback>{otherParticipant.name.substring(0,2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div>
-                <CardTitle className="text-lg">{otherParticipant.name}</CardTitle>
-                <CardDescription>Order #{selectedThread.id.substring(0,8)}</CardDescription>
-            </div>
+  const formatMessageTimestamp = (timestamp: any) => {
+    if (!timestamp || !timestamp.seconds) return "";
+    const date = new Date(timestamp.seconds * 1000);
+    return format(date, 'p');
+  }
+
+  const renderThreadList = () => (
+    <Card className="md:col-span-1 lg:col-span-1 h-full flex flex-col shadow-xl">
+        <CardHeader>
+            <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Chat Hub</CardTitle>
+            <CardDescription>All your conversations in one place.</CardDescription>
         </CardHeader>
-        <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>
-          {isLoadingMessages ? (
-            <div className="flex justify-center items-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            messages.map((msg) => (
-              <div key={msg.id} className={cn("flex mb-3", msg.senderId === currentUser.uid ? "justify-end" : "justify-start")}>
-                <div
-                  className={cn(
-                    "max-w-[70%] p-3 rounded-xl text-sm",
-                    msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
-                  )}
-                >
-                  <p>{msg.text}</p>
-                  <p className={cn("text-xs mt-1", msg.senderId === currentUser.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
-                    {formatTimestamp(msg.timestamp)}
-                  </p>
+        <CardContent className="flex-grow overflow-hidden p-2">
+            <ScrollArea className="h-full">
+            {isLoadingThreads ? (
+                <div className="flex justify-center items-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              </div>
-            ))
-          )}
-        </ScrollArea>
-        <CardFooter className="p-4 border-t">
-          <div className="w-full space-y-2">
-            <PredefinedMessages onSelectMessage={handleUsePredefinedMessage} />
-            <div className="flex items-center gap-2">
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type your message..."
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              />
-              <Button onClick={handleSendMessage} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Send className="h-5 w-5" />
-              </Button>
+            ) : chatThreads.length === 0 ? (
+                <p className="text-center text-muted-foreground p-8">No active chats.</p>
+            ) : (
+                <div className="space-y-1">
+                    {chatThreads.map(thread => {
+                        if (!currentUser) return null;
+                        const details = getParticipantDetails(thread, currentUser.uid);
+                        const isSelected = selectedThread?.id === thread.id;
+                        return (
+                             <div 
+                                key={thread.id} 
+                                onClick={() => setSelectedThread(thread)}
+                                className={cn(
+                                    "p-3 rounded-lg cursor-pointer transition-colors border border-transparent",
+                                    isSelected ? "bg-muted border-primary/50" : "hover:bg-muted/50"
+                                )}
+                                role="button"
+                                tabIndex={0}
+                                onKeyPress={(e) => e.key === 'Enter' && setSelectedThread(thread)}
+                                aria-label={`Open chat with ${details.name}`}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <Avatar className="h-10 w-10 border">
+                                        {details.avatarUrl && <AvatarImage src={details.avatarUrl} alt={details.name} data-ai-hint="person avatar"/>}
+                                        <AvatarFallback className={cn(thread.type === 'support' && 'bg-blue-500 text-white')}>
+                                            {thread.type === 'support' ? <LifeBuoy size={20} /> : details.name.substring(0,1).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-grow overflow-hidden">
+                                        <div className="flex justify-between items-center">
+                                            <p className="font-semibold truncate">{details.name}</p>
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastMessageTimestamp || thread.lastUpdated)}</p>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground truncate">{thread.lastMessage || `New conversation...`}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+            </ScrollArea>
+        </CardContent>
+    </Card>
+  );
+
+  const renderChatWindow = () => {
+      if (!selectedThread || !currentUser) {
+          return (
+              <div className="hidden md:flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+                <MessageSquare className="h-16 w-16 mb-4 text-gray-300" />
+                <h3 className="text-lg font-semibold">Select a conversation</h3>
+                <p>Choose a chat from the left panel to view messages.</p>
             </div>
-          </div>
-        </CardFooter>
+          );
+      }
+      
+      const details = getParticipantDetails(selectedThread, currentUser.uid);
+
+      return (
+        <Card className="w-full h-full flex flex-col shadow-xl">
+            <CardHeader className="flex flex-row items-center gap-4 p-4 border-b">
+                 <Button variant="ghost" size="icon" onClick={() => setSelectedThread(null)} className="mr-2 md:hidden">
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <Avatar>
+                    {details.avatarUrl && <AvatarImage src={details.avatarUrl} alt={details.name} />}
+                    <AvatarFallback className={cn(selectedThread.type === 'support' && 'bg-blue-500 text-white')}>
+                         {selectedThread.type === 'support' ? <LifeBuoy size={20} /> : details.name.substring(0,1).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
+                <div>
+                    <CardTitle className="text-lg">{details.name}</CardTitle>
+                    <CardDescription>{details.subtext}</CardDescription>
+                </div>
+            </CardHeader>
+            <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>
+            {isLoadingMessages ? (
+                <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                messages.map((msg) => (
+                    <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUser.uid ? "justify-end" : "justify-start")}>
+                        {msg.senderId !== currentUser.uid && (
+                           <Avatar className="h-8 w-8">
+                                <AvatarFallback className={cn(selectedThread.type === 'support' && 'bg-blue-500 text-white')}>
+                                   {selectedThread.type === 'support' ? 'S' : details.name.substring(0,1).toUpperCase()}
+                                </AvatarFallback>
+                           </Avatar>
+                        )}
+                        <div
+                        className={cn(
+                            "max-w-[70%] p-3 rounded-xl text-sm",
+                            msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                        )}
+                        >
+                            <p>{msg.text || msg.message}</p>
+                            <p className={cn("text-xs mt-1", msg.senderId === currentUser.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+                                {formatMessageTimestamp(msg.timestamp)}
+                            </p>
+                        </div>
+                    </div>
+                ))
+            )}
+            </ScrollArea>
+            <CardFooter className="p-4 border-t">
+            <div className="w-full space-y-2">
+                {selectedThread.type === 'customer' && <PredefinedMessages onSelectMessage={handleUsePredefinedMessage} />}
+                <div className="flex items-center gap-2">
+                <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                />
+                <Button onClick={handleSendMessage} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Send className="h-5 w-5" />
+                </Button>
+                </div>
+            </div>
+            </CardFooter>
       </Card>
-    );
+      );
   }
 
   return (
-    <Card className="shadow-xl">
-      <CardHeader>
-        <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Chat Hub</CardTitle>
-        <CardDescription>Select a conversation to start chatting.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoadingThreads ? (
-            <div className="flex justify-center items-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="ml-2">Loading chats...</p>
-            </div>
-        ) : chatThreads.length === 0 ? (
-            <p className="text-center text-muted-foreground p-8">No active chats.</p>
-        ) : (
-            <div className="space-y-1">
-                {chatThreads.map(thread => {
-                    if (!currentUser) return null;
-                    const otherParticipant = getOtherParticipant(thread, currentUser.uid);
-                    return (
-                        <div 
-                            key={thread.id} 
-                            onClick={() => handleSelectThread(thread)}
-                            className="flex items-center p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                            role="button"
-                            tabIndex={0}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSelectThread(thread)}
-                            aria-label={`Open chat with ${otherParticipant.name}`}
-                        >
-                            <Avatar className="mr-3 h-10 w-10">
-                            <AvatarImage src={otherParticipant.avatarUrl} alt={otherParticipant.name} data-ai-hint="person avatar list" />
-                            <AvatarFallback>{otherParticipant.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-grow">
-                            <p className="font-semibold">{otherParticipant.name}</p>
-                            <p className="text-sm text-muted-foreground truncate max-w-xs">{thread.lastMessage}</p>
-                            </div>
-                            <div className="text-right text-xs text-muted-foreground">
-                                <p>{formatTimestamp(thread.lastMessageTimestamp)}</p>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 h-full">
+       <div className={cn("md:col-span-1 lg:col-span-1 h-full", selectedThread && "hidden md:block")}>
+        {renderThreadList()}
+       </div>
+       <div className={cn("md:col-span-2 lg:col-span-3 h-full", !selectedThread && "hidden md:flex")}>
+        {renderChatWindow()}
+       </div>
+    </div>
   );
 }

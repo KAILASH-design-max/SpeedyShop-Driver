@@ -120,7 +120,9 @@ export interface Profile {
 export interface CommunicationMessage {
   id: string;
   senderId: string;
-  text: string;
+  text?: string; // For customer chat
+  message?: string; // For support chat
+  senderRole?: 'user' | 'agent' | 'driver';
   timestamp: any; // Firestore ServerTimestamp
 }
 
@@ -161,13 +163,14 @@ export interface ChatMessage {
 
 export interface SupportChatSession {
   id: string;
-  userId: string; // customerId
-  riderId: string; // deliveryPartnerId
+  userId: string; 
+  riderId?: string; // deliveryPartnerId - now optional as driver creates it
   userName?: string;
   riderName?: string;
   createdAt: any; // Firestore Timestamp
   lastUpdated: any; // Firestore Timestamp
   status: 'active' | 'waiting' | 'resolved';
   lastMessage?: string;
-  orderId?: string; // Optional: The order related to the support chat
+  lastMessageTimestamp?: any; // Firestore Timestamp
+  orderId?: string; 
 }
