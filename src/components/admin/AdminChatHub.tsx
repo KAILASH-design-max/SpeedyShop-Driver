@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -41,13 +42,21 @@ export function AdminChatHub() {
   useEffect(() => {
     if (currentUser) {
       setIsLoadingSessions(true);
-      const sessionsQuery = query(collection(db, "supportChats"), orderBy("createdAt", "desc"));
+      const sessionsQuery = query(collection(db, "supportChats"));
       
       const unsubscribe = onSnapshot(sessionsQuery, snapshot => {
         const sessionsData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         } as SupportChatSession));
+        
+        // Sort sessions by createdAt timestamp on the client side
+        sessionsData.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+          return dateB.getTime() - dateA.getTime();
+        });
+
         setChatSessions(sessionsData);
         setIsLoadingSessions(false);
       }, error => {
