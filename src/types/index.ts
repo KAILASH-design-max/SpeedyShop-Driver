@@ -152,11 +152,13 @@ export interface ChatMessage {
 
 export interface SupportChatSession {
   id: string;
-  userId: string;
+  userId: string; // customerId
+  riderId: string; // deliveryPartnerId
   userName?: string;
+  riderName?: string;
   createdAt: any; // Firestore Timestamp
+  lastUpdated: any; // Firestore Timestamp
   status: 'active' | 'waiting' | 'resolved';
   lastMessage?: string;
-  lastMessageTimestamp?: any;
   orderId?: string; // Optional: The order related to the support chat
 }

@@ -11,11 +11,26 @@ import { Send, MessageSquare, Loader2, Package, User } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, doc } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "firebase/firestore";
 import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
+
+const fetchUserName = async (userId: string) => {
+    if (!userId) return "Unknown User";
+    try {
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+            return userDoc.data().name || "User";
+        }
+        return "User";
+    } catch (error) {
+        console.error("Error fetching user name:", error);
+        return "User";
+    }
+}
+
 
 export function AdminChatHub() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -39,19 +54,28 @@ export function AdminChatHub() {
   useEffect(() => {
     if (currentUser) {
       setIsLoadingSessions(true);
-      // Removed orderBy from query to avoid needing a composite index
-      const sessionsQuery = query(collection(db, "supportChats"));
+      const sessionsQuery = query(collection(db, "Customer&deliveryboy"));
       
-      const unsubscribe = onSnapshot(sessionsQuery, snapshot => {
-        const sessionsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        } as SupportChatSession));
+      const unsubscribe = onSnapshot(sessionsQuery, async (snapshot) => {
+        const sessionsDataPromises = snapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          const [userName, riderName] = await Promise.all([
+            fetchUserName(data.userId),
+            fetchUserName(data.riderId)
+          ]);
+          return {
+            id: docSnap.id,
+            ...data,
+            userName,
+            riderName,
+          } as SupportChatSession;
+        });
+
+        const sessionsData = await Promise.all(sessionsDataPromises);
         
-        // Sort client-side
         sessionsData.sort((a, b) => {
-          const dateA = a.lastMessageTimestamp?.toDate ? a.lastMessageTimestamp.toDate() : (a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0));
-          const dateB = b.lastMessageTimestamp?.toDate ? b.lastMessageTimestamp.toDate() : (b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0));
+          const dateA = a.lastUpdated?.toDate ? a.lastUpdated.toDate() : (a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0));
+          const dateB = b.lastUpdated?.toDate ? b.lastUpdated.toDate() : (b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0));
           return dateB.getTime() - dateA.getTime();
         });
 
@@ -73,7 +97,7 @@ export function AdminChatHub() {
   useEffect(() => {
     if (selectedSession && currentUser) {
       setIsLoadingMessages(true);
-      const messagesQuery = query(collection(db, `supportChats/${selectedSession.id}/messages`), orderBy("timestamp", "asc"));
+      const messagesQuery = query(collection(db, `Customer&deliveryboy/${selectedSession.id}/messages`), orderBy("timestamp", "asc"));
 
       const unsubscribe = onSnapshot(messagesQuery, snapshot => {
         const messagesData = snapshot.docs.map(doc => ({
@@ -122,7 +146,12 @@ export function AdminChatHub() {
     setNewMessage("");
 
     try {
-      await addDoc(collection(db, `supportChats/${selectedSession.id}/messages`), messagePayload);
+      await addDoc(collection(db, `Customer&deliveryboy/${selectedSession.id}/messages`), messagePayload);
+       const sessionRef = doc(db, "Customer&deliveryboy", selectedSession.id);
+       await updateDoc(sessionRef, {
+           lastMessage: newMessage,
+           lastUpdated: serverTimestamp(),
+       });
     } catch (error) {
       console.error("Error sending message:", error);
       toast({ variant: "destructive", title: "Error", description: "Could not send message." });
@@ -190,7 +219,7 @@ export function AdminChatHub() {
                                     <div className="flex-grow overflow-hidden">
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold truncate">{session.userName}</p>
-                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(session.lastMessageTimestamp || session.createdAt)}</p>
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(session.lastUpdated || session.createdAt)}</p>
                                         </div>
                                         <p className="text-sm text-muted-foreground truncate">{session.lastMessage || `New session started...`}</p>
                                         <div className="flex items-center gap-2 mt-1.5">
@@ -236,7 +265,7 @@ export function AdminChatHub() {
                 ) : (
                     messages.map((msg) => (
                     <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderRole === 'agent' ? "justify-end" : "justify-start")}>
-                        {msg.senderRole === 'user' && (
+                        {msg.senderRole !== 'agent' && (
                             <Avatar className="h-8 w-8">
                                 <AvatarFallback>{selectedSession.userName?.substring(0,1).toUpperCase()}</AvatarFallback>
                             </Avatar>
