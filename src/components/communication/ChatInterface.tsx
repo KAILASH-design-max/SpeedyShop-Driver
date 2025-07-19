@@ -50,6 +50,26 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     }
 
     setIsLoadingThreads(true);
+    let combinedThreads: UnifiedChatThread[] = [];
+
+    const handleUpdate = () => {
+        combinedThreads.sort((a, b) => {
+            const tsA = a.lastMessageTimestamp || a.lastUpdated;
+            const tsB = b.lastMessageTimestamp || b.lastUpdated;
+            if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
+            return tsB.seconds - tsA.seconds;
+        });
+
+        // Handle pre-selection
+        if (preselectedThreadId) {
+            const threadToSelect = combinedThreads.find(t => t.orderId === preselectedThreadId);
+            if (threadToSelect) {
+                setSelectedThread(threadToSelect);
+            }
+        }
+        setChatThreads([...combinedThreads]);
+        setIsLoadingThreads(false);
+    }
 
     // Listener for customer chats
     const customerThreadsQuery = query(collection(db, "Customer&deliveryboy"), where("riderId", "==", currentUser.uid));
@@ -60,34 +80,38 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             type: 'customer'
         } as UnifiedChatThread));
         
-        // Combine with other threads if any
-        setChatThreads(prev => {
-            const otherThreads = prev.filter(t => t.type !== 'customer');
-            const allThreads = [...customerThreads, ...otherThreads].sort((a, b) => {
-                const tsA = a.lastMessageTimestamp || a.lastUpdated;
-                const tsB = b.lastMessageTimestamp || b.lastUpdated;
-                if (!tsA || !tsB) return 0;
-                return tsB.seconds - tsA.seconds;
-            });
-            
-            // Handle pre-selection
-            if (preselectedThreadId) {
-                const threadToSelect = allThreads.find(t => t.orderId === preselectedThreadId);
-                if (threadToSelect) {
-                    setSelectedThread(threadToSelect);
-                }
-            }
-            return allThreads;
-        });
+        // Combine with other threads
+        const otherThreads = combinedThreads.filter(t => t.type !== 'customer');
+        combinedThreads = [...customerThreads, ...otherThreads];
+        handleUpdate();
 
-        setIsLoadingThreads(false);
     }, error => {
         console.error("Error fetching customer chat threads:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not fetch customer chats." });
     });
+    
+    // Listener for support chats
+    const supportThreadsQuery = query(collection(db, "supportChats"), where("userId", "==", currentUser.uid));
+    const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, snapshot => {
+        const supportThreads = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            type: 'support'
+        } as UnifiedChatThread));
+        
+        // Combine with other threads
+        const otherThreads = combinedThreads.filter(t => t.type !== 'support');
+        combinedThreads = [...supportThreads, ...otherThreads];
+        handleUpdate();
+    }, error => {
+        console.error("Error fetching support chat threads:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch support chats." });
+    });
+
 
     return () => {
         unsubscribeCustomerChats();
+        unsubscribeSupportChats();
     };
 
   }, [currentUser, toast, preselectedThreadId]);

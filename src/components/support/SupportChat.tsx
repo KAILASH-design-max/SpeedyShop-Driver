@@ -41,8 +41,14 @@ export function SupportChat() {
             }
         };
 
-        ensureSupportSessionExists();
-    }, []);
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            if (user) {
+                ensureSupportSessionExists();
+            }
+        });
+        
+        return () => unsubscribe();
+    }, [toast]);
 
     return (
        <div className="h-full">
