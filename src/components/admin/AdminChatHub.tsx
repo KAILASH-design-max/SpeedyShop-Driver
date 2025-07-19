@@ -16,15 +16,11 @@ import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
 
-interface AdminChatMessage extends ChatMessage {
-  sender: 'user' | 'agent';
-}
-
 export function AdminChatHub() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [selectedSession, setSelectedSession] = useState<SupportChatSession | null>(null);
   const [chatSessions, setChatSessions] = useState<SupportChatSession[]>([]);
-  const [messages, setMessages] = useState<AdminChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -81,7 +77,7 @@ export function AdminChatHub() {
         const messagesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-        } as AdminChatMessage));
+        } as ChatMessage));
         setMessages(messagesData);
         setIsLoadingMessages(false);
       }, error => {
@@ -114,9 +110,10 @@ export function AdminChatHub() {
 
     setIsSending(true);
 
-    const messagePayload = {
-      sender: 'agent',
-      text: newMessage,
+    const messagePayload: Omit<ChatMessage, 'id'> = {
+      message: newMessage,
+      senderId: currentUser.uid,
+      senderRole: 'agent',
       timestamp: serverTimestamp(),
     };
     
@@ -127,7 +124,7 @@ export function AdminChatHub() {
     } catch (error) {
       console.error("Error sending message:", error);
       toast({ variant: "destructive", title: "Error", description: "Could not send message." });
-      setNewMessage(messagePayload.text);
+      setNewMessage(messagePayload.message);
     } finally {
         setIsSending(false);
     }
@@ -215,15 +212,15 @@ export function AdminChatHub() {
                     </div>
                 ) : (
                     messages.map((msg) => (
-                    <div key={msg.id} className={cn("flex mb-3", msg.sender === 'agent' ? "justify-end" : "justify-start")}>
+                    <div key={msg.id} className={cn("flex mb-3", msg.senderRole === 'agent' ? "justify-end" : "justify-start")}>
                         <div
                         className={cn(
                             "max-w-[70%] p-3 rounded-xl text-sm",
-                            msg.sender === 'agent' ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                            msg.senderRole === 'agent' ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
                         )}
                         >
-                        <p>{msg.text}</p>
-                        <p className={cn("text-xs mt-1", msg.sender === 'agent' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+                        <p>{msg.message}</p>
+                        <p className={cn("text-xs mt-1", msg.senderRole === 'agent' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
                             {formatMessageTimestamp(msg.timestamp)}
                         </p>
                         </div>

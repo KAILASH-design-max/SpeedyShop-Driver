@@ -13,13 +13,7 @@ import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs, limit, doc, setDoc, orderBy } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-
-interface ChatMessage {
-    id?: string;
-    sender: 'user' | 'agent';
-    text: string;
-    timestamp: any;
-}
+import type { ChatMessage } from "@/types";
 
 export function SupportChat() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -100,9 +94,9 @@ export function SupportChat() {
 
     useEffect(() => {
         if (scrollAreaRef.current) {
-            const scrollDiv = scrollAreaRef.current.querySelector('div:first-child');
-            if (scrollDiv) {
-                scrollDiv.scrollTop = scrollDiv.scrollHeight;
+            const scrollViewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+            if (scrollViewport) {
+              scrollViewport.scrollTop = scrollViewport.scrollHeight;
             }
         }
     }, [messages]);
@@ -114,9 +108,10 @@ export function SupportChat() {
         const textToSend = newMessage;
         setNewMessage("");
 
-        const messagePayload: ChatMessage = {
-            sender: 'user',
-            text: textToSend,
+        const messagePayload: Omit<ChatMessage, 'id'> = {
+            message: textToSend,
+            senderId: currentUser.uid,
+            senderRole: 'user',
             timestamp: serverTimestamp(),
         };
 
@@ -158,10 +153,10 @@ export function SupportChat() {
                                     key={message.id || index}
                                     className={cn(
                                         "flex items-end gap-2",
-                                        message.sender === "user" ? "justify-end" : "justify-start"
+                                        message.senderRole === "user" ? "justify-end" : "justify-start"
                                     )}
                                 >
-                                    {message.sender === "agent" && (
+                                    {message.senderRole === "agent" && (
                                         <Avatar className="h-8 w-8">
                                             <AvatarFallback className="bg-muted-foreground text-white">S</AvatarFallback>
                                         </Avatar>
@@ -169,14 +164,14 @@ export function SupportChat() {
                                     <div
                                         className={cn(
                                             "max-w-[75%] rounded-lg p-3 text-sm",
-                                            message.sender === "user"
+                                            message.senderRole === "user"
                                             ? "rounded-br-none bg-primary text-primary-foreground"
                                             : "rounded-bl-none bg-muted"
                                         )}
                                     >
-                                        {message.text}
+                                        {message.message}
                                     </div>
-                                    {message.sender === "user" && (
+                                    {message.senderRole === "user" && (
                                         <Avatar className="h-8 w-8">
                                             <AvatarFallback className="bg-primary text-primary-foreground"><UserIcon size={16}/></AvatarFallback>
                                         </Avatar>

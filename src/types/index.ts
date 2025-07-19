@@ -144,8 +144,9 @@ export interface MonthlyEarning {
 
 export interface ChatMessage {
     id?: string;
-    sender: 'user' | 'agent';
-    text: string;
+    message: string;
+    senderId: string;
+    senderRole: 'user' | 'agent';
     timestamp: any;
 }
 
