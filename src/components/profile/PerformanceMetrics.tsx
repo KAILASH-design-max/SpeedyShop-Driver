@@ -9,6 +9,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 
+interface PerformanceMetricsProps {
+  profile: Profile;
+}
+
 interface FeedbackItem {
     name: string;
     rating: number;

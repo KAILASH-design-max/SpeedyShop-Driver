@@ -9,9 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { User } from "firebase/auth";
+import { Button } from "@/components/ui/button";
 
 export default function ProfilePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -116,6 +117,12 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={() => router.push('/ratings')}>
+          <Star className="mr-2 h-4 w-4" />
+          View My Ratings
+        </Button>
+      </div>
       <ProfileForm profile={profile} onUpdate={handleProfileUpdate} />
       <Separator />
       <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
