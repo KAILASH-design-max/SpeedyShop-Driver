@@ -141,3 +141,19 @@ export interface MonthlyEarning {
   };
   createdAt?: any;
 }
+
+export interface ChatMessage {
+    id?: string;
+    sender: 'user' | 'agent';
+    text: string;
+    timestamp: any;
+}
+
+export interface SupportChatSession {
+  id: string;
+  userId: string;
+  userName?: string;
+  createdAt: any; // Firestore Timestamp
+  status: 'open' | 'closed';
+  lastMessage?: string;
+}
