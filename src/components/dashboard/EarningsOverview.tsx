@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Wallet, Truck, Badge, Star, Loader2, IndianRupee, Trophy } from "lucide
 import Link from "next/link";
 import { useState, useEffect, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, doc, getDoc, Timestamp } from 'firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import type { Profile, DeliveryRating } from "@/types";
 import { startOfWeek, endOfWeek } from 'date-fns';
