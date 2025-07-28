@@ -156,7 +156,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
 
     const isSupportChat = selectedThread.type === 'support';
     const collectionName = isSupportChat ? 'supportMessages' : 'Customer&deliveryboy';
-    const lastUpdatedField = 'lastUpdated';
+    const lastUpdatedField = isSupportChat ? 'lastUpdated' : 'lastMessageTimestamp';
 
     const messagePayload = {
       senderId: currentUser.uid,
@@ -258,7 +258,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                                     <div className="flex-grow overflow-hidden">
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold truncate">{details.name}</p>
-                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastUpdated)}</p>
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastUpdated || thread.lastMessageTimestamp)}</p>
                                         </div>
                                         <p className="text-sm text-muted-foreground truncate">{thread.lastMessage || `New conversation...`}</p>
                                     </div>
