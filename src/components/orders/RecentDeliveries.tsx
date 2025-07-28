@@ -249,7 +249,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                     <TableRow>
                     <TableHead>Order ID</TableHead>
                     <TableHead>Customer Name</TableHead>
-                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Date &amp; Time</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Amount Earned</TableHead>
                     </TableRow>
