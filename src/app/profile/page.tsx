@@ -7,7 +7,7 @@ import { DocumentManagement } from "@/components/profile/DocumentManagement";
 import type { Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, arrayUnion, collection } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -133,7 +133,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <div className="container mx-auto p-6 md:p-8 space-y-8">
       <div className="flex justify-end">
         <Button variant="outline" onClick={() => router.push('/ratings')}>
           <Star className="mr-2 h-4 w-4" />
