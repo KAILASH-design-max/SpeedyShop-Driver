@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, Edit3, CheckCircle, UploadCloud, Loader2, Video, VideoOff } from "lucide-react";
+import { Camera, Edit3, CheckCircle, UploadCloud, Loader2, VideoOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Order } from "@/types";
 import { storage } from "@/lib/firebase";
@@ -36,8 +36,18 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
   const [isCameraActive, setIsCameraActive] = useState(false);
 
   useEffect(() => {
-    // Only try to get permissions if it's a standard delivery or no-contact that allows photo
-    if (!order.noContactDelivery || (order.noContactDelivery && !leftAtDoor)) {
+    // Stop any existing streams before starting a new one
+    if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+    }
+
+    // Only request camera if needed
+    if (
+        !photo && // no photo taken yet
+        (!order.noContactDelivery || // standard delivery
+        (order.noContactDelivery && !leftAtDoor)) // no-contact but not left-at-door yet
+    ) {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             navigator.mediaDevices.getUserMedia({ video: true })
                 .then(stream => {
@@ -50,15 +60,14 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
                 .catch(error => {
                     console.error('Error accessing camera:', error);
                     setHasCameraPermission(false);
-                    toast({
-                        variant: 'destructive',
-                        title: 'Camera Access Denied',
-                        description: 'Enable camera permissions in your browser to use the in-app camera.',
-                    });
+                    setIsCameraActive(false);
                 });
         } else {
             setHasCameraPermission(false);
+            setIsCameraActive(false);
         }
+    } else {
+        setIsCameraActive(false);
     }
     
     // Cleanup function to stop video stream
@@ -68,14 +77,13 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
             stream.getTracks().forEach(track => track.stop());
         }
     };
-  }, [toast, order.noContactDelivery, leftAtDoor]);
+  }, [leftAtDoor, photo, order.noContactDelivery]);
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       setPhoto(file);
       setSignature(""); // Clear signature
-      setLeftAtDoor(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
@@ -100,7 +108,6 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
                 setPhoto(capturedFile);
                 setPhotoPreview(canvas.toDataURL('image/jpeg'));
                 setSignature(""); // Clear signature
-                setLeftAtDoor(false);
                 setIsCameraActive(false); // Stop camera feed after capture
             }
         }, 'image/jpeg', 0.95);
@@ -111,7 +118,6 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
       setSignature(e.target.value);
       setPhoto(null); // Clear photo
       setPhotoPreview(null);
-      setLeftAtDoor(false);
       setIsCameraActive(false);
   }
   
@@ -122,25 +128,21 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
             setSignature("");
             setPhoto(null);
             setPhotoPreview(null);
-            setIsCameraActive(false);
-        } else {
-            setIsCameraActive(true); // Reactivate camera if unchecked
         }
       }
   }
 
   const handleSubmit = async () => {
-    // ... existing handleSubmit logic ...
     if (order.noContactDelivery) {
         if (!leftAtDoor && !photo) {
              toast({
                 variant: "destructive",
                 title: "Confirmation Incomplete",
-                description: "For no-contact delivery, please check the box or upload a photo.",
+                description: "For no-contact delivery, check 'left at door' or upload a photo.",
             });
             return;
         }
-        if (photo) { // Photo is priority proof for no-contact
+        if (photo) {
             setIsUploading(true);
             try {
                 const photoURL = await uploadProofPhoto(photo);
@@ -150,11 +152,11 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
             } finally {
                 setIsUploading(false);
             }
-        } else { // Left at door is secondary proof
+        } else {
             onConfirm();
         }
 
-    } else { // Standard delivery
+    } else {
         if (!photo && !signature) {
             toast({
                 variant: "destructive",
@@ -242,17 +244,17 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
             </div>
         )}
 
-        {!isCameraActive && hasCameraPermission === false && (
+        {hasCameraPermission === false && (
              <Alert>
                 <VideoOff className="h-4 w-4" />
                 <AlertTitle>Camera Not Available</AlertTitle>
                 <AlertDescription>
-                    In-app camera is not available. Please use the file upload option below.
+                    In-app camera is not available or permission was denied. Please use the file upload option below.
                 </AlertDescription>
             </Alert>
         )}
         
-        {(hasCameraPermission === false || !isCameraActive) && (
+        {(!isCameraActive || hasCameraPermission === false) && (
             <>
             <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -299,7 +301,7 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
                     value={signature} 
                     onChange={handleSignatureChange}
                     className="min-h-[80px]"
-                    disabled={isCameraActive || !!photoPreview}
+                    disabled={!!photoPreview || isCameraActive}
                   />
                   <p className="text-xs text-muted-foreground mt-1">For a quick confirmation, ask the customer to type their name.</p>
                 </div>
@@ -314,5 +316,3 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
     </Card>
   );
 }
-
-    
