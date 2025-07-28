@@ -1,13 +1,16 @@
 
 "use client";
 
-import type { Profile } from "@/types";
+import type { Order, Profile } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Star, ThumbsUp, Loader2 } from "lucide-react";
+import { BarChart, Star, ThumbsUp, Loader2, Package, Percent, Gift } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { User } from "firebase/auth";
 
 interface PerformanceMetricsProps {
   profile: Profile;
@@ -30,9 +33,44 @@ const improvementTips = [
 export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
-  const { overallRating, ratingBreakdown, totalRatings } = useMemo(() => {
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) {
+        setLoadingOrders(false);
+        return;
+    }
+
+    setLoadingOrders(true);
+    const ordersQuery = query(
+        collection(db, "orders"),
+        where("deliveryPartnerId", "==", currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+        const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+        setOrders(fetchedOrders);
+        setLoadingOrders(false);
+    }, (error) => {
+        console.error("Error fetching orders for metrics:", error);
+        setLoadingOrders(false);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  const { overallRating, ratingBreakdown, totalRatings, lifetimeTips } = useMemo(() => {
     const ratings = profile.deliveryRatings?.filter(r => typeof r.rating === 'number') || [];
+    const tips = profile.deliveryRatings?.reduce((acc, r) => acc + (r.tip || 0), 0) || 0;
     
     if (!ratings || ratings.length === 0) {
       return {
@@ -45,6 +83,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
           { stars: 2, count: 0, percentage: 0 },
           { stars: 1, count: 0, percentage: 0 },
         ],
+        lifetimeTips: tips,
       };
     }
     
@@ -65,8 +104,20 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
       percentage: ratings.length > 0 ? Math.round((count / ratings.length) * 100) : 0,
     })).sort((a, b) => b.stars - a.stars);
 
-    return { overallRating, ratingBreakdown: breakdown, totalRatings: ratings.length };
+    return { overallRating, ratingBreakdown: breakdown, totalRatings: ratings.length, lifetimeTips: tips };
   }, [profile.deliveryRatings]);
+  
+   const performanceStats = useMemo(() => {
+    const totalOrders = orders.length;
+    const deliveredOrders = orders.filter(o => o.orderStatus === 'delivered').length;
+    const completionRate = totalOrders > 0 ? (deliveredOrders / totalOrders) * 100 : 0;
+
+    return {
+      totalDeliveries: deliveredOrders,
+      completionRate,
+      lifetimeTips,
+    };
+  }, [orders, lifetimeTips]);
   
   useEffect(() => {
     const processFeedback = () => {
@@ -124,16 +175,64 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     return formatDistanceToNow(date, { addSuffix: true });
   }
 
+  const StatCard = ({ title, value, icon: Icon, color, isLoading, unit }: { title: string, value: string | number, icon: React.ElementType, color: string, isLoading: boolean, unit?: string}) => (
+    <Card className="shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+            <Icon className={`h-5 w-5 ${color}`} />
+        </CardHeader>
+        <CardContent>
+            {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+                <div className={`text-2xl font-bold ${color}`}>
+                    {value}{unit}
+                </div>
+            )}
+        </CardContent>
+    </Card>
+  );
+
   return (
     <Card className="shadow-xl">
       <CardHeader>
-        <CardTitle className="flex items-center text-2xl font-bold text-primary"><BarChart className="mr-2 h-6 w-6"/>Your Rating</CardTitle>
-        <CardDescription>Based on your last {totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'}</CardDescription>
+        <CardTitle className="flex items-center text-2xl font-bold text-primary"><BarChart className="mr-2 h-6 w-6"/>Your Performance</CardTitle>
+        <CardDescription>A summary of your customer ratings and delivery statistics.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
+        
+        {/* Performance Stats */}
+        <div>
+          <h3 className="text-lg font-semibold mb-3">Performance Stats</h3>
+           <div className="grid gap-4 md:grid-cols-3">
+              <StatCard
+                title="Total Completed Deliveries"
+                value={performanceStats.totalDeliveries}
+                icon={Package}
+                color="text-blue-500"
+                isLoading={loadingOrders}
+              />
+              <StatCard
+                title="Delivery Completion Rate"
+                value={performanceStats.completionRate.toFixed(1)}
+                unit="%"
+                icon={Percent}
+                color="text-green-500"
+                isLoading={loadingOrders}
+              />
+              <StatCard
+                title="Lifetime Tips Earned"
+                value={`₹${performanceStats.lifetimeTips.toFixed(2)}`}
+                icon={Gift}
+                color="text-orange-500"
+                isLoading={false} // This comes from profile, not orders
+              />
+           </div>
+        </div>
+
         {/* Overall Rating */}
         <div className="text-center p-6 bg-primary/5 rounded-lg">
-            <p className="text-muted-foreground">Overall Rating</p>
+            <p className="text-muted-foreground">Overall Rating (from {totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'})</p>
             <div className="text-5xl font-bold my-2 text-primary">{overallRating.toFixed(1)} / 5.0</div>
             <div className="flex justify-center gap-1">
                 {renderStars(overallRating, 'lg')}
@@ -203,3 +302,4 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     </Card>
   );
 }
+
