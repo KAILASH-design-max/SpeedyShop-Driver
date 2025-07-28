@@ -179,7 +179,7 @@ export default function DashboardPage() {
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
   return (
-    <div className="container mx-auto p-6 md:p-8">
+    <div className="container mx-auto px-6 py-4 md:px-8 md:py-6">
       <DashboardHeader />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-6">

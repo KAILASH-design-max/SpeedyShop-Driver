@@ -135,7 +135,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto p-6 md:p-8 space-y-8">
+    <div className="container mx-auto px-6 py-4 md:px-8 md:py-6 space-y-8">
       <div className="flex justify-end">
         <Button variant="outline" onClick={() => router.push('/ratings')}>
           <Star className="mr-2 h-4 w-4" />

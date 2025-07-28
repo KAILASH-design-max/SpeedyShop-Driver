@@ -174,7 +174,7 @@ export default function OrderPage() {
   const isOrderActive = order.orderStatus === 'accepted' || order.orderStatus === 'picked-up' || order.orderStatus === 'out-for-delivery';
 
   return (
-    <div className="container mx-auto p-6 md:p-8 space-y-8">
+    <div className="container mx-auto px-6 py-4 md:px-8 md:py-6 space-y-8">
       <OrderDetailsDisplay order={order} />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
