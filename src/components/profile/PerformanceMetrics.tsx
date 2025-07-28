@@ -302,4 +302,3 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     </Card>
   );
 }
-
