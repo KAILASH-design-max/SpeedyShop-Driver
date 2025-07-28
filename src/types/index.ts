@@ -175,3 +175,5 @@ export interface SupportChatSession {
   lastMessageTimestamp?: any; // Firestore Timestamp
   orderId?: string; 
 }
+
+    
