@@ -89,9 +89,11 @@ export default function ProfilePage() {
     const profileRef = doc(db, "users", currentUser.uid); 
     try {
       // Handle server timestamps for nested document uploads
-      const docKey = Object.keys(updatedData.documents || {})[0];
-      if (docKey && updatedData.documents[docKey].uploadedAt) {
-          updatedData.documents[docKey].uploadedAt = serverTimestamp();
+      if (updatedData.documents) {
+        const docKey = Object.keys(updatedData.documents)[0];
+        if (docKey && updatedData.documents[docKey].uploadedAt) {
+            updatedData.documents[docKey].uploadedAt = serverTimestamp();
+        }
       }
 
       const dataWithTimestamp = {
