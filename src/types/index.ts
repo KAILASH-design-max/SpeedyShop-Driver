@@ -134,6 +134,7 @@ export interface ChatThread {
   lastMessageTimestamp: any; // Firestore ServerTimestamp
   orderId?: string;
   lastUpdated?: any;
+  userName?: string; // Adding for consistency
 }
 
 export interface Session {
@@ -165,13 +166,11 @@ export interface ChatMessage {
 export interface SupportChatSession {
   id: string;
   userId: string; 
-  riderId?: string; // deliveryPartnerId - now optional as driver creates it
   userName?: string;
-  riderName?: string;
   createdAt: any; // Firestore Timestamp
   lastUpdated: any; // Firestore Timestamp
   status: 'active' | 'waiting' | 'resolved';
   lastMessage?: string;
-  lastMessageTimestamp?: any; // Firestore Timestamp
+  lastMessageTimestamp?: any; // To align with ChatThread
   orderId?: string; 
 }
