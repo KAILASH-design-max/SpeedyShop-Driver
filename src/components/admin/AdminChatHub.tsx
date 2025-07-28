@@ -72,7 +72,7 @@ export function AdminChatHub() {
         
         sessionsData.sort((a, b) => {
           const dateA = a.lastUpdated?.toDate ? a.lastUpdated.toDate() : (a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0));
-          const dateB = b.lastUpdated?.toDate ? b.lastUpdated.toDate() : (b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0));
+          const dateB = b.lastUpdated?.toDate ? b.lastUpdated.toDate() : (a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0));
           return dateB.getTime() - dateA.getTime();
         });
 
