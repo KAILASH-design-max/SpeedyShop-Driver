@@ -103,7 +103,7 @@ export default function ProfilePage() {
       if (updatedData.newMaintenanceLog) {
         const newLogWithTimestamp = {
           ...updatedData.newMaintenanceLog,
-          id: doc().id, // Generate a unique ID for the log entry
+          id: doc(collection(db, 'id-generator')).id, // Generate a unique ID for the log entry
           date: serverTimestamp(),
         };
         delete dataWithTimestamp.newMaintenanceLog;

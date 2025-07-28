@@ -81,7 +81,12 @@ export function VehicleMaintenanceLog({ profile, onUpdate }: VehicleMaintenanceL
     }
   }
   
-  const sortedLogs = [...(profile.maintenanceLog || [])].sort((a, b) => b.date.seconds - a.date.seconds);
+  const sortedLogs = [...(profile.maintenanceLog || [])].sort((a, b) => {
+    if (a.date?.seconds && b.date?.seconds) {
+      return b.date.seconds - a.date.seconds;
+    }
+    return 0;
+  });
 
   return (
     <Card className="shadow-xl">
@@ -176,7 +181,7 @@ export function VehicleMaintenanceLog({ profile, onUpdate }: VehicleMaintenanceL
                 sortedLogs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="font-medium">{log.serviceType}</TableCell>
-                    <TableCell>{format(log.date.toDate(), "PPP")}</TableCell>
+                    <TableCell>{log.date?.toDate ? format(log.date.toDate(), "PPP") : 'Invalid Date'}</TableCell>
                     <TableCell className="text-muted-foreground truncate max-w-xs">{log.notes || 'N/A'}</TableCell>
                     <TableCell className="text-right font-semibold">
                       ₹{log.cost.toFixed(2)}
