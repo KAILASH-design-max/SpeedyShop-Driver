@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import type { Profile, DeliveryRating } from "@/types";
-import { startOfWeek, endOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 
 const staticStats = [
     {
@@ -74,9 +75,12 @@ export function EarningsOverview() {
 
 
         // --- Weekly Deliveries and Earnings Logic ---
-        const today = new Date();
-        const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-        const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+        const now = new Date();
+        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+        const todayStart = startOfDay(now);
+        const todayEnd = endOfDay(now);
+
 
         const weekDeliveriesQuery = query(
             collection(db, "orders"),
@@ -89,9 +93,7 @@ export function EarningsOverview() {
         const unsubscribeDeliveries = onSnapshot(weekDeliveriesQuery, (snapshot) => {
             let totalDeliveryEarnings = 0;
             let deliveriesTodayCount = 0;
-            const startOfToday = new Date();
-            startOfToday.setHours(0, 0, 0, 0);
-
+            
             snapshot.forEach(doc => {
                 const orderData = doc.data();
                 const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
@@ -100,7 +102,7 @@ export function EarningsOverview() {
                 const completedAtTimestamp = orderData.completedAt as Timestamp;
                 if (completedAtTimestamp) {
                     const completedDate = completedAtTimestamp.toDate();
-                    if (completedDate >= startOfToday) {
+                    if (completedDate >= todayStart && completedDate <= todayEnd) {
                         deliveriesTodayCount++;
                     }
                 }
@@ -127,9 +129,9 @@ export function EarningsOverview() {
     // This effect combines delivery earnings and tips once both are loaded
     useEffect(() => {
         if (profile) {
-            const today = new Date();
-            const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-            const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+            const now = new Date();
+            const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+            const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
             const weeklyTips = profile.deliveryRatings?.reduce((acc, rating) => {
                 if (rating.tip && rating.ratedAt?.toDate) {
