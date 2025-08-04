@@ -343,7 +343,7 @@ export default function OrderPage() {
                 <div className="mt-4">
                     <p className="text-sm text-green-700">Proof of delivery:</p>
                     <a href={order.proofImageURL} target="_blank" rel="noopener noreferrer">
-                         <img src={order.proofImageURL} alt="Proof of delivery" className="rounded-md max-h-48 w-auto object-contain border mx-auto mt-2 shadow-sm" />
+                         <img src={order.proofImageURL} alt="Proof of delivery" className="rounded-md max-h-48 w-auto object-contain border mx-auto mt-2 shadow-sm" data-ai-hint="delivery package" />
                     </a>
                 </div>
             )}
@@ -353,5 +353,3 @@ export default function OrderPage() {
     </div>
   );
 }
-
-    

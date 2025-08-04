@@ -5,7 +5,7 @@ import { ConnectionStatusBanner } from '@/components/layout/ConnectionStatusBann
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 
 export const metadata: Metadata = {
-  title: 'SpeedyShop Driver',
+  title: 'Velocity Driver',
   description: 'Quick Commerce Delivery Partner App',
 };
 

@@ -106,7 +106,7 @@ export default function AuthenticatedLayout({
           <Link href="/dashboard" className="flex items-center gap-2">
             <Truck className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
-              SpeedyShop
+              Velocity
             </h1>
           </Link>
         </SidebarHeader>
@@ -145,7 +145,7 @@ export default function AuthenticatedLayout({
                 <MobileNav />
                 {!isHistoryPage && (
                   <>
-                    <span className="text-xl font-semibold text-primary hidden md:block">SpeedyShop Driver</span>
+                    <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span>
                     <ActiveTimeTracker />
                   </>
                 )}

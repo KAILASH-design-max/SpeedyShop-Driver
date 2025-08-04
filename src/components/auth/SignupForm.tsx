@@ -113,7 +113,7 @@ export function SignupForm() {
          <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full inline-block">
           <UserPlus className="h-10 w-10 text-primary" />
         </div>
-        <CardTitle className="text-3xl font-bold text-primary">Join SpeedyShop Driver</CardTitle>
+        <CardTitle className="text-3xl font-bold text-primary">Join Velocity Driver</CardTitle>
         <CardDescription>Sign up to start delivering and earning.</CardDescription>
       </CardHeader>
       <CardContent>
