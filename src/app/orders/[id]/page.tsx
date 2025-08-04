@@ -8,7 +8,7 @@ import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX } from "lucide-react";
+import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -80,6 +80,14 @@ export default function OrderPage() {
       toast({ variant: "destructive", title: "Error", description: "No order ID provided."});
     }
   }, [orderId, toast]);
+
+  const handleStartStoreNavigation = () => {
+    if (order?.pickupLocation) {
+      const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.pickupLocation)}`;
+      window.open(mapsUrl, "_blank");
+      toast({ title: "Navigation Started", description: `Routing to ${order.pickupLocation}.`});
+    }
+  };
 
   const handlePickupConfirmation = async () => {
     if (order && order.orderStatus === "accepted") { 
@@ -174,16 +182,21 @@ export default function OrderPage() {
   const isOrderActive = order.orderStatus === 'accepted' || order.orderStatus === 'picked-up' || order.orderStatus === 'out-for-delivery';
 
   return (
-    <div className="container mx-auto px-6 py-4 md:px-8 md:py-6 space-y-8">
+    <div className="space-y-8 p-4 md:p-6">
       <OrderDetailsDisplay order={order} />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-            {order.orderStatus === "accepted" && ( 
-              <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
-                 Confirm Pickup from Store
-              </Button>
+            {order.orderStatus === "accepted" && (
+              <>
+                <Button onClick={handleStartStoreNavigation} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  <Store className="mr-2 h-5 w-5" /> Navigate to Store
+                </Button>
+                <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
+                   Confirm Pickup from Store
+                </Button>
+              </>
             )}
              {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
               <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-6 font-bold" disabled={isUpdating}>
@@ -206,7 +219,7 @@ export default function OrderPage() {
                     <AlertDialogTitle>Are you sure you want to release this order?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This action cannot be undone. The order will be returned to the pool for other drivers to accept. Only do this if you are unable to complete the delivery.
-                    </AlertDialogDescription>
+                    </dixs>`sc:rip<tion>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
