@@ -180,3 +180,9 @@ export interface DriverLocation {
   lastKnownLocation: any; // Firestore GeoPoint
   updatedAt: any; // Firestore Timestamp
 }
+
+export interface DeliveryLocation {
+    latitude: number;
+    longitude: number;
+    timestamp: any; // Firestore Timestamp
+}

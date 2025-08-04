@@ -3,7 +3,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { Order } from "@/types";
 import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
@@ -23,9 +23,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { updateLocation } from "@/ai/flows/update-location-flow";
+import { useThrottle } from "@/hooks/use-throttle";
 
 
 export default function OrderPage() {
@@ -36,6 +37,20 @@ export default function OrderPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const locationWatcherId = useRef<number | null>(null);
+
+  const throttledLocationUpdate = useThrottle(async (position: GeolocationPosition) => {
+    if (!order) return;
+    try {
+      await updateLocation({
+        orderId: order.id,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+    } catch (error) {
+      console.error("Throttled location update failed:", error);
+    }
+  }, 10000); // Throttle to every 10 seconds
 
   useEffect(() => {
     // Load order from cache on initial render
@@ -81,6 +96,51 @@ export default function OrderPage() {
       toast({ variant: "destructive", title: "Error", description: "No order ID provided."});
     }
   }, [orderId, toast]);
+  
+  // Effect to manage live location tracking based on order status
+  useEffect(() => {
+    const isOrderActiveForTracking = order?.orderStatus === 'picked-up' || order?.orderStatus === 'out-for-delivery';
+
+    const startWatching = () => {
+      if (locationWatcherId.current !== null || !isOrderActiveForTracking) return;
+
+      locationWatcherId.current = navigator.geolocation.watchPosition(
+        (position) => {
+          throttledLocationUpdate(position);
+        },
+        (error) => {
+          console.warn(`Geolocation Error: ${error.message}`);
+          if (error.code === 1) { // PERMISSION_DENIED
+            toast({
+              variant: "destructive",
+              title: "Location Access Denied",
+              description: "Live location tracking requires permission to access your location.",
+              duration: 10000,
+            });
+            stopWatching();
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    };
+
+    const stopWatching = () => {
+      if (locationWatcherId.current !== null) {
+        navigator.geolocation.clearWatch(locationWatcherId.current);
+        locationWatcherId.current = null;
+      }
+    };
+
+    if (isOrderActiveForTracking) {
+      startWatching();
+    } else {
+      stopWatching();
+    }
+
+    return () => stopWatching(); // Cleanup on component unmount or when order status changes
+
+  }, [order?.orderStatus, throttledLocationUpdate, toast]);
+
 
   const handleStartStoreNavigation = () => {
     if (order?.pickupLocation) {

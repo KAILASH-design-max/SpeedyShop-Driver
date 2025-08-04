@@ -1,9 +1,10 @@
+
 'use server';
 
 /**
- * @fileOverview Flow for updating a driver's live location.
+ * @fileOverview Flow for updating a driver's live location for a specific order.
  *
- * - updateLocation - A function that receives and stores a driver's GPS coordinates.
+ * - updateLocation - A function that receives and stores a driver's GPS coordinates for an order.
  * - UpdateLocationInput - The input type for the updateLocation function.
  */
 
@@ -12,7 +13,7 @@ import { z } from 'genkit';
 import { getFirestore, GeoPoint, Timestamp } from 'firebase-admin/firestore';
 
 const UpdateLocationInputSchema = z.object({
-  driverId: z.string().describe("The unique ID of the driver."),
+  orderId: z.string().describe("The ID of the order being tracked."),
   latitude: z.number().describe("The driver's current latitude."),
   longitude: z.number().describe("The driver's current longitude."),
 });
@@ -41,18 +42,19 @@ const updateLocationFlow = ai.defineFlow(
   async (input) => {
     try {
         const db = getFirestore();
-        const locationRef = db.collection('driverLocations').doc(input.driverId);
+        // Use a new collection 'deliveryLocations' and the orderId as the document ID
+        const locationRef = db.collection('deliveryLocations').doc(input.orderId);
         
         await locationRef.set({
-            lastKnownLocation: new GeoPoint(input.latitude, input.longitude),
-            updatedAt: Timestamp.now(),
-            driverId: input.driverId,
+            latitude: input.latitude,
+            longitude: input.longitude,
+            timestamp: Timestamp.now(),
         }, { merge: true });
 
         return { success: true };
 
     } catch (error) {
-        console.error("Failed to update driver location:", error);
+        console.error("Failed to update delivery location:", error);
         // In a production app, you might have more robust error handling here.
         return { success: false };
     }
