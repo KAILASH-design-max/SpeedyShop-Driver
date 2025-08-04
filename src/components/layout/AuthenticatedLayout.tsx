@@ -30,13 +30,18 @@ import {
   Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { endSession } from "@/lib/sessionManager";
 import { ActiveTimeTracker } from "@/components/dashboard/ActiveTimeTracker";
 import { ThemeToggle } from "./ThemeToggle";
+import { doc, onSnapshot } from "firebase/firestore";
+import type { User } from "firebase/auth";
+import type { Profile } from "@/types";
+import { updateLocation } from "@/ai/flows/update-location-flow";
+import { useThrottle } from "@/hooks/use-throttle";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -67,6 +72,96 @@ export default function AuthenticatedLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const locationWatcherId = useRef<number | null>(null);
+
+  const throttledLocationUpdate = useThrottle(async (position: GeolocationPosition) => {
+    if (!currentUser) return;
+    try {
+      await updateLocation({
+        driverId: currentUser.uid,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+    } catch (error) {
+      console.error("Throttled location update failed:", error);
+    }
+  }, 15000); // Throttle to every 15 seconds
+
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+      if (!user) {
+        setProfile(null);
+      }
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const profileRef = doc(db, "users", currentUser.uid);
+    const unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setProfile(docSnap.data() as Profile);
+      } else {
+        setProfile(null);
+      }
+    });
+    return () => unsubscribeProfile();
+  }, [currentUser]);
+
+
+  useEffect(() => {
+     const startWatching = () => {
+        if (locationWatcherId.current !== null) return; // Already watching
+
+        locationWatcherId.current = navigator.geolocation.watchPosition(
+            (position) => {
+                // On success, call the throttled update function
+                throttledLocationUpdate(position);
+            },
+            (error) => {
+                // On error, log it and potentially show a non-intrusive toast
+                console.warn(`Geolocation Error: ${error.message}`);
+                 if (error.code === 1) { // PERMISSION_DENIED
+                     toast({
+                         variant: "destructive",
+                         title: "Location Access Denied",
+                         description: "Live location tracking requires permission to access your location.",
+                         duration: 10000,
+                     });
+                     stopWatching(); // Stop trying if permission is denied
+                 }
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000, // 10 seconds
+                maximumAge: 0,
+            }
+        );
+     }
+     
+     const stopWatching = () => {
+        if (locationWatcherId.current !== null) {
+            navigator.geolocation.clearWatch(locationWatcherId.current);
+            locationWatcherId.current = null;
+        }
+     }
+
+     if (profile?.availabilityStatus === 'online') {
+        startWatching();
+     } else {
+        stopWatching();
+     }
+
+     // Cleanup on component unmount
+     return () => stopWatching();
+
+  }, [profile?.availabilityStatus, throttledLocationUpdate, toast]);
+
 
   useEffect(() => {
     const handleBeforeUnload = () => {

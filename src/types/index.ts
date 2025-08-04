@@ -174,3 +174,9 @@ export interface SupportChatSession {
   lastMessageTimestamp?: any; // To align with ChatThread
   orderId?: string; 
 }
+
+export interface DriverLocation {
+  driverId: string;
+  lastKnownLocation: any; // Firestore GeoPoint
+  updatedAt: any; // Firestore Timestamp
+}
