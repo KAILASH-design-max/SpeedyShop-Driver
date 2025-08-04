@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wallet, Truck, Badge, Star, Loader2, IndianRupee, Trophy } from "lucide-react";
+import { Truck, Star, Loader2, IndianRupee, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';

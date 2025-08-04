@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
+import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -164,11 +165,14 @@ export default function DashboardPage() {
       setNewOrders(ordersData);
       setLoadingNew(false);
     }, (error) => {
-      console.error("Error fetching new orders:", error);
-       if (error.code !== 'permission-denied') {
-          toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new order alerts." });
-       }
-      setNewOrders([]);
+      // This is an expected error if backend security rules prevent listing all new orders.
+      if (error.code === 'permission-denied') {
+        console.warn("Permission denied for fetching new orders. This is expected if security rules are restrictive.");
+      } else {
+         console.error("Error fetching new orders:", error);
+         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new order alerts." });
+      }
+      setNewOrders([]); // Clear new orders on any error
       setLoadingNew(false);
     });
     
@@ -179,8 +183,10 @@ export default function DashboardPage() {
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
   return (
-    <div className="container mx-auto px-4 py-4 md:px-6 md:py-6">
+    <div className="container mx-auto px-4 py-4 md:px-6 md:py-6 space-y-8">
       <DashboardHeader />
+      <EarningsOverview />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-6">
           <AvailabilityToggle
