@@ -9,7 +9,7 @@ import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store } from "lucide-react";
+import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -91,11 +91,11 @@ export default function OrderPage() {
   };
 
   const handlePickupConfirmation = async () => {
-    if (order && order.orderStatus === "accepted") { 
+    if (order && order.orderStatus === "accepted") {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "picked-up" }); 
+        await updateDoc(orderRef, { orderStatus: "picked-up" });
         toast({ title: "Pickup Confirmed", description: `Order ${order.id.substring(0,8)} marked as picked-up.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error confirming pickup:", error);
@@ -105,7 +105,23 @@ export default function OrderPage() {
       }
     }
   };
-  
+
+  const handleOutOfDelivery = async () => {
+    if (order && order.orderStatus === "picked-up") {
+      setIsUpdating(true);
+      try {
+        const orderRef = doc(db, "orders", order.id);
+        await updateDoc(orderRef, { orderStatus: "out-for-delivery" });
+        toast({ title: "Out for Delivery", description: `Order ${order.id.substring(0,8)} is now out for delivery.`, className: "bg-blue-500 text-white" });
+      } catch (error) {
+        console.error("Error setting out for delivery:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
+
   const handleStartNavigation = () => {
       if (order?.dropOffLocation) {
         const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.dropOffLocation)}`;
@@ -119,7 +135,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        
+
         const updateData: any = {
           orderStatus: "delivered",
           completedAt: serverTimestamp(),
@@ -128,9 +144,9 @@ export default function OrderPage() {
         if (proof?.type === 'photo') {
             updateData.proofImageURL = proof.value;
         }
-        
-        await updateDoc(orderRef, updateData); 
-        
+
+        await updateDoc(orderRef, updateData);
+
         toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
         router.push("/dashboard");
       } catch (error) {
@@ -185,7 +201,7 @@ export default function OrderPage() {
   return (
     <div className="space-y-8 p-4 md:p-6">
       <OrderDetailsDisplay order={order} />
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
             {order.orderStatus === "accepted" && (
@@ -199,15 +215,24 @@ export default function OrderPage() {
                 </Button>
               </>
             )}
-             {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
+
+            {order.orderStatus === "picked-up" && (
+              <Button onClick={handleOutOfDelivery} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-5 w-5" />}
+                 Out for Delivery
+              </Button>
+            )}
+
+             {order.orderStatus === "out-for-delivery" && (
               <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-6 font-bold" disabled={isUpdating}>
                 <Navigation className="mr-2 h-5 w-5" /> Start Navigation to Customer
               </Button>
             )}
+
              <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)} disabled={isUpdating}>
                 <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
             </Button>
-            
+
             {isOrderActive && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -233,7 +258,7 @@ export default function OrderPage() {
             )}
         </div>
 
-        {(order.orderStatus === "picked-up" || order.orderStatus === "out-for-delivery") && ( 
+        {order.orderStatus === "out-for-delivery" && (
           <DeliveryConfirmation order={order} onConfirm={handleDeliveryConfirmed} isUpdating={isUpdating} />
         )}
       </div>
@@ -248,7 +273,7 @@ export default function OrderPage() {
         </Alert>
       )}
 
-      {order.orderStatus === "delivered" && ( 
+      {order.orderStatus === "delivered" && (
         <Card className="mt-6 bg-green-100 border-green-300">
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />

@@ -183,7 +183,7 @@ export default function DashboardPage() {
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
   return (
-    <div className="container mx-auto px-4 py-4 md:px-6 md:py-6 space-y-8">
+    <div className="space-y-8 p-4 md:p-6">
       <DashboardHeader />
       <EarningsOverview />
 
