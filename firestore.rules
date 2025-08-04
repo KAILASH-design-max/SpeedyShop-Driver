@@ -1,40 +1,94 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper Functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    
+    // Helper function to check if a user has a specific role.
+    function isRole(role) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
     }
     
-    // User profile documents
-    match /users/{userId} {
-      // Users can read and write to their own document
-      allow read, write: if isOwner(userId);
+    // Helper function to check if a user is online.
+    function isOnline() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.availabilityStatus == 'online';
     }
 
-    // Orders collection
+    // USERS (Drivers)
+    // Drivers can read and write to their own profile document.
+    // Admins can read any driver's profile.
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId || isRole('admin');
+    }
+
+    // ORDERS
+    // Rules for the orders collection, which are the core of the app.
     match /orders/{orderId} {
-      // Allow a driver to accept an order by updating the deliveryPartnerId
-      allow update: if isAuthenticated()
-                    && request.resource.data.deliveryPartnerId == request.auth.uid
-                    && resource.data.deliveryPartnerId == null;
-
-      // Allow a driver to update an order they are assigned to
-      allow update: if isAuthenticated()
-                    && resource.data.deliveryPartnerId == request.auth.uid;
+      // LIST (querying multiple documents)
+      // An online driver can list unassigned orders.
+      // A driver can list orders assigned to them.
+      // An admin can list all orders.
+      allow list: if (isOnline() && resource.data.deliveryPartnerId == null) ||
+                   (request.auth.uid == resource.data.deliveryPartnerId) ||
+                   isRole('admin');
+                   
+      // GET (reading a single document)
+      // A driver can get an order if it's assigned to them.
+      // An admin can get any order.
+      allow get: if request.auth.uid == resource.data.deliveryPartnerId || isRole('admin');
       
-      // Allow a driver to read an order assigned to them
-      allow read: if isAuthenticated() 
-                  && resource.data.deliveryPartnerId == request.auth.uid;
+      // UPDATE
+      // A driver can update an order if it's assigned to them, or if they are claiming an unassigned order.
+      allow update: if (request.auth.uid == resource.data.deliveryPartnerId) || 
+                       (resource.data.deliveryPartnerId == null && request.resource.data.deliveryPartnerId == request.auth.uid);
 
-      // Allow authenticated users to query for orders under specific conditions
-      allow list: if isAuthenticated();
+      // CREATE/DELETE
+      // These should typically be handled by a trusted backend/admin, so they are denied for drivers.
+      allow create, delete: if false;
+    }
+    
+    // SESSIONS
+    // Drivers can create new session documents for themselves.
+    // They can only update their own session documents (e.g., to set logoutTimestamp).
+    match /sessions/{sessionId} {
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth.uid == resource.data.userId;
+    }
+
+    // DELIVERY LOCATIONS
+    // Drivers can create/update their live location for an order they are assigned to.
+    match /deliveryLocations/{orderId} {
+      allow write: if request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.deliveryPartnerId;
+      // Customer or admin can read the location for an active delivery.
+      allow read: if request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.userId || isRole('admin');
+    }
+
+    // SUPPORT MESSAGES (Driver to Support)
+    // Drivers can create and read their own support chat sessions and messages.
+    // Admins can read/write to any support chat for monitoring and responding.
+    match /supportMessages/{chatId} {
+      allow read, create: if request.auth.uid == resource.data.userId;
+      allow write: if isRole('admin'); // Admins can update status, etc.
+      
+      match /messages/{messageId} {
+        allow read: if request.auth.uid == get(/databases/$(database)/documents/supportMessages/$(chatId)).data.userId || isRole('admin');
+        allow create: if request.auth.uid == get(/databases/$(database)/documents/supportMessages/$(chatId)).data.userId || isRole('agent');
+      }
+    }
+    
+    // CHAT (Driver to Customer)
+    // This collection name seems to be shared. The rule allows read/write if the user is one of the participants.
+    match /Customer&deliveryboy/{chatId} {
+        allow read, write: if request.auth.uid in resource.data.participantIds;
+        
+        match /messages/{messageId} {
+             allow read, write: if request.auth.uid in get(/databases/$(database)/documents/Customer&deliveryboy/$(chatId)).data.participantIds;
+        }
+    }
+    
+    // Deny all other collections by default to ensure security.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
