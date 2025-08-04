@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -219,7 +220,7 @@ export default function OrderPage() {
                     <AlertDialogTitle>Are you sure you want to release this order?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This action cannot be undone. The order will be returned to the pool for other drivers to accept. Only do this if you are unable to complete the delivery.
-                    </dixs>`sc:rip<tion>
+                    </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
