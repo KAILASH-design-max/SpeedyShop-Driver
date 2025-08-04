@@ -208,7 +208,8 @@ export default function OrderPage() {
         await updateDoc(orderRef, updateData);
 
         toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
-        router.push("/dashboard");
+        // We no longer redirect, so the user can see the confirmation on this page.
+        // router.push("/dashboard"); 
       } catch (error) {
         console.error("Error confirming delivery:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not confirm delivery." });
