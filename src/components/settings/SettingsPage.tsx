@@ -11,11 +11,15 @@ import {
   Copy,
   ShieldCheck,
   Siren,
-  Info
+  Info,
+  ChevronRight,
+  ShieldQuestion,
+  Smartphone
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { LoginActivity } from "./LoginActivity";
+import { Input } from "@/components/ui/input";
 
 
 export function SettingsPage() {
@@ -42,22 +46,73 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center"><Bell className="mr-2 h-5 w-5" /> Notifications</CardTitle>
           <CardDescription>
-            Manage how you receive alerts from the app.
+            Choose what alerts you want to receive.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
-            <Label htmlFor="push-notifications" className="font-medium">
-              Push Notifications
+            <Label htmlFor="new-orders" className="font-medium">
+              New Orders
             </Label>
-            <Switch id="push-notifications" defaultChecked />
+            <Switch id="new-orders" defaultChecked />
           </div>
-           <p className="text-sm text-muted-foreground">
-            You can manage detailed notification settings (sounds, vibration) for Velocity Driver from your phone's system settings.
-          </p>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <Label htmlFor="announcements" className="font-medium">
+              Announcements & Incentives
+            </Label>
+            <Switch id="announcements" defaultChecked />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <Label htmlFor="shift-reminders" className="font-medium">
+              Shift Reminders
+            </Label>
+            <Switch id="shift-reminders" />
+          </div>
         </CardContent>
       </Card>
+
+      <Card className="shadow-lg">
+          <CardHeader>
+              <CardTitle className="flex items-center"><ShieldQuestion className="mr-2 h-5 w-5" /> Permissions</CardTitle>
+              <CardDescription>Manage app access to your device features.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                  <Label className="font-medium">Location Access</Label>
+                  <p className="text-sm text-green-600 font-semibold">Allowed</p>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                  <Label className="font-medium">Camera Access</Label>
+                   <p className="text-sm text-green-600 font-semibold">Allowed</p>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                  <Label className="font-medium">Notifications</Label>
+                   <p className="text-sm text-green-600 font-semibold">Allowed</p>
+              </div>
+              <Button variant="outline" className="w-full justify-between">
+                <div className="flex items-center">
+                    <Smartphone className="mr-2 h-4 w-4"/>
+                    Manage in Device Settings
+                </div>
+                <ChevronRight className="h-4 w-4"/>
+              </Button>
+          </CardContent>
+      </Card>
       
+      <Card className="shadow-lg">
+          <CardHeader>
+              <CardTitle className="flex items-center"><Siren className="mr-2 h-5 w-5" /> Emergency SOS</CardTitle>
+              <CardDescription>Configure your emergency contact information.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+              <div className="space-y-1">
+                <Label htmlFor="emergency-contact">Emergency Contact Number</Label>
+                <Input id="emergency-contact" type="tel" placeholder="+91 98765 43210" />
+              </div>
+              <Button className="w-full">Save Contact</Button>
+          </CardContent>
+      </Card>
+
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center"><Users className="mr-2 h-5 w-5" /> Referral Program</CardTitle>
