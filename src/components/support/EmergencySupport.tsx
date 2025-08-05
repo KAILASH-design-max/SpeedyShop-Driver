@@ -33,6 +33,10 @@ export function EmergencySupport() {
       description: "Emergency services have been notified of your location. Please stay safe.",
       duration: 10000,
     });
+    
+    // Also initiate a call to a local emergency number.
+    // In a real app, you would have a more robust system, but this is a direct way to help the user.
+    window.location.href = "tel:112";
   };
 
   return (
@@ -42,26 +46,26 @@ export function EmergencySupport() {
             <Siren className="h-6 w-6 text-destructive" />
         </div>
         <div className="flex-grow">
-            <CardTitle className="text-destructive">Emergency Support</CardTitle>
+            <CardTitle className="text-destructive">Panic Mode</CardTitle>
             <CardDescription className="text-destructive/80">For urgent safety concerns.</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
             <p className="text-sm text-destructive/90 mb-2">
-            For accidents or critical safety issues, press the SOS button to alert our team immediately.
+            For accidents or critical safety issues, press the SOS button to alert our team and call emergency services.
             </p>
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="w-full text-lg font-bold py-6">
-                        <Siren className="mr-2 h-5 w-5" /> SOS – Request Help
+                        <Siren className="mr-2 h-5 w-5" /> SOS – ACTIVATE PANIC MODE
                     </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                     <AlertDialogTitle>Confirm Emergency SOS</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to trigger an emergency SOS? This will immediately alert our response team with your location. Use only for genuine emergencies.
+                        This will alert our response team with your location AND attempt to call local emergency services (e.g., 112). Use only for genuine emergencies.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -75,7 +79,7 @@ export function EmergencySupport() {
         </div>
          <div>
             <p className="text-sm text-muted-foreground mb-2">
-             For less urgent issues, you can call our support line directly.
+             For non-emergency issues, you can call our support line directly.
             </p>
              <a href="tel:+911234567890" className="w-full">
                 <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/20 hover:text-destructive">
