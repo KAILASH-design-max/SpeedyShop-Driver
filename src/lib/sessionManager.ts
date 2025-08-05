@@ -26,6 +26,8 @@ export const startSession = async (userId: string) => {
             loginTimestamp: serverTimestamp(),
             logoutTimestamp: null,
             date: getTodayDateString(),
+            userAgent: navigator.userAgent, // Store user agent
+            location: "Unknown", // Placeholder for location
         };
         const docRef = await addDoc(collection(db, "sessions"), sessionData);
         sessionStorage.setItem('active_session_id', docRef.id);

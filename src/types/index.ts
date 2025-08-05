@@ -176,6 +176,8 @@ export interface Session {
   loginTimestamp: any; // Firestore Timestamp
   logoutTimestamp?: any | null;
   date: string; // YYYY-MM-DD
+  userAgent?: string;
+  location?: string;
 }
 
 export interface MonthlyEarning {

@@ -5,24 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Bell,
-  Palette,
-  Languages,
   Users,
   Copy,
   ShieldCheck,
   Siren,
   Info
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
+import { LoginActivity } from "./LoginActivity";
 
 
 export function SettingsPage() {
-    const { theme, setTheme } = useTheme();
     const { toast } = useToast();
     const currentUser = auth.currentUser;
     const referralCode = currentUser ? `VELOCITY-${currentUser.uid.substring(0, 8).toUpperCase()}` : '';
@@ -67,7 +63,7 @@ export function SettingsPage() {
           <CardTitle className="flex items-center"><Users className="mr-2 h-5 w-5" /> Referral Program</CardTitle>
            <CardDescription>
             Invite other drivers and earn rewards when they sign up.
-          </CardDescription>
+           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             <div className="rounded-lg border p-4 space-y-2">
@@ -81,13 +77,15 @@ export function SettingsPage() {
             </div>
         </CardContent>
       </Card>
+
+      <LoginActivity />
       
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center"><ShieldCheck className="mr-2 h-5 w-5" /> Legal & Information</CardTitle>
            <CardDescription>
             View terms of service, privacy policy, and app information.
-          </CardDescription>
+           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" className="flex-1"><Siren className="mr-2 h-4 w-4"/>Terms of Service</Button>
