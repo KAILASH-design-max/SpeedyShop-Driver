@@ -169,16 +169,6 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-6 py-4 md:px-8 md:py-6 space-y-8">
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => router.push('/ratings')}>
-          <Star className="mr-2 h-4 w-4" />
-          View My Ratings
-        </Button>
-        <Button variant="destructive" onClick={() => router.push('/penalties')}>
-          <ShieldX className="mr-2 h-4 w-4" />
-          View Penalties
-        </Button>
-      </div>
       <ProfileForm profile={profile} onUpdate={handleProfileUpdate} />
       <Separator />
       <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
