@@ -320,6 +320,7 @@ export default function OrderPage() {
   }
 
   const isOrderActive = ['accepted', 'arrived-at-store', 'picked-up', 'out-for-delivery', 'arrived'].includes(order.orderStatus);
+  const isOrderComplete = ['delivered', 'cancelled'].includes(order.orderStatus);
 
 
   return (
@@ -366,7 +367,7 @@ export default function OrderPage() {
               </>
             )}
 
-             <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)} disabled={isUpdating}>
+             <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)} disabled={isUpdating || isOrderComplete}>
                 <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
             </Button>
 
