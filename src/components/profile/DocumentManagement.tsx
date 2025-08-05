@@ -142,7 +142,7 @@ function DocumentUploadItem({ docName, docKey, document, profileUid, onUpdate }:
     <div className="p-4 border rounded-lg bg-muted/30">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
-          <h3 className="font-semibold text-lg">{docName}</h3>
+          <h3 className="font-semibold text-[15px]">{docName}</h3>
           <div className="flex items-center text-sm gap-2 mt-1">
              <Badge variant={getBadgeVariant(!!document?.url)} className="capitalize">
                 {getStatusIcon()}
@@ -215,7 +215,7 @@ export function DocumentManagement({ profile, onUpdate }: DocumentManagementProp
   return (
     <Card className="shadow-xl">
       <CardHeader>
-        <CardTitle className="flex items-center text-2xl font-bold text-primary"><FileText className="mr-2 h-6 w-6"/>Document Management</CardTitle>
+        <CardTitle className="flex items-center text-[15px] font-semibold text-primary"><FileText className="mr-2 h-6 w-6"/>Document Management</CardTitle>
         <CardDescription>Upload and manage your required documents for verification. Images will be compressed if possible.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

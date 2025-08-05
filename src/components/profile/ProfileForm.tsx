@@ -185,7 +185,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
               )}
             </div>
             <div className="flex-grow">
-                <CardTitle className="text-2xl font-bold text-primary">{profile.name || "Driver Name"}</CardTitle>
+                <CardTitle className="text-[15px] font-semibold text-primary">{profile.name || "Driver Name"}</CardTitle>
                 <CardDescription>Role: {profile.role || 'N/A'}</CardDescription>
                 <div className="mt-2 flex items-center gap-4">
                   <Label htmlFor="profile-picture-upload" className="inline-flex items-center text-sm text-primary hover:underline cursor-pointer">
@@ -206,7 +206,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <CardTitle className="text-xl font-semibold text-primary border-b pb-2">Personal Information</CardTitle>
+            <CardTitle className="text-[15px] font-semibold text-primary border-b pb-2">Personal Information</CardTitle>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -252,7 +252,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
             
             <Separator className="my-6"/>
 
-            <CardTitle className="text-xl font-semibold text-primary border-b pb-2">Vehicle & License Details</CardTitle>
+            <CardTitle className="text-[15px] font-semibold text-primary border-b pb-2">Vehicle & License Details</CardTitle>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -306,7 +306,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
 
             <Separator className="my-6"/>
 
-            <CardTitle className="text-xl font-semibold text-primary border-b pb-2">Bank Details</CardTitle>
+            <CardTitle className="text-[15px] font-semibold text-primary border-b pb-2">Bank Details</CardTitle>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}

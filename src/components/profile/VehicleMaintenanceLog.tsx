@@ -92,7 +92,7 @@ export function VehicleMaintenanceLog({ profile, onUpdate }: VehicleMaintenanceL
     <Card className="shadow-xl">
       <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <CardTitle className="flex items-center text-2xl font-bold text-primary">
+          <CardTitle className="flex items-center text-[15px] font-semibold text-primary">
             <Wrench className="mr-3 h-6 w-6" />
             Vehicle Maintenance Log
           </CardTitle>
