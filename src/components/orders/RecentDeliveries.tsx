@@ -35,7 +35,7 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Order, Profile, DeliveryRating } from "@/types";
-import { Loader2, Calendar as CalendarIcon, Package, Link2, XCircle } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Package, Link2, XCircle, MessageSquare } from "lucide-react";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { format, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -95,7 +95,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
           fetchedDeliveries.sort((a, b) => {
             const dateA = a.completedAt?.toDate ? a.completedAt.toDate() : new Date(0);
             const dateB = b.completedAt?.toDate ? b.completedAt.toDate() : new Date(0);
-            return dateB.getTime() - dateA.getTime();
+            return dateB.getTime() - a.getTime();
           });
         }
         setAllDeliveries(fetchedDeliveries);
@@ -286,7 +286,8 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                     <TableHead>Customer</TableHead>
                     <TableHead>Completed At</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Amount Earned</TableHead>
+                    <TableHead>Amount Earned</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -307,8 +308,15 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                             {delivery.orderStatus}
                         </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-green-600">
+                        <TableCell className="font-semibold text-green-600">
                           {delivery.orderStatus === 'delivered' ? `₹${(delivery.estimatedEarnings || 0).toFixed(2)}` : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <Link href={`/communication?orderId=${delivery.id}`} passHref>
+                               <Button variant="ghost" size="icon">
+                                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                               </Button>
+                            </Link>
                         </TableCell>
                     </TableRow>
                     ))}
