@@ -15,6 +15,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
 import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
+import { EarningsForecast } from "@/components/dashboard/EarningsForecast";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -194,6 +195,8 @@ export default function DashboardPage() {
             onStatusChange={handleAvailabilityChange}
             isLoading={isAvailabilityLoading}
           />
+
+          <EarningsForecast />
 
           <Separator />
           
