@@ -3,13 +3,14 @@
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Loader2, Milestone, Store, User, Wallet, BellRing } from "lucide-react";
+import { Clock, Loader2, Milestone, Store, User, Wallet, BellRing, Package, Home, ShoppingBasket, X, Check } from "lucide-react";
 import type { Order } from "@/types";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 
 interface NewOrderCardProps {
   order: Order;
@@ -86,69 +87,73 @@ export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
     });
   };
   
-  const mockDistance = (order.estimatedTime / 4 + Math.random()).toFixed(1); 
+  const displayItems = order.items.map(item => `${item.quantity}x ${item.name}`).join(", ");
 
   if (isDeclined) {
     return null;
   }
 
   return (
-    <Card className="shadow-lg border-2 border-primary/50 bg-primary/5 transition-all duration-300 flex flex-col">
-        <CardHeader className="p-3 bg-primary/10">
-            <CardTitle className="flex items-center text-primary text-base">
-                 <BellRing className="mr-2 h-5 w-5 animate-pulse" />
-                 NEW DELIVERY ASSIGNMENT
-            </CardTitle>
+    <Card className="shadow-xl border-2 border-transparent bg-background transition-all duration-300 flex flex-col w-full max-w-sm mx-auto">
+        <CardHeader className="p-4 items-center">
+            <div className="flex items-center text-xl font-bold text-foreground">
+                 <Package className="mr-3 h-8 w-8 text-primary" />
+                 New Delivery Assignment
+            </div>
         </CardHeader>
-        <CardContent className="p-4">
-            <div className="space-y-2 text-sm">
-                <p className="font-semibold">Order ID: #{order.id.substring(0,8)}</p>
-                <div className="flex items-start gap-2">
-                    <Store className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <span className="font-medium" title={order.pickupLocation}>Pickup: {order.pickupLocation}</span>
-                </div>
-                <div className="flex items-start gap-2">
-                    <User className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <span className="font-medium" title={order.customerName}>Drop: {order.customerName}</span>
-                </div>
+        <CardContent className="p-6 text-center space-y-4">
+            <div>
+                <p className="text-sm text-muted-foreground">Order ID</p>
+                <p className="text-lg font-bold">ORD{order.id.substring(0,5).toUpperCase()}</p>
             </div>
             
-            <Separator className="my-3"/>
-            
-            <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="p-1 rounded-md bg-background">
-                    <div className="text-xs text-muted-foreground">Earn</div>
-                    <div className="font-bold text-base text-green-600 flex items-center justify-center gap-1">
-                        <Wallet size={14}/>
-                        ₹{order.estimatedEarnings.toFixed(2)}
+            <Card className="text-left w-full bg-muted/30">
+                <CardContent className="p-4 space-y-4">
+                     <div className="flex items-start gap-3">
+                        <Store className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div>
+                           <p className="text-xs text-muted-foreground">Pickup</p>
+                           <p className="font-medium" title={order.pickupLocation}>{order.pickupLocation}</p>
+                        </div>
                     </div>
-                </div>
-                <div className="p-1 rounded-md bg-background">
-                    <div className="text-xs text-muted-foreground">Time</div>
-                    <div className="font-bold text-base flex items-center justify-center gap-1">
-                        <Clock size={14} />
-                        {order.estimatedTime}m
+                     <div className="flex items-start gap-3">
+                        <Home className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div>
+                           <p className="text-xs text-muted-foreground">Drop</p>
+                           <p className="font-medium" title={order.dropOffLocation}>{order.dropOffLocation} ({order.customerName})</p>
+                        </div>
                     </div>
-                </div>
-                <div className="p-1 rounded-md bg-background">
-                    <div className="text-xs text-muted-foreground">Dist.</div>
-                    <div className="font-bold text-base flex items-center justify-center gap-1">
-                        <Milestone size={14} />
-                        {mockDistance}km
+                     <div className="flex items-start gap-3">
+                        <ShoppingBasket className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div>
+                           <p className="text-xs text-muted-foreground">Items</p>
+                           <p className="font-medium" title={displayItems}>{displayItems}</p>
+                        </div>
                     </div>
-                </div>
-            </div>
+                     <div className="flex items-start gap-3">
+                        <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div>
+                           <p className="text-xs text-muted-foreground">Expected Delivery</p>
+                           <p className="font-medium">{order.estimatedTime} mins</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
         </CardContent>
-        <CardFooter className="flex items-center justify-between gap-2 p-2 bg-primary/10 mt-auto">
-            <Button onClick={() => handleDecline(false)} variant="ghost" className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10 h-10 font-bold" disabled={isAccepting}>
-              Reject
-            </Button>
-            <div className="font-mono text-lg text-primary font-bold">
-              00:{countdown.toString().padStart(2, '0')}
+        <CardFooter className="flex flex-col items-center justify-between gap-2 p-4 pt-0">
+            <div className="flex items-center gap-4 w-full">
+                <Button onClick={() => handleDecline(false)} variant="destructive" className="flex-1 bg-red-500 hover:bg-red-600 h-12 text-base font-bold" disabled={isAccepting}>
+                  <X className="mr-2 h-5 w-5"/> Reject
+                </Button>
+                <Button onClick={handleAccept} className="flex-1 bg-green-500 hover:bg-green-600 text-white h-12 text-base font-bold" disabled={isAccepting}>
+                  {isAccepting ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="mr-2 h-5 w-5" /> Accept</>}
+                </Button>
             </div>
-            <Button onClick={handleAccept} className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold h-10" disabled={isAccepting}>
-              {isAccepting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accept"}
-            </Button>
+             <div className="w-full mt-4">
+                 <Progress value={(countdown / 60) * 100} className="h-2" />
+                 <p className="text-center text-sm text-muted-foreground mt-2">Auto-rejecting in 00:{countdown.toString().padStart(2, '0')}</p>
+            </div>
         </CardFooter>
     </Card>
   );
