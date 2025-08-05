@@ -148,7 +148,7 @@ export default function AuthenticatedLayout({
                 <MobileNav />
                 {!isHistoryPage && (
                   <>
-                    <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span>
+                    {/* <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span> */}
                     <ActiveTimeTracker />
                   </>
                 )}
