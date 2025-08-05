@@ -18,7 +18,8 @@ export function DeviceStatusMonitor() {
           const battery = await (navigator as any).getBattery();
           
           const handleBatteryChange = () => {
-            if (!battery.charging && battery.level < 0.2) { // 20% threshold
+            // Using 15% threshold as requested
+            if (!battery.charging && battery.level < 0.15) { 
               if (!hasShownBatteryWarning.current) {
                 toast({
                   variant: "destructive",
@@ -29,9 +30,8 @@ export function DeviceStatusMonitor() {
                 });
                 hasShownBatteryWarning.current = true;
               }
-            } else if (battery.charging || battery.level >= 0.2) {
-                // Reset the warning if the condition is no longer met,
-                // so it can be shown again if the battery drains later.
+            } else if (battery.charging || battery.level >= 0.15) {
+                // Reset the warning if the condition is no longer met
                 hasShownBatteryWarning.current = false;
             }
           };
@@ -40,7 +40,6 @@ export function DeviceStatusMonitor() {
           battery.addEventListener('levelchange', handleBatteryChange);
           battery.addEventListener('chargingchange', handleBatteryChange);
 
-          // Return a cleanup function
           return () => {
             battery.removeEventListener('levelchange', handleBatteryChange);
             battery.removeEventListener('chargingchange', handleBatteryChange);
@@ -63,7 +62,7 @@ export function DeviceStatusMonitor() {
                 toast({
                   variant: "destructive",
                   title: "GPS Access Denied",
-                  description: "Location tracking is required for deliveries. Please enable location permissions in your browser settings.",
+                  description: "Location tracking is required for deliveries. Please enable location permissions.",
                   duration: 10000,
                   action: <WifiOff className="text-white" />
                 });
@@ -77,7 +76,6 @@ export function DeviceStatusMonitor() {
           handleGpsChange(); // Initial check
           permissionStatus.onchange = handleGpsChange;
 
-          // Return a cleanup function
           return () => {
             permissionStatus.onchange = null;
           };
@@ -88,13 +86,14 @@ export function DeviceStatusMonitor() {
       }
     };
     
-    // Set up separate cleanup functions for each check
     let batteryCleanup: (() => void) | undefined;
     let gpsCleanup: (() => void) | undefined;
     
     const runChecks = async () => {
-        batteryCleanup = await checkBattery();
-        gpsCleanup = await checkGps();
+        const cleanupBat = await checkBattery();
+        const cleanupGps = await checkGps();
+        batteryCleanup = cleanupBat;
+        gpsCleanup = cleanupGps;
     }
     
     runChecks();
