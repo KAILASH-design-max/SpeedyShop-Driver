@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -41,18 +40,23 @@ import { format, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/components/earnings/PayoutHistoryTable";
 import Link from "next/link";
+import { DateRange } from "react-day-picker";
 
 interface RecentDeliveriesProps {
     onDeliveriesFetched: (deliveries: Order[]) => void;
     onTransactionsCalculated: (transactions: Transaction[]) => void;
 }
 
+type StatusFilter = "all" | "delivered" | "cancelled";
+
 export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated }: RecentDeliveriesProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allDeliveries, setAllDeliveries] = useState<Order[]>([]);
   const [filteredDeliveries, setFilteredDeliveries] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -110,11 +114,20 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
     if (loading) return;
 
     let deliveriesToDisplay = allDeliveries;
-    if (selectedDate) {
-        deliveriesToDisplay = allDeliveries.filter(delivery => {
+    
+    // Filter by status first
+    if (statusFilter !== 'all') {
+        deliveriesToDisplay = deliveriesToDisplay.filter(d => d.orderStatus === statusFilter);
+    }
+    
+    // Then filter by date range
+    if (dateRange?.from) {
+        deliveriesToDisplay = deliveriesToDisplay.filter(delivery => {
             if (!delivery.completedAt?.toDate) return false;
             const completedDate = delivery.completedAt.toDate();
-            return isSameDay(completedDate, selectedDate);
+            const fromDate = dateRange.from;
+            const toDate = dateRange.to || fromDate; // If no 'to' date, use 'from' as single day
+            return completedDate >= fromDate && completedDate <= new Date(toDate.setHours(23, 59, 59, 999));
         });
     }
 
@@ -146,10 +159,8 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             
             ratings.forEach((rating: DeliveryRating) => {
                 if(rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
-                    const ratedDate = rating.ratedAt.toDate();
-                    const deliveryIsInDisplay = deliveriesToDisplay.some(d => d.id === rating.orderId);
-                    
-                    if (selectedDate && deliveryIsInDisplay && isSameDay(selectedDate, ratedDate)) {
+                    const deliveryForTip = deliveriesToDisplay.find(d => d.id === rating.orderId);
+                    if (deliveryForTip) {
                          tipTransactions.push({
                             title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
                             transactionId: `${rating.orderId}-tip`,
@@ -167,7 +178,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
 
     calculateTransactions();
 
-  }, [selectedDate, allDeliveries, currentUser, loading, onDeliveriesFetched, onTransactionsCalculated]);
+  }, [dateRange, statusFilter, allDeliveries, currentUser, loading, onDeliveriesFetched, onTransactionsCalculated]);
 
 
   const formatTimestamp = (timestamp: any): string => {
@@ -200,39 +211,59 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             <div>
                 <CardTitle className="text-2xl font-bold flex items-center"><Package className="mr-2 h-6 w-6"/>Delivery History</CardTitle>
                 <CardDescription className="mt-1">
-                 View all your past deliveries or select a date to filter.
+                 View all your past deliveries. Use filters to narrow down the results.
                 </CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Popover>
                     <PopoverTrigger asChild>
                     <Button
+                        id="date"
                         variant={"outline"}
                         className={cn(
-                        "w-full sm:w-[240px] justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
+                        "w-full sm:w-[260px] justify-start text-left font-normal",
+                        !dateRange && "text-muted-foreground"
                         )}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? format(selectedDate, "PPP") : <span>Filter by date</span>}
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "LLL dd, y")} -{" "}
+                              {format(dateRange.to, "LLL dd, y")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "LLL dd, y")
+                          )
+                        ) : (
+                          <span>Pick a date range</span>
+                        )}
                     </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0" align="end">
                     <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={(date) => date && setSelectedDate(date)}
                         initialFocus
-                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={2}
+                        disabled={(date) => date > new Date() || date < new Date("2020-01-01")}
                     />
                     </PopoverContent>
                 </Popover>
-                 {selectedDate && (
-                    <Button variant="ghost" size="icon" onClick={() => setSelectedDate(undefined)}>
+                 {dateRange && (
+                    <Button variant="ghost" size="icon" onClick={() => setDateRange(undefined)}>
                         <XCircle className="h-5 w-5 text-muted-foreground" />
                     </Button>
                  )}
             </div>
+        </div>
+        
+        <div className="flex items-center gap-2 mt-4">
+            <Button variant={statusFilter === 'all' ? 'default' : 'outline'} onClick={() => setStatusFilter('all')}>All</Button>
+            <Button variant={statusFilter === 'delivered' ? 'default' : 'outline'} onClick={() => setStatusFilter('delivered')}>Delivered</Button>
+            <Button variant={statusFilter === 'cancelled' ? 'default' : 'outline'} onClick={() => setStatusFilter('cancelled')}>Cancelled</Button>
         </div>
       
         <div className="mt-6">
@@ -243,7 +274,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             </div>
             ) : filteredDeliveries.length === 0 ? (
             <div className="text-center text-muted-foreground p-8 border rounded-lg">
-                <p>No deliveries found for {selectedDate ? format(selectedDate, "PPP") : 'this period'}.</p>
+                <p>No deliveries found for the selected filters.</p>
             </div>
             ) : (
             <div className="border rounded-md">
