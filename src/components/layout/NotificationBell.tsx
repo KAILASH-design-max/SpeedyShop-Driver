@@ -45,18 +45,28 @@ export function NotificationBell() {
     }
 
     setLoading(true);
+    // Query without composite index. We will sort on the client.
     const notificationsQuery = query(
       collection(db, "notifications"),
       where("userId", "==", currentUser.uid),
-      orderBy("createdAt", "desc"),
-      limit(20)
+      limit(50) // Fetch a bit more to ensure we get recent ones, then sort.
     );
 
     const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-      const fetchedNotifications = snapshot.docs.map(doc => ({
+      let fetchedNotifications = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Notification));
+      
+      // Sort on the client
+      fetchedNotifications.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+          return dateB - dateA;
+      });
+
+      // Limit to the most recent 20 after sorting
+      fetchedNotifications = fetchedNotifications.slice(0, 20);
       
       setNotifications(fetchedNotifications);
       setUnreadCount(fetchedNotifications.filter(n => !n.read).length);
