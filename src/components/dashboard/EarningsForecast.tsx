@@ -6,7 +6,7 @@ import { BrainCircuit, Loader2, IndianRupee, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { getEarningsForecast } from "@/ai/flows/get-earnings-forecast-flow";
-import type { GetEarningsForecastOutput } from "@/ai/flows/get-earnings-forecast-flow";
+import type { GetEarningsForecastOutput } from "@/types";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
 import type { User } from 'firebase/auth';

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -9,25 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-export const GetEarningsForecastInputSchema = z.object({
-  dayOfWeek: z.string().describe("The current day of the week (e.g., 'Monday', 'Friday')."),
-  timeOfDay: z.string().describe("The current time of day (e.g., 'Morning', 'Afternoon', 'Evening', 'Late Night')."),
-  averageDailyEarnings: z.number().describe("The driver's average earnings per day over the last month."),
-  averageDeliveriesPerDay: z.number().describe("The driver's average number of deliveries per day over the last month."),
-  weather: z.string().optional().describe("Optional current weather conditions (e.g., 'Rainy', 'Clear')."),
-});
-export type GetEarningsForecastInput = z.infer<typeof GetEarningsForecastInputSchema>;
-
-export const GetEarningsForecastOutputSchema = z.object({
-  estimatedEarningsRange: z.object({
-    min: z.number().describe('The minimum potential earnings for the day.'),
-    max: z.number().describe('The maximum potential earnings for the day.'),
-  }),
-  forecastInsight: z.string().describe("A brief, encouraging insight about the forecast, explaining why it might be higher or lower than average."),
-});
-export type GetEarningsForecastOutput = z.infer<typeof GetEarningsForecastOutputSchema>;
+import { GetEarningsForecastInputSchema, GetEarningsForecastOutputSchema, type GetEarningsForecastInput, type GetEarningsForecastOutput } from '@/types';
 
 
 export async function getEarningsForecast(
