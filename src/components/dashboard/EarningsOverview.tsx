@@ -15,7 +15,7 @@ const staticStats = [
     {
         title: "Active Achievements",
         value: "3",
-        subtext: "Challenges you're working towards",
+        subtext: "Challenges you're working on",
         icon: Trophy,
         color: "text-orange-500",
         href: "/achievements",

@@ -119,7 +119,7 @@ export default function DashboardPage() {
     const activeOrdersQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "in", ["accepted", "picked-up", "out-for-delivery"])
+      where("orderStatus", "in", ["accepted", "picked-up", "out-for-delivery", "arrived"])
     );
 
     const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
