@@ -19,7 +19,8 @@ const staticStats = [
         icon: Trophy,
         color: "text-orange-500",
         href: "/achievements",
-        isCurrency: false
+        isCurrency: false,
+        isLoading: false, // This is static
     },
 ];
 
@@ -177,7 +178,7 @@ export function EarningsOverview() {
             isCurrency: false,
             isLoading: isLoadingDeliveries,
         },
-        staticStats[0],
+        ...staticStats,
         {
             title: "Overall Rating",
             value: isLoadingProfile ? null : (overallRating !== null ? `${overallRating.toFixed(1)}/5` : "N/A"),
