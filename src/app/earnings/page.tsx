@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldX } from 'lucide-react';
 import { EarningsSummaryCard } from "@/components/earnings/EarningsSummaryCard";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
+import { EarningsOverview } from '@/components/earnings/EarningsOverview';
 
 export default function EarningsPage() {
   const router = useRouter();
@@ -23,8 +24,8 @@ export default function EarningsPage() {
         </Button>
       </div>
 
+      <EarningsOverview />
       <EarningsSummaryCard />
-
       <WeeklyEarningsChart />
     </div>
   );

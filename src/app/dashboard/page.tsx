@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
-import { EarningsOverview } from "@/components/dashboard/EarningsOverview";
 import { EarningsForecast } from "@/components/dashboard/EarningsForecast";
 
 export default function DashboardPage() {
@@ -186,8 +185,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 p-4 md:p-6">
       <DashboardHeader />
-      <EarningsOverview />
-
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-6">
           <AvailabilityToggle

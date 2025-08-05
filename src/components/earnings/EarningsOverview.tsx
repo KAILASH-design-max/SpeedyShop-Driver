@@ -20,7 +20,7 @@ const staticStats = [
         color: "text-orange-500",
         href: "/achievements",
         isCurrency: false,
-        isLoading: false, // This is static
+        isLoading: false, // This is static,
     },
 ];
 
@@ -164,7 +164,7 @@ export function EarningsOverview() {
             subtext: "Includes deliveries and tips",
             icon: IndianRupee,
             color: "text-green-500",
-            href: "/earnings",
+            href: "/earnings/history",
             isCurrency: true,
             isLoading: isLoadingWeekEarnings,
         },
