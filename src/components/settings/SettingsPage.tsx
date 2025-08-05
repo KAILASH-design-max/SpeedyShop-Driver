@@ -61,27 +61,6 @@ export function SettingsPage() {
           </p>
         </CardContent>
       </Card>
-
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center"><Palette className="mr-2 h-5 w-5" /> Appearance</CardTitle>
-           <CardDescription>
-            Customize the look and feel of the app.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <Label htmlFor="theme" className="font-medium">
-              Theme
-            </Label>
-            <div className="flex gap-2">
-                <Button variant={theme === 'light' ? 'default' : 'outline'} onClick={() => setTheme('light')}>Light</Button>
-                <Button variant={theme === 'dark' ? 'default' : 'outline'} onClick={() => setTheme('dark')}>Dark</Button>
-                <Button variant={theme === 'system' ? 'default' : 'outline'} onClick={() => setTheme('system')}>System</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
       
       <Card className="shadow-lg">
         <CardHeader>

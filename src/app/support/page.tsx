@@ -1,5 +1,4 @@
 import { Faq } from "@/components/support/Faq";
-import { SupportChat } from "@/components/support/SupportChat";
 import { EmergencySupport } from "@/components/support/EmergencySupport";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,6 @@ export default function SupportPage() {
     <div className="container mx-auto px-6 py-4 md:px-8 md:py-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-8">
-           {/* This now renders the unified chat interface */}
-          <SupportChat />
           <Faq />
         </div>
         <div className="space-y-8">
