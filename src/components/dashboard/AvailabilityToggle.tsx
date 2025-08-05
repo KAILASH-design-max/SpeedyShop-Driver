@@ -49,7 +49,7 @@ export function AvailabilityToggle({ currentStatus, onStatusChange, isLoading }:
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
+        <CardTitle className="flex items-center text-[15px] font-semibold">
           {getTitleIcon()}
           Availability Status
         </CardTitle>

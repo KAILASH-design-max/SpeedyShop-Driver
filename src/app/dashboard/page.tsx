@@ -201,7 +201,7 @@ export default function DashboardPage() {
           <Separator />
           
            <div>
-             <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
+             <h2 className="text-[15px] font-semibold mb-4 flex items-center text-primary">
               <BellDot className="mr-2 h-6 w-6" /> New Order Alerts
             </h2>
             {isLoading && newOrders.length === 0 ? (
@@ -224,7 +224,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="md:col-span-2 space-y-6">
-          <h2 className="text-2xl font-semibold mb-4 flex items-center text-primary">
+          <h2 className="text-[15px] font-semibold mb-4 flex items-center text-primary">
             <PackageCheck className="mr-2 h-6 w-6" /> Your Active Orders
           </h2>
           {isLoading && activeOrders.length === 0 ? (
