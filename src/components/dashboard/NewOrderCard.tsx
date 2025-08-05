@@ -8,7 +8,7 @@ import type { Order } from "@/types";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
 
 interface NewOrderCardProps {
@@ -16,11 +16,27 @@ interface NewOrderCardProps {
   currentUserId: string;
 }
 
+// Data URI for a simple notification sound (a short, soft beep)
+const notificationSound = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
+
 export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclined, setIsDeclined] = useState(false);
   const [countdown, setCountdown] = useState(60);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Effect to play notification sound when the card first renders
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        audioRef.current = new Audio(notificationSound);
+        audioRef.current.play().catch(error => {
+            console.warn("Audio playback failed. User interaction may be required.", error);
+        });
+    }
+  }, []);
+
 
   useEffect(() => {
     if (isAccepting || isDeclined) return;
