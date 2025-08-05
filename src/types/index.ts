@@ -16,7 +16,7 @@ export interface Order {
   pickupLocation: string; 
   dropOffLocation: string; 
   items: OrderItem[]; 
-  orderStatus: "Placed" | "accepted" | "picked-up" | "out-for-delivery" | "delivered" | "cancelled"; 
+  orderStatus: "Placed" | "accepted" | "picked-up" | "out-for-delivery" | "arrived" | "delivered" | "cancelled"; 
   estimatedEarnings: number; 
   deliveryCharge?: number;
   total?: number;

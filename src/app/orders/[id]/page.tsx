@@ -8,7 +8,7 @@ import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck } from "lucide-react";
+import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -181,6 +181,22 @@ export default function OrderPage() {
       }
     }
   };
+  
+  const handleArrived = async () => {
+    if (order && order.orderStatus === "out-for-delivery") {
+      setIsUpdating(true);
+      try {
+        const orderRef = doc(db, "orders", order.id);
+        await updateDoc(orderRef, { orderStatus: "arrived" });
+        toast({ title: "Arrived at Location", description: `You have arrived at the customer's location.`, className: "bg-blue-500 text-white" });
+      } catch (error) {
+        console.error("Error setting arrived:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
 
   const handleStartNavigation = () => {
       if (order?.dropOffLocation) {
@@ -257,7 +273,7 @@ export default function OrderPage() {
     return <div className="flex justify-center items-center h-full min-h-[calc(100vh-10rem)]"><p>Order not found or an error occurred.</p></div>;
   }
 
-  const isOrderActive = order.orderStatus === 'accepted' || order.orderStatus === 'picked-up' || order.orderStatus === 'out-for-delivery';
+  const isOrderActive = order.orderStatus === 'accepted' || order.orderStatus === 'picked-up' || order.orderStatus === 'out-for-delivery' || order.orderStatus === 'arrived';
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -285,9 +301,15 @@ export default function OrderPage() {
             )}
 
              {order.orderStatus === "out-for-delivery" && (
-              <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-6 font-bold" disabled={isUpdating}>
-                <Navigation className="mr-2 h-5 w-5" /> Start Navigation to Customer
-              </Button>
+              <>
+                <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-6 font-bold" disabled={isUpdating}>
+                  <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
+                </Button>
+                <Button onClick={handleArrived} className="w-full bg-purple-500 hover:bg-purple-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-5 w-5" />}
+                    Arrived at Location
+                </Button>
+              </>
             )}
 
              <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)} disabled={isUpdating}>
@@ -319,7 +341,7 @@ export default function OrderPage() {
             )}
         </div>
 
-        {order.orderStatus === "out-for-delivery" && (
+        {order.orderStatus === "arrived" && (
           <DeliveryConfirmation order={order} onConfirm={handleDeliveryConfirmed} isUpdating={isUpdating} />
         )}
       </div>
@@ -353,7 +375,3 @@ export default function OrderPage() {
     </div>
   );
 }
-
-    
-
-    

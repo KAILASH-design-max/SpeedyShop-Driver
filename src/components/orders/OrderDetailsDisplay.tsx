@@ -16,6 +16,7 @@ const getStatusBadgeClass = (status: Order['orderStatus']) => {
     case 'accepted':
     case 'out-for-delivery':
     case 'picked-up':
+    case 'arrived':
       return 'bg-blue-100 text-blue-800 border-blue-200';
     case 'delivered':
       return 'bg-green-100 text-green-800 border-green-200';
