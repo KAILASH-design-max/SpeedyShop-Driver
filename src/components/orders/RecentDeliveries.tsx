@@ -35,11 +35,12 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Order, Profile, DeliveryRating } from "@/types";
-import { Loader2, Calendar as CalendarIcon, Package } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Package, Link2 } from "lucide-react";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { format, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/components/earnings/PayoutHistoryTable";
+import Link from "next/link";
 
 interface RecentDeliveriesProps {
     onDeliveriesFetched: (deliveries: Order[]) => void;
@@ -248,8 +249,8 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                 <TableHeader>
                     <TableRow>
                     <TableHead>Order ID</TableHead>
-                    <TableHead>Customer Name</TableHead>
-                    <TableHead>Date &amp; Time</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Completed At</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Amount Earned</TableHead>
                     </TableRow>
@@ -258,7 +259,9 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                     {filteredDeliveries.map((delivery) => (
                     <TableRow key={delivery.id}>
                         <TableCell className="font-medium">
-                        #{delivery.id.substring(0, 6)}
+                           <Link href={`/orders/${delivery.id}`} className="flex items-center gap-1 text-primary hover:underline">
+                             #{delivery.id.substring(0, 6)} <Link2 size={12}/>
+                           </Link>
                         </TableCell>
                         <TableCell>{delivery.customerName}</TableCell>
                         <TableCell>{formatTimestamp(delivery.completedAt)}</TableCell>

@@ -17,8 +17,8 @@ export default function OrdersHistoryPage() {
   const [deliveries, setDeliveries] = useState<Order[]>([]);
 
   return (
-    <div className="space-y-6">
-      <Button variant="outline" onClick={() => router.back()}>
+    <div className="container mx-auto px-6 py-4 md:px-8 md:py-6 space-y-6">
+      <Button variant="outline" onClick={() => router.push('/dashboard')}>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Dashboard
       </Button>

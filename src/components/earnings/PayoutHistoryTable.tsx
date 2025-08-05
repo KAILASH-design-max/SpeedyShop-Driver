@@ -67,13 +67,13 @@ export function PayoutHistoryTable({ transactions, deliveries }: PayoutHistoryTa
                             ))
                         ) : deliveries.length > 0 ? (
                              <TableRow>
-                                <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                    No tips or other transactions for this day.
+                                <TableCell colSpan={3} className="text-center text-muted-foreground p-8">
+                                    No tips or other transactions for this day's deliveries.
                                 </TableCell>
                              </TableRow>
                         ) : (
                              <TableRow>
-                                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                <TableCell colSpan={3} className="text-center text-muted-foreground p-8">
                                     No transactions found for the selected date.
                                 </TableCell>
                             </TableRow>
