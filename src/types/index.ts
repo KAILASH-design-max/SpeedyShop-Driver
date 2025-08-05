@@ -121,8 +121,8 @@ export interface Profile {
   
   // Vehicle Details
   vehicleDetails: string; // Kept for backward compatibility, but new fields are preferred
-  vehicleType?: 'bike' | 'scooter' | 'car';
-  vehicleRegistrationNumber?: string;
+  vehicleType: 'bike' | 'scooter' | 'car';
+  vehicleRegistrationNumber: string;
   drivingLicenseNumber?: string;
 
   // Profile status and details
