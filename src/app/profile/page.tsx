@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { VehicleMaintenanceLog } from "@/components/profile/VehicleMaintenanceLog";
+import { LeaveManagement } from "@/components/profile/LeaveManagement";
 
 export default function ProfilePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -101,7 +102,6 @@ export default function ProfilePage() {
         updatedAt: serverTimestamp(),
       };
       
-      // Handle adding a new maintenance log entry using arrayUnion
       if (updatedData.newMaintenanceLog) {
         const newLogWithTimestamp = {
           ...updatedData.newMaintenanceLog,
@@ -112,6 +112,18 @@ export default function ProfilePage() {
         await updateDoc(profileRef, {
             ...dataWithTimestamp,
             maintenanceLog: arrayUnion(newLogWithTimestamp),
+        });
+      } else if (updatedData.newLeaveRequest) {
+        const newLeaveRequestWithTimestamp = {
+          ...updatedData.newLeaveRequest,
+          id: doc(collection(db, 'id-generator')).id,
+          createdAt: serverTimestamp(),
+          status: 'pending',
+        };
+        delete dataWithTimestamp.newLeaveRequest;
+        await updateDoc(profileRef, {
+            ...dataWithTimestamp,
+            leaveRequests: arrayUnion(newLeaveRequestWithTimestamp),
         });
       } else {
         await setDoc(profileRef, dataWithTimestamp, { merge: true });
@@ -147,6 +159,8 @@ export default function ProfilePage() {
       <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
       <Separator />
       <VehicleMaintenanceLog profile={profile} onUpdate={handleProfileUpdate} />
+      <Separator />
+      <LeaveManagement profile={profile} onUpdate={handleProfileUpdate} />
     </div>
   );
 }

@@ -81,6 +81,17 @@ export interface MaintenanceLogEntry {
     notes?: string;
 }
 
+export interface LeaveRequest {
+  id: string;
+  startDate: any; // Firestore Timestamp
+  endDate: any; // Firestore Timestamp
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: any; // Firestore Timestamp
+  adminComment?: string;
+}
+
+
 export interface Profile {
   uid: string;
   name: string;
@@ -114,6 +125,7 @@ export interface Profile {
   overallRating?: number;
   deliveryRatings?: DeliveryRating[];
   maintenanceLog?: MaintenanceLogEntry[];
+  leaveRequests?: LeaveRequest[];
 }
 
 
