@@ -22,7 +22,7 @@ export function OrderCard({ order }: OrderCardProps) {
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold">Order #{order.id.substring(0, 8)}</CardTitle>
           <Badge variant={"secondary"} className="capitalize">
-            {order.orderStatus.replace('-', ' ')}
+            {order.orderStatus.replace(/-/g, ' ')}
           </Badge>
         </div>
         <CardDescription className="flex items-center text-sm pt-2 text-muted-foreground">

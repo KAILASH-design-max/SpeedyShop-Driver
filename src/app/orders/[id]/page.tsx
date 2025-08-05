@@ -151,8 +151,24 @@ export default function OrderPage() {
     }
   };
 
-  const handlePickupConfirmation = async () => {
+  const handleArrivedAtStore = async () => {
     if (order && order.orderStatus === "accepted") {
+      setIsUpdating(true);
+      try {
+        const orderRef = doc(db, "orders", order.id);
+        await updateDoc(orderRef, { orderStatus: "arrived-at-store" });
+        toast({ title: "Arrived at Store", description: `You have arrived at the pickup location.`, className: "bg-blue-500 text-white" });
+      } catch (error) {
+        console.error("Error setting arrived at store:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
+
+  const handlePickupConfirmation = async () => {
+    if (order && order.orderStatus === "arrived-at-store") {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
@@ -303,7 +319,8 @@ export default function OrderPage() {
     return <div className="flex justify-center items-center h-full min-h-[calc(100vh-10rem)]"><p>Order not found or an error occurred.</p></div>;
   }
 
-  const isOrderActive = order.orderStatus === 'accepted' || order.orderStatus === 'picked-up' || order.orderStatus === 'out-for-delivery' || order.orderStatus === 'arrived';
+  const isOrderActive = ['accepted', 'arrived-at-store', 'picked-up', 'out-for-delivery', 'arrived'].includes(order.orderStatus);
+
 
   return (
     <div className="space-y-8 p-4 md:p-6">
@@ -316,11 +333,18 @@ export default function OrderPage() {
                 <Button onClick={handleStartStoreNavigation} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
                   <Store className="mr-2 h-5 w-5" /> Navigate to Store
                 </Button>
-                <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                <Button onClick={handleArrivedAtStore} className="w-full bg-teal-500 hover:bg-teal-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-5 w-5" />}
+                   Arrived at Store
+                </Button>
+              </>
+            )}
+
+            {order.orderStatus === "arrived-at-store" && (
+                 <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
                    Confirm Pickup from Store
                 </Button>
-              </>
             )}
 
             {order.orderStatus === "picked-up" && (

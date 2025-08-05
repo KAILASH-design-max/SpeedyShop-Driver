@@ -14,6 +14,7 @@ interface OrderDetailsDisplayProps {
 const getStatusBadgeClass = (status: Order['orderStatus']) => {
   switch (status) {
     case 'accepted':
+    case 'arrived-at-store':
     case 'out-for-delivery':
     case 'picked-up':
     case 'arrived':
@@ -42,7 +43,7 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
           </div>
           <Badge variant="outline" className={cn("text-sm capitalize font-semibold", getStatusBadgeClass(order.orderStatus))}>
             <Check className="mr-1 h-3.5 w-3.5" />
-            {order.orderStatus.replace('-', ' ')}
+            {order.orderStatus.replace(/-/g, ' ')}
           </Badge>
         </div>
       </CardHeader>
