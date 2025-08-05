@@ -29,6 +29,7 @@ import {
   LifeBuoy,
   Trophy,
   Users,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -50,6 +51,7 @@ const navItems = [
   { href: "/earnings", label: "Earnings", icon: IndianRupee },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/community", label: "Community", icon: Users },
+  { href: "/training", label: "Training", icon: BookOpen },
   { href: "/communication", label: "Messages", icon: MessagesSquare },
   { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/profile", label: "Profile", icon: UserIcon },
