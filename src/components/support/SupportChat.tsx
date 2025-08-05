@@ -51,7 +51,7 @@ export function SupportChat() {
     }, [toast]);
 
     return (
-       <div className="h-full">
+       <div className="h-full min-h-[calc(100vh-14rem)]">
          <ChatInterface />
        </div>
     );
