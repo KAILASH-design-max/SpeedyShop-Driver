@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
-import { collection, query, onSnapshot, orderBy, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy, doc, getDoc, setDoc, serverTimestamp, addDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import { Megaphone, Loader2 } from "lucide-react";
