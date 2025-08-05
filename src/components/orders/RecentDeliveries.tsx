@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -95,7 +94,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
           fetchedDeliveries.sort((a, b) => {
             const dateA = a.completedAt?.toDate ? a.completedAt.toDate() : new Date(0);
             const dateB = b.completedAt?.toDate ? b.completedAt.toDate() : new Date(0);
-            return dateB.getTime() - a.getTime();
+            return dateB.getTime() - dateA.getTime();
           });
         }
         setAllDeliveries(fetchedDeliveries);
