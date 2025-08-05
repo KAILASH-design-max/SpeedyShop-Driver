@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Package, User, FileText, MessageSquare } from "lucide-react";
 import type { Order } from "@/types";
+import { CustomerChatDialog } from "../communication/CustomerChatDialog";
 
 interface OrderCardProps {
   order: Order;
@@ -22,11 +23,11 @@ export function OrderCard({ order }: OrderCardProps) {
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold">Order #{order.id.substring(0, 8)}</CardTitle>
           <div className="flex items-center gap-2">
-            <Link href={`/communication?orderId=${order.id}`}>
-                <Button variant="ghost" size="icon" aria-label="Chat about this order">
-                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                </Button>
-            </Link>
+            <CustomerChatDialog order={order}>
+              <Button variant="ghost" size="icon" aria-label="Chat about this order">
+                  <MessageSquare className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            </CustomerChatDialog>
             <Badge variant={"secondary"} className="capitalize">
                 {order.orderStatus.replace(/-/g, ' ')}
             </Badge>
