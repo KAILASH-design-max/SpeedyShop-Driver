@@ -33,7 +33,7 @@ import { Star, ThumbsDown, Send, Loader2, Check } from "lucide-react";
 import type { Order, DeliveryPartnerFeedback } from "@/types";
 
 const feedbackSchema = z.object({
-  pickupRating: z.number().min(1).max(5),
+  pickupRating: z.number().min(1, "Please provide a rating.").max(5),
   reportReason: z.string().optional(),
   comments: z.string().optional(),
 });
@@ -99,27 +99,36 @@ export function RateAndReport({ order, onSubmit, isSubmitting }: RateAndReportPr
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-            <FormItem>
-              <FormLabel className="text-base font-medium">
-                Rate the Store Pickup Experience
-              </FormLabel>
-              <FormControl>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-8 w-8 cursor-pointer transition-colors ${
-                        star <= rating
-                          ? "text-yellow-400 fill-yellow-400"
-                          : "text-gray-300 hover:text-gray-400"
-                      }`}
-                      onClick={() => setRating(star)}
-                    />
-                  ))}
-                </div>
-              </FormControl>
-               <FormMessage>{rating === 0 && form.getFieldState('pickupRating').isTouched ? "Please provide a rating." : ""}</FormMessage>
-            </FormItem>
+            <FormField
+              control={form.control}
+              name="pickupRating"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-medium">
+                    Rate the Store Pickup Experience
+                  </FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-8 w-8 cursor-pointer transition-colors ${
+                            star <= rating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-300 hover:text-gray-400"
+                          }`}
+                          onClick={() => {
+                            setRating(star);
+                            field.onChange(star);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -163,10 +172,7 @@ export function RateAndReport({ order, onSubmit, isSubmitting }: RateAndReportPr
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isSubmitting || rating === 0} onClick={() => {
-                form.setValue('pickupRating', rating, { shouldValidate: true, shouldTouch: true });
-                form.handleSubmit(handleFormSubmit)();
-            }}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || rating === 0}>
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
