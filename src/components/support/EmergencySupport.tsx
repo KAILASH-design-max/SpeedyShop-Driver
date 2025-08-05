@@ -16,6 +16,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { auth } from "@/lib/firebase";
+
 
 export function EmergencySupport() {
   const { toast } = useToast();
