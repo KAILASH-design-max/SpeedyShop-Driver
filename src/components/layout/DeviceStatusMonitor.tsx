@@ -13,7 +13,7 @@ export function DeviceStatusMonitor() {
   useEffect(() => {
     // --- Battery Status Check ---
     const checkBattery = async () => {
-      if ('getBattery' in navigator && !hasShownBatteryWarning.current) {
+      if ('getBattery' in navigator) {
         try {
           const battery = await (navigator as any).getBattery();
           
@@ -40,6 +40,7 @@ export function DeviceStatusMonitor() {
           battery.addEventListener('levelchange', handleBatteryChange);
           battery.addEventListener('chargingchange', handleBatteryChange);
 
+          // Return a cleanup function
           return () => {
             battery.removeEventListener('levelchange', handleBatteryChange);
             battery.removeEventListener('chargingchange', handleBatteryChange);
@@ -52,7 +53,7 @@ export function DeviceStatusMonitor() {
 
     // --- GPS Status Check ---
     const checkGps = async () => {
-      if ('permissions' in navigator && !hasShownGpsWarning.current) {
+      if ('permissions' in navigator) {
         try {
           const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
 
@@ -76,6 +77,7 @@ export function DeviceStatusMonitor() {
           handleGpsChange(); // Initial check
           permissionStatus.onchange = handleGpsChange;
 
+          // Return a cleanup function
           return () => {
             permissionStatus.onchange = null;
           };
@@ -86,17 +88,21 @@ export function DeviceStatusMonitor() {
       }
     };
     
-    // Set up a single interval to run checks periodically
-    const intervalId = setInterval(() => {
-        checkBattery();
-        checkGps();
-    }, 30000); // Check every 30 seconds
+    // Set up separate cleanup functions for each check
+    let batteryCleanup: (() => void) | undefined;
+    let gpsCleanup: (() => void) | undefined;
+    
+    const runChecks = async () => {
+        batteryCleanup = await checkBattery();
+        gpsCleanup = await checkGps();
+    }
+    
+    runChecks();
 
-    // Initial check on mount
-    checkBattery();
-    checkGps();
-
-    return () => clearInterval(intervalId);
+    return () => {
+        if (batteryCleanup) batteryCleanup();
+        if (gpsCleanup) gpsCleanup();
+    };
   }, [toast]);
 
   return null; // This component does not render any UI itself
