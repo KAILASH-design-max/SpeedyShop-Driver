@@ -41,7 +41,7 @@ export function PayoutHistoryTable({ transactions, deliveries }: PayoutHistoryTa
 
     return (
         <div>
-            <CardTitle className="text-2xl font-bold flex items-center"><Wallet className="mr-2 h-6 w-6"/>Transaction Summary</CardTitle>
+            <CardTitle className="text-2xl font-bold flex items-center"><Wallet className="mr-2 h-6 w-6"/>Withdraw funds from your wallet</CardTitle>
             <CardDescription className="mt-1">A detailed breakdown of transactions for the selected day.</CardDescription>
             <div className="mt-6 border rounded-md">
                 <Table>
