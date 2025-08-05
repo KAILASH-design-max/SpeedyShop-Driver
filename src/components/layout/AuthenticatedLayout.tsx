@@ -55,9 +55,8 @@ const baseNavItems = [
   { href: "/community", label: "Community", icon: Users },
   // Training is now conditional
   { href: "/communication", label: "Messages", icon: MessagesSquare },
-  { href: "/profile", label: "Settings", icon: Settings },
+  { href: "/settings", label: "Settings", icon: Settings },
   { href: "/support", label: "Help & Info", icon: HelpCircle },
-  { href: "/profile", label: "Profile", icon: UserIcon },
 ];
 
 const trainingNavItem = { href: "/training", label: "Training", icon: BookOpen };
@@ -178,10 +177,34 @@ export default function AuthenticatedLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-4 border-t border-sidebar-border">
-          <Button variant="ghost" onClick={handleLogout} className="w-full justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-            <LogOut className="h-5 w-5" />
-            <span className="group-data-[collapsible=icon]:hidden ml-2">Logout</span>
-          </Button>
+           <SidebarMenu>
+              <SidebarMenuItem>
+                  <Link href="/profile" passHref>
+                      <SidebarMenuButton
+                          className={cn(
+                          pathname === "/profile"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          )}
+                          isActive={pathname === "/profile"}
+                           tooltip={{ children: "Profile", className: "group-data-[collapsible=icon]:block hidden" }}
+                      >
+                          <UserIcon className="h-5 w-5" />
+                          <span className="group-data-[collapsible=icon]:hidden">Profile</span>
+                      </SidebarMenuButton>
+                  </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton
+                      onClick={handleLogout}
+                      className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      tooltip={{ children: "Logout", className: "group-data-[collapsible=icon]:block hidden" }}
+                  >
+                      <LogOut className="h-5 w-5" />
+                      <span className="group-data-[collapsible=icon]:hidden">Logout</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
