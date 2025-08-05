@@ -35,7 +35,7 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Order, Profile, DeliveryRating } from "@/types";
-import { Loader2, Calendar as CalendarIcon, Package, Link2 } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Package, Link2, XCircle } from "lucide-react";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { format, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -53,11 +53,6 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
   const [filteredDeliveries, setFilteredDeliveries] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-
-  useEffect(() => {
-    // Set the initial date only on the client side to avoid hydration mismatch
-    setSelectedDate(new Date());
-  }, []);
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -115,21 +110,22 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
 
   // Effect to filter deliveries and calculate transactions when date or allDeliveries change
   useEffect(() => {
-    if (!selectedDate || loading) {
-      return;
+    if (loading) return;
+
+    let deliveriesToDisplay = allDeliveries;
+    if (selectedDate) {
+        deliveriesToDisplay = allDeliveries.filter(delivery => {
+            if (!delivery.completedAt?.toDate) return false;
+            const completedDate = delivery.completedAt.toDate();
+            return isSameDay(completedDate, selectedDate);
+        });
     }
 
-    const deliveriesForDate = allDeliveries.filter(delivery => {
-      if (!delivery.completedAt?.toDate) return false;
-      const completedDate = delivery.completedAt.toDate();
-      return isSameDay(completedDate, selectedDate);
-    });
-
-    setFilteredDeliveries(deliveriesForDate);
-    onDeliveriesFetched(deliveriesForDate);
+    setFilteredDeliveries(deliveriesToDisplay);
+    onDeliveriesFetched(deliveriesToDisplay);
 
     const calculateTransactions = async () => {
-        const deliveryTransactions: Transaction[] = deliveriesForDate
+        const deliveryTransactions: Transaction[] = deliveriesToDisplay
             .filter(d => d.orderStatus === 'delivered') // only include delivered orders in transactions
             .map(d => ({
                 title: `Delivery Pay (Order #${d.id.substring(0,6)})`,
@@ -154,7 +150,8 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             ratings.forEach((rating: DeliveryRating) => {
                 if(rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
                     const ratedDate = rating.ratedAt.toDate();
-                    if (isSameDay(ratedDate, selectedDate)) {
+                    const deliveryIsInDisplay = deliveriesToDisplay.some(d => d.id === rating.orderId);
+                    if (deliveryIsInDisplay || (!selectedDate && isSameDay(new Date(), ratedDate))) {
                          tipTransactions.push({
                             title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
                             transactionId: `${rating.orderId}-tip`,
@@ -205,32 +202,39 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             <div>
                 <CardTitle className="text-2xl font-bold flex items-center"><Package className="mr-2 h-6 w-6"/>Delivery History</CardTitle>
                 <CardDescription className="mt-1">
-                Select a date to view your delivery records.
+                 View all your past deliveries or select a date to filter.
                 </CardDescription>
             </div>
-            <Popover>
-                <PopoverTrigger asChild>
-                <Button
-                    variant={"outline"}
-                    className={cn(
-                    "w-full sm:w-[280px] justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                    )}
-                >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => date && setSelectedDate(date)}
-                    initialFocus
-                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                />
-                </PopoverContent>
-            </Popover>
+            <div className="flex items-center gap-2">
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className={cn(
+                        "w-full sm:w-[240px] justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "PPP") : <span>Filter by date</span>}
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                    <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => date && setSelectedDate(date)}
+                        initialFocus
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                    />
+                    </PopoverContent>
+                </Popover>
+                 {selectedDate && (
+                    <Button variant="ghost" size="icon" onClick={() => setSelectedDate(undefined)}>
+                        <XCircle className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                 )}
+            </div>
         </div>
       
         <div className="mt-6">
@@ -241,7 +245,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             </div>
             ) : filteredDeliveries.length === 0 ? (
             <div className="text-center text-muted-foreground p-8 border rounded-lg">
-                <p>No deliveries found for this date.</p>
+                <p>No deliveries found for {selectedDate ? format(selectedDate, "PPP") : 'this period'}.</p>
             </div>
             ) : (
             <div className="border rounded-md">
