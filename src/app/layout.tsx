@@ -28,9 +28,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster />
-          <ConnectionStatusBanner />
+            {children}
+            <Toaster />
+            <ConnectionStatusBanner />
         </ThemeProvider>
       </body>
     </html>
