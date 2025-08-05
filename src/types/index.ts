@@ -9,6 +9,13 @@ export interface OrderItem {
   imageUrl?: string;
 }
 
+export interface DeliveryPartnerFeedback {
+    pickupRating: number; // 1-5 stars
+    reportReason?: string;
+    comments?: string;
+    reportedAt?: any; // Firestore Timestamp
+}
+
 export interface Order {
   id: string;
   customerName: string; 
@@ -28,6 +35,7 @@ export interface Order {
   noContactDelivery?: boolean; // Flag for no-contact delivery
   proofImageURL?: string; // URL for the proof of delivery image
   accessibleTo: string[]; // Array of UIDs that can access this order
+  deliveryPartnerFeedback?: DeliveryPartnerFeedback;
 }
 
 export interface EarningSummary {

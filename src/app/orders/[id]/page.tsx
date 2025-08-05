@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import type { Order } from "@/types";
+import type { Order, DeliveryPartnerFeedback } from "@/types";
 import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { updateLocation } from "@/ai/flows/update-location-flow";
 import { useThrottle } from "@/hooks/use-throttle";
+import { RateAndReport } from "@/components/orders/RateAndReport";
 
 
 export default function OrderPage() {
@@ -259,6 +260,35 @@ export default function OrderPage() {
       setIsUpdating(false);
     }
   };
+  
+  const handleFeedbackSubmit = async (feedback: DeliveryPartnerFeedback) => {
+    if (!order) return;
+    setIsUpdating(true);
+    try {
+        const orderRef = doc(db, "orders", order.id);
+        await updateDoc(orderRef, {
+            deliveryPartnerFeedback: {
+                ...feedback,
+                reportedAt: serverTimestamp(),
+            },
+        });
+        toast({
+            title: "Feedback Submitted",
+            description: "Thank you for helping us improve our service.",
+            className: "bg-green-500 text-white",
+        });
+    } catch (error) {
+        console.error("Error submitting feedback:", error);
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "Could not submit your feedback. Please try again.",
+        });
+    } finally {
+        setIsUpdating(false);
+    }
+  };
+
 
   if (loading && !order) {
     return (
@@ -357,20 +387,28 @@ export default function OrderPage() {
       )}
 
       {order.orderStatus === "delivered" && (
-        <Card className="mt-6 bg-green-100 border-green-300">
-          <CardContent className="p-6 text-center">
-            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />
-            <p className="text-xl font-semibold text-green-800">This order has been successfully delivered!</p>
-            {order.proofImageURL && (
-                <div className="mt-4">
-                    <p className="text-sm text-green-700">Proof of delivery:</p>
-                    <a href={order.proofImageURL} target="_blank" rel="noopener noreferrer">
-                         <img src={order.proofImageURL} alt="Proof of delivery" className="rounded-md max-h-48 w-auto object-contain border mx-auto mt-2 shadow-sm" data-ai-hint="delivery package" />
-                    </a>
-                </div>
-            )}
-          </CardContent>
-        </Card>
+        <>
+            <Card className="mt-6 bg-green-100 border-green-300">
+            <CardContent className="p-6 text-center">
+                <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />
+                <p className="text-xl font-semibold text-green-800">This order has been successfully delivered!</p>
+                {order.proofImageURL && (
+                    <div className="mt-4">
+                        <p className="text-sm text-green-700">Proof of delivery:</p>
+                        <a href={order.proofImageURL} target="_blank" rel="noopener noreferrer">
+                            <img src={order.proofImageURL} alt="Proof of delivery" className="rounded-md max-h-48 w-auto object-contain border mx-auto mt-2 shadow-sm" data-ai-hint="delivery package" />
+                        </a>
+                    </div>
+                )}
+            </CardContent>
+            </Card>
+
+            <RateAndReport
+                order={order}
+                onSubmit={handleFeedbackSubmit}
+                isSubmitting={isUpdating}
+            />
+        </>
       )}
     </div>
   );
