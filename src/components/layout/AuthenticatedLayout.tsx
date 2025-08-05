@@ -30,6 +30,8 @@ import {
   Trophy,
   Users,
   BookOpen,
+  Settings,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -53,7 +55,8 @@ const baseNavItems = [
   { href: "/community", label: "Community", icon: Users },
   // Training is now conditional
   { href: "/communication", label: "Messages", icon: MessagesSquare },
-  { href: "/support", label: "Support", icon: LifeBuoy },
+  { href: "/profile", label: "Settings", icon: Settings },
+  { href: "/support", label: "Help & Info", icon: HelpCircle },
   { href: "/profile", label: "Profile", icon: UserIcon },
 ];
 
