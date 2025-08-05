@@ -171,7 +171,8 @@ export interface ChatMessage {
     id?: string;
     message: string;
     senderId: string;
-    senderRole: 'user' | 'agent' | 'driver';
+    senderName?: string; // Name of the sender (e.g., "Admin", "Velocity Support")
+    senderRole: 'user' | 'agent' | 'driver' | 'system';
     timestamp: any;
 }
 
