@@ -42,6 +42,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Profile } from "@/types";
 import { DeviceStatusMonitor } from "./DeviceStatusMonitor";
+import { NotificationBell } from "./NotificationBell";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -148,12 +149,14 @@ export default function AuthenticatedLayout({
                 <MobileNav />
                 {!isHistoryPage && (
                   <>
-                    {/* <span className="text-xl font-semibold text-primary hidden md:block">Velocity Driver</span> */}
                     <ActiveTimeTracker />
                   </>
                 )}
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+                <NotificationBell />
+                <ThemeToggle />
+            </div>
         </header>
         <main className="flex-1 overflow-auto">
             {children}

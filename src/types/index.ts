@@ -207,3 +207,13 @@ export interface DeliveryLocation {
     longitude: number;
     timestamp: any; // Firestore Timestamp
 }
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: any; // Firestore Timestamp
+  link?: string; // Optional link to navigate to
+}
