@@ -16,6 +16,8 @@ import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp,
 import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
+import { chat as callChatApi } from '@/ai/flows/chat-flow';
+import type { ChatHistory } from '@/ai/flows/chat-flow';
 
 type UnifiedChatThread = (ChatThread & { type: 'customer' }) | (SupportChatSession & { type: 'support' });
 
@@ -31,6 +33,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [participantNames, setParticipantNames] = useState<{[key: string]: string}>({});
@@ -174,6 +177,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === "" || !selectedThread || !currentUser) return;
+    setIsSending(true);
 
     const isSupportChat = selectedThread.type === 'support';
     const collectionName = isSupportChat ? 'supportMessages' : 'Customer&deliveryboy';
@@ -182,31 +186,52 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     const messagePayload: Omit<CommunicationMessage, 'id'> = {
       senderId: currentUser.uid,
       message: newMessage,
-      senderRole: isSupportChat ? 'user' : 'driver', // Assign role based on chat type
+      senderRole: 'driver',
       timestamp: serverTimestamp(),
     };
     
     setNewMessage("");
 
     try {
+      // Add user's message to Firestore
       await addDoc(collection(db, `${collectionName}/${selectedThread.id}/messages`), messagePayload);
       
       const threadRef = doc(db, collectionName, selectedThread.id);
-      const updateData: any = {
+      await updateDoc(threadRef, {
         lastMessage: newMessage,
         [lastUpdatedField]: serverTimestamp(),
-      };
+        status: 'active',
+      });
       
-      if(isSupportChat) {
-          updateData.status = 'active';
-      }
+      // If it's a support chat, call the AI flow
+      if (isSupportChat) {
+          const chatHistory: ChatHistory[] = messages.map(m => ({
+            role: m.senderId === currentUser.uid ? 'user' : 'model',
+            message: m.message,
+          }));
 
-      await updateDoc(threadRef, updateData);
+          const aiResponse = await callChatApi(chatHistory, newMessage);
+
+          // Add AI's response to Firestore
+          const aiMessagePayload: Omit<CommunicationMessage, 'id'> = {
+              senderId: 'support-agent',
+              message: aiResponse,
+              senderRole: 'agent',
+              timestamp: serverTimestamp(),
+          };
+          await addDoc(collection(db, `${collectionName}/${selectedThread.id}/messages`), aiMessagePayload);
+          await updateDoc(threadRef, {
+            lastMessage: aiResponse,
+            [lastUpdatedField]: serverTimestamp(),
+          });
+      }
 
     } catch (error) {
       console.error("Error sending message:", error);
       toast({ variant: "destructive", title: "Error", description: "Could not send message." });
       setNewMessage(messagePayload.message); // Restore message on error
+    } finally {
+        setIsSending(false);
     }
   };
   
@@ -372,10 +397,11 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type your message..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSendMessage()}
+                    disabled={isSending}
                 />
-                <Button onClick={handleSendMessage} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    <Send className="h-5 w-5" />
+                <Button onClick={handleSendMessage} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSending}>
+                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-5 w-5" />}
                 </Button>
                 </div>
                  {!isSupport && <PredefinedMessages onSelectMessage={handleUsePredefinedMessage}/>}
