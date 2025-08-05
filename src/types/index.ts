@@ -66,6 +66,8 @@ export type ProfileDocuments = {
   driverLicense?: DocumentMetadata;
   vehicleRegistration?: DocumentMetadata;
   proofOfInsurance?: DocumentMetadata;
+  aadhaar?: DocumentMetadata;
+  pan?: DocumentMetadata;
 }
 
 
@@ -73,6 +75,8 @@ export interface BankDetails {
   accountHolderName?: string;
   accountNumber?: string;
   ifscCode?: string;
+  upiId?: string;
+  isVerified?: boolean;
 }
 
 export interface DeliveryRating {
@@ -89,16 +93,6 @@ export interface MaintenanceLogEntry {
     date: any; // Firestore Timestamp
     cost: number;
     notes?: string;
-}
-
-export interface LeaveRequest {
-  id: string;
-  startDate: any; // Firestore Timestamp
-  endDate: any; // Firestore Timestamp
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: any; // Firestore Timestamp
-  adminComment?: string;
 }
 
 export interface Penalty {
@@ -119,6 +113,14 @@ export interface Profile {
   phoneNumber: string;
   role?: string;
   
+  // Address
+  address?: {
+      street: string;
+      city: string;
+      state: string;
+      postalCode: string;
+  };
+  
   // Vehicle Details
   vehicleDetails: string; // Kept for backward compatibility, but new fields are preferred
   vehicleType: 'bike' | 'scooter' | 'car';
@@ -133,19 +135,15 @@ export interface Profile {
   // Documents & Financials
   documents: ProfileDocuments;
   bankDetails?: BankDetails;
+  autoWithdrawalEnabled?: boolean;
 
   // Timestamps
   createdAt?: string; // ISO string
   updatedAt?: string; // ISO string for last update
 
   // Performance metrics (populated by another system, read-only here)
-  averageDeliveryTime?: number; // in minutes
-  onTimeDeliveryRate?: number; // percentage 0-100
-  totalDeliveries?: number;
-  overallRating?: number;
   deliveryRatings?: DeliveryRating[];
   maintenanceLog?: MaintenanceLogEntry[];
-  leaveRequests?: LeaveRequest[];
   penalties?: Penalty[];
 }
 

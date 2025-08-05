@@ -2,8 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ProfileForm } from "@/components/profile/ProfileForm";
-import { DocumentManagement } from "@/components/profile/DocumentManagement";
+import { ProfileDetails } from "@/components/profile/ProfileDetails";
 import type { Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase";
@@ -14,6 +13,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { VehicleMaintenanceLog } from "@/components/profile/VehicleMaintenanceLog";
+import { DocumentManagement } from "@/components/profile/DocumentManagement";
 
 export default function ProfilePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -155,7 +155,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-6 py-4 md:px-8 md:py-6 space-y-8">
-      <ProfileForm profile={profile} onUpdate={handleProfileUpdate} />
+      <ProfileDetails profile={profile} onUpdate={handleProfileUpdate} />
       <Separator />
       <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
       <Separator />
