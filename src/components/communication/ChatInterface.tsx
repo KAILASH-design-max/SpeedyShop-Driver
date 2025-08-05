@@ -52,66 +52,63 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
 
     setIsLoadingThreads(true);
     
-    const allThreads: UnifiedChatThread[] = [];
-    let customerChatsDone = false;
-    let supportChatsDone = false;
+    // Using a map to avoid duplicates and to easily update
+    const threadsMap = new Map<string, UnifiedChatThread>();
     
     const processAndSetThreads = () => {
-        if (customerChatsDone && supportChatsDone) {
-            allThreads.sort((a, b) => {
-                const tsA = a.lastUpdated || a.lastMessageTimestamp;
-                const tsB = b.lastUpdated || b.lastMessageTimestamp;
-                if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
-                return tsB.seconds - tsA.seconds;
-            });
+        const allThreads = Array.from(threadsMap.values());
+        allThreads.sort((a, b) => {
+            const tsA = a.lastUpdated || (a as ChatThread).lastMessageTimestamp;
+            const tsB = b.lastUpdated || (b as ChatThread).lastMessageTimestamp;
+            if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
+            return tsB.seconds - tsA.seconds;
+        });
 
-            // Handle pre-selection
-            if (preselectedThreadId) {
-                const threadToSelect = allThreads.find(t => t.id === preselectedThreadId);
-                if (threadToSelect) {
-                    setSelectedThread(threadToSelect);
-                }
+        // Handle pre-selection
+        if (preselectedThreadId) {
+            const threadToSelect = allThreads.find(t => t.id === preselectedThreadId);
+            if (threadToSelect) {
+                setSelectedThread(threadToSelect);
             }
-
-            setChatThreads(allThreads);
-            setIsLoadingThreads(false);
         }
+
+        setChatThreads(allThreads);
+        setIsLoadingThreads(false);
     }
 
     // Listener for customer chats
     const customerThreadsQuery = query(collection(db, "Customer&deliveryboy"), where("participantIds", "array-contains", currentUser.uid));
-    const unsubscribeCustomerChats = onSnapshot(customerThreadsQuery, snapshot => {
+    const unsubscribeCustomerChats = onSnapshot(customerThreadsQuery, async snapshot => {
         const customerThreads = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
             type: 'customer'
         } as UnifiedChatThread));
         
-        allThreads.push(...customerThreads);
+        customerThreads.forEach(thread => threadsMap.set(thread.id, thread));
         
         // Fetch participant names for customer chats
         const namesToFetch = new Set<string>();
         customerThreads.forEach(thread => {
-            thread.participantIds.forEach(id => namesToFetch.add(id));
+            if ('participantIds' in thread) {
+                thread.participantIds.forEach(id => namesToFetch.add(id));
+            }
         });
         
-        namesToFetch.forEach(async (id) => {
-            if (id !== currentUser.uid) {
+        for (const id of Array.from(namesToFetch)) {
+            if (id !== currentUser.uid && !participantNames[id]) {
                 const userDoc = await getDoc(doc(db, "users", id));
                 if (userDoc.exists()) {
                     setParticipantNames(prev => ({...prev, [id]: userDoc.data().name || 'Customer'}));
                 }
             }
-        });
-
-        customerChatsDone = true;
+        }
+        
         processAndSetThreads();
 
     }, error => {
         console.error("Error fetching customer chat threads:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not fetch customer chats." });
-        customerChatsDone = true;
-        processAndSetThreads();
     });
 
     // Listener for support chats
@@ -123,15 +120,12 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             type: 'support'
         } as UnifiedChatThread));
         
-        allThreads.push(...supportThreads);
-
-        supportChatsDone = true;
+        supportThreads.forEach(thread => threadsMap.set(thread.id, thread));
+        
         processAndSetThreads();
     }, error => {
         console.error("Error fetching support chat threads:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not fetch support chats." });
-        supportChatsDone = true;
-        processAndSetThreads();
     });
 
 
@@ -295,7 +289,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                                     <div className="flex-grow overflow-hidden">
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold truncate">{details.name}</p>
-                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastUpdated || thread.lastMessageTimestamp)}</p>
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastUpdated || (thread as ChatThread).lastMessageTimestamp)}</p>
                                         </div>
                                         <p className="text-sm text-muted-foreground truncate">{thread.lastMessage || `New conversation...`}</p>
                                     </div>
