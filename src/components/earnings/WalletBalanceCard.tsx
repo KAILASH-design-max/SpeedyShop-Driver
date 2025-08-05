@@ -1,12 +1,13 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, IndianRupee, Download, Loader2 } from "lucide-react";
+import { Wallet, IndianRupee, Download, Loader2, PiggyBank } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { auth, db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, doc, Timestamp } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
+import type { Profile } from "@/types";
 
 const payoutSchema = z.object({
     amount: z.coerce.number().positive("Amount must be greater than 0."),
@@ -47,9 +52,84 @@ const payoutSchema = z.object({
 
 
 export function WalletBalanceCard() {
-    const walletBalance = 11868.00; // Static value for now
     const [open, setOpen] = useState(false);
     const { toast } = useToast();
+
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [lifetimeEarnings, setLifetimeEarnings] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            setCurrentUser(user);
+            if (!user) setIsLoading(false);
+        });
+        return () => unsubscribeAuth();
+    }, []);
+
+    useEffect(() => {
+        if (!currentUser) {
+             if(!auth.currentUser) {
+                setIsLoading(false);
+            }
+            return;
+        };
+
+        setIsLoading(true);
+
+        let totalLifetimeDeliveryEarnings = 0;
+
+        // Listener for all deliveries
+        const allDeliveriesQuery = query(
+            collection(db, "orders"),
+            where("deliveryPartnerId", "==", currentUser.uid),
+            where("orderStatus", "==", "delivered")
+        );
+        
+        const unsubscribeDeliveries = onSnapshot(allDeliveriesQuery, (snapshot) => {
+            totalLifetimeDeliveryEarnings = 0;
+            snapshot.forEach(doc => {
+                const orderData = doc.data();
+                const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
+                totalLifetimeDeliveryEarnings += earning;
+            });
+            // Initially set earnings without tips
+            setLifetimeEarnings(totalLifetimeDeliveryEarnings);
+        }, (error) => {
+            console.error("Error fetching earnings summary:", error);
+            setIsLoading(false);
+        });
+
+        // Listener for user profile to get tips
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const profile = docSnap.data() as Profile;
+                const ratings = profile.deliveryRatings || [];
+
+                let totalLifetimeTips = 0;
+                ratings.forEach(rating => {
+                    if (rating.tip && rating.tip > 0) {
+                        totalLifetimeTips += rating.tip;
+                    }
+                });
+
+                // Combine delivery earnings with tips
+                setLifetimeEarnings(totalLifetimeDeliveryEarnings + totalLifetimeTips);
+            }
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching profile for tips:", error);
+            setIsLoading(false); // still stop loading on error
+        });
+
+
+        return () => {
+            unsubscribeDeliveries();
+            unsubscribeProfile();
+        };
+    }, [currentUser]);
+
 
     const form = useForm<z.infer<typeof payoutSchema>>({
         resolver: zodResolver(payoutSchema),
@@ -78,16 +158,21 @@ export function WalletBalanceCard() {
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center text-xl font-bold">
-                        <Wallet className="mr-3 h-6 w-6 text-primary" />
-                        Wallet Balance
+                        <PiggyBank className="mr-3 h-6 w-6 text-primary" />
+                        Total Lifetime Earnings
                     </CardTitle>
+                     <CardDescription>Includes all deliveries and tips.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="text-center bg-muted/50 p-6 rounded-lg">
-                        <p className="text-4xl font-bold text-primary flex items-center justify-center">
-                            <IndianRupee size={30} className="mr-1" />
-                            {walletBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
+                        {isLoading ? (
+                            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                        ) : (
+                             <p className="text-4xl font-bold text-primary flex items-center justify-center">
+                                <IndianRupee size={30} className="mr-1" />
+                                {lifetimeEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                        )}
                         <p className="text-muted-foreground mt-1">Next payout: Tuesday</p>
                     </div>
                      <DialogTrigger asChild>
