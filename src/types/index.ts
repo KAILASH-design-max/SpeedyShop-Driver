@@ -101,6 +101,16 @@ export interface LeaveRequest {
   adminComment?: string;
 }
 
+export interface Penalty {
+  id: string;
+  reason: string;
+  date: any; // Firestore Timestamp
+  status: 'Active' | 'Appealed' | 'Removed' | 'Expired';
+  appealComment?: string;
+  appealDate?: any; // Firestore Timestamp for when the appeal was made
+  adminNotes?: string;
+}
+
 
 export interface Profile {
   uid: string;
@@ -136,6 +146,7 @@ export interface Profile {
   deliveryRatings?: DeliveryRating[];
   maintenanceLog?: MaintenanceLogEntry[];
   leaveRequests?: LeaveRequest[];
+  penalties?: Penalty[];
 }
 
 
