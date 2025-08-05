@@ -52,7 +52,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
   const [allDeliveries, setAllDeliveries] = useState<Order[]>([]);
   const [filteredDeliveries, setFilteredDeliveries] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -75,8 +75,6 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
       where("orderStatus", "in", ["delivered", "cancelled"])
-      // NOTE: Removed orderBy clause to avoid needing a composite index.
-      // Sorting will be handled client-side.
     );
 
     const unsubscribe = onSnapshot(
@@ -89,7 +87,6 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
           );
           fetchedDeliveries = await Promise.all(ordersDataPromises);
           
-          // Sort deliveries by date client-side
           fetchedDeliveries.sort((a, b) => {
             const dateA = a.completedAt?.toDate ? a.completedAt.toDate() : new Date(0);
             const dateB = b.completedAt?.toDate ? b.completedAt.toDate() : new Date(0);
@@ -126,7 +123,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
 
     const calculateTransactions = async () => {
         const deliveryTransactions: Transaction[] = deliveriesToDisplay
-            .filter(d => d.orderStatus === 'delivered') // only include delivered orders in transactions
+            .filter(d => d.orderStatus === 'delivered')
             .map(d => ({
                 title: `Delivery Pay (Order #${d.id.substring(0,6)})`,
                 transactionId: d.id,
@@ -151,7 +148,8 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                 if(rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
                     const ratedDate = rating.ratedAt.toDate();
                     const deliveryIsInDisplay = deliveriesToDisplay.some(d => d.id === rating.orderId);
-                    if (deliveryIsInDisplay || (!selectedDate && isSameDay(new Date(), ratedDate))) {
+                    
+                    if (selectedDate && deliveryIsInDisplay && isSameDay(selectedDate, ratedDate)) {
                          tipTransactions.push({
                             title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
                             transactionId: `${rating.orderId}-tip`,
