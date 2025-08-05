@@ -45,17 +45,20 @@ import type { Profile } from "@/types";
 import { DeviceStatusMonitor } from "./DeviceStatusMonitor";
 import { NotificationBell } from "./NotificationBell";
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/smart-routing", label: "Smart Routing", icon: Route },
   { href: "/earnings", label: "Earnings", icon: IndianRupee },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/community", label: "Community", icon: Users },
-  { href: "/training", label: "Training", icon: BookOpen },
+  // Training is now conditional
   { href: "/communication", label: "Messages", icon: MessagesSquare },
   { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/profile", label: "Profile", icon: UserIcon },
 ];
+
+const trainingNavItem = { href: "/training", label: "Training", icon: BookOpen };
+
 
 function MobileNav() {
     const { toggleSidebar } = useSidebar();
@@ -76,6 +79,33 @@ export default function AuthenticatedLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+        if(!user) {
+            setProfile(null);
+        }
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+      if (currentUser) {
+          const profileRef = doc(db, "users", currentUser.uid);
+          const unsubscribe = onSnapshot(profileRef, (docSnap) => {
+              if (docSnap.exists()) {
+                  setProfile(docSnap.data() as Profile);
+              } else {
+                  setProfile(null);
+              }
+          });
+          return () => unsubscribe();
+      }
+  }, [currentUser]);
+
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -104,6 +134,12 @@ export default function AuthenticatedLayout({
   };
 
   const isHistoryPage = pathname.includes('/earnings/history');
+  
+  const navItems = [
+    ...baseNavItems.slice(0, 5),
+    ...(profile?.verificationStatus === 'pending' ? [trainingNavItem] : []),
+    ...baseNavItems.slice(5)
+  ];
 
   return (
     <SidebarProvider defaultOpen>
