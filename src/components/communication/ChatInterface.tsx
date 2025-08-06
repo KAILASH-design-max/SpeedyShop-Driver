@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, ArrowLeft, Loader2, LifeBuoy, User } from "lucide-react";
+import { Send, MessageSquare, ArrowLeft, Loader2, LifeBuoy, User, Package } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PredefinedMessages } from "./PredefinedMessages";
 import { cn } from "@/lib/utils";
@@ -64,7 +64,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             const tsA = a.lastUpdated || (a as ChatThread).lastMessageTimestamp;
             const tsB = b.lastUpdated || (b as ChatThread).lastMessageTimestamp;
             if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
-            return tsB.seconds - tsA.seconds;
+            return tsB.seconds - a.seconds;
         });
 
         // Handle pre-selection
@@ -210,7 +210,9 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             message: m.message,
           }));
 
-          const aiResponse = await callChatApi(chatHistory, newMessage);
+          const orderIdForChat = selectedThread.orderId;
+
+          const aiResponse = await callChatApi(chatHistory, newMessage, orderIdForChat);
 
           // Add AI's response to Firestore
           const aiMessagePayload: Omit<CommunicationMessage, 'id'> = {
@@ -244,7 +246,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
         return {
             name: "Support Agent",
             avatarUrl: undefined, // No avatar for support
-            subtext: `Support Session`
+            subtext: thread.orderId ? `About Order #${thread.orderId.substring(0,6)}` : "General Support"
         }
     } else {
         const otherParticipantId = thread.participantIds.find(id => id !== currentUserId);
@@ -357,7 +359,10 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                 </Avatar>
                 <div>
                     <CardTitle className="text-lg">{details.name}</CardTitle>
-                    <CardDescription>{details.subtext}</CardDescription>
+                    <CardDescription className="flex items-center gap-1">
+                        {isSupport && selectedThread.orderId && <Package size={14}/>}
+                        {details.subtext}
+                    </CardDescription>
                 </div>
             </CardHeader>
             <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>

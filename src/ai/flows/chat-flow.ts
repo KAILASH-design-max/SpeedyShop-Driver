@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -20,10 +21,11 @@ export { type ChatHistory };
 const ChatInputSchema = z.object({
   history: z.array(chatHistorySchema),
   message: z.string(),
+  orderId: z.string().optional().describe("The ID of the order the user is asking about, if any.")
 });
 
-export async function chat(history: ChatHistory[], message: string): Promise<string> {
-  const response = await chatFlow({ history, message });
+export async function chat(history: ChatHistory[], message: string, orderId?: string): Promise<string> {
+  const response = await chatFlow({ history, message, orderId });
   return response.response;
 }
 
@@ -33,10 +35,12 @@ const chatFlow = ai.defineFlow(
     inputSchema: ChatInputSchema,
     outputSchema: z.object({ response: z.string() }),
   },
-  async ({ history, message }) => {
+  async ({ history, message, orderId }) => {
     const prompt = `You are a friendly and helpful customer support agent for a delivery driver app called "Velocity Driver".
 
     Your role is to assist drivers with their questions and concerns. Keep your responses concise and to the point.
+    
+    If the user asks about a specific order (the orderId will be provided), use that context in your response. The current order ID is: ${orderId || 'Not specified'}.
 
     Here is the conversation history:
     ${history
