@@ -7,20 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Package, User, FileText, MessageSquare } from "lucide-react";
 import type { Order } from "@/types";
-import { useRouter } from "next/navigation";
 
 interface OrderCardProps {
   order: Order;
+  onChat: (orderId: string) => void;
 }
 
-export function OrderCard({ order }: OrderCardProps) {
-  const router = useRouter();
+export function OrderCard({ order, onChat }: OrderCardProps) {
   
   const displayItems = order.items.map(item => `${item.name} (x${item.quantity})`).join(", ");
 
   const handleChatClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push(`/communication?orderId=${order.id}`);
+    onChat(order.id);
   };
 
   return (

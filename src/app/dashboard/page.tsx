@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
+import { LiveChat } from "@/components/dashboard/LiveChat";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -25,6 +26,9 @@ export default function DashboardPage() {
 
   const [newOrders, setNewOrders] = useState<Order[]>([]);
   const [loadingNew, setLoadingNew] = useState(true);
+
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -185,11 +189,16 @@ export default function DashboardPage() {
     setNewOrders(prev => prev.slice(1));
   };
 
+  const handleChatOpen = (orderId: string) => {
+    setChatOrderId(orderId);
+    setIsChatOpen(true);
+  };
+
 
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6 p-6">
       <DashboardHeader />
       
       {/* New Order Dialog */}
@@ -200,8 +209,17 @@ export default function DashboardPage() {
           onOrderAction={handleOrderAction}
         />
       )}
+
+      {chatOrderId && currentUser && (
+        <LiveChat
+            isOpen={isChatOpen}
+            onOpenChange={setIsChatOpen}
+            orderId={chatOrderId}
+            currentUserId={currentUser.uid}
+        />
+      )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-6">
           <AvailabilityToggle
             currentStatus={availabilityStatus}
@@ -212,7 +230,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="md:col-span-2 space-y-6">
-          <h2 className="text-[15px] font-semibold mb-4 flex items-center text-primary">
+          <h2 className="text-lg font-semibold mb-4 flex items-center text-primary">
             <PackageCheck className="mr-2 h-6 w-6" /> Your Active Orders
           </h2>
           {isLoading && activeOrders.length === 0 ? (
@@ -223,7 +241,7 @@ export default function DashboardPage() {
           ) : activeOrders.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {activeOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
+                <OrderCard key={order.id} order={order} onChat={() => handleChatOpen(order.id)} />
               ))}
             </div>
           ) : (
