@@ -312,7 +312,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                           {delivery.orderStatus === 'delivered' ? `₹${(delivery.estimatedEarnings || 0).toFixed(2)}` : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                           <Button variant="ghost" size="icon" disabled>
+                           <Button variant="ghost" size="icon" disabled={true}>
                                 <MessageSquare className="h-5 w-5 text-muted-foreground" />
                            </Button>
                         </TableCell>
@@ -326,5 +326,3 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
     </div>
   );
 }
-
-    
