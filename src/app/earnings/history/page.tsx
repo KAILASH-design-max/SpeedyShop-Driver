@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -9,7 +10,7 @@ export default function MonthlyEarningsHistoryPage() {
   const router = useRouter();
 
   return (
-    <div className="container px-6 py-4 md:px-8 md:py-6 space-y-6">
+    <div className="container p-6 space-y-6">
       <Button variant="outline" onClick={() => router.back()}>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back

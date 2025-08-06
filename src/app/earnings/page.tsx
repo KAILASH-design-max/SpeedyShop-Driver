@@ -14,7 +14,7 @@ export default function EarningsPage() {
   const router = useRouter();
 
   return (
-    <div className="container mx-auto px-4 py-4 md:px-6 md:py-6 space-y-8">
+    <div className="container mx-auto p-6 space-y-8">
       <div className="flex justify-between items-center">
         <div>
             <h1 className="text-3xl font-bold text-primary">Earnings Breakdown</h1>
