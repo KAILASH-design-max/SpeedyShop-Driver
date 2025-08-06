@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -311,11 +312,9 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                           {delivery.orderStatus === 'delivered' ? `₹${(delivery.estimatedEarnings || 0).toFixed(2)}` : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                            <Link href={`/communication?orderId=${delivery.id}`} passHref>
-                               <Button variant="ghost" size="icon">
-                                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                               </Button>
-                            </Link>
+                           <Button variant="ghost" size="icon" disabled>
+                                <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                           </Button>
                         </TableCell>
                     </TableRow>
                     ))}
@@ -327,3 +326,5 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
     </div>
   );
 }
+
+    
