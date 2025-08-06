@@ -8,6 +8,7 @@ import { EarningsSummaryCard } from "@/components/earnings/EarningsSummaryCard";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
 import { EarningsOverview } from '@/components/earnings/EarningsOverview';
 import { WalletBalanceCard } from '@/components/earnings/WalletBalanceCard';
+import { EarningsForecast } from '@/components/dashboard/EarningsForecast';
 
 export default function EarningsPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function EarningsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-1 space-y-8">
             <WalletBalanceCard />
+            <EarningsForecast />
             <EarningsSummaryCard />
         </div>
         <div className="lg:col-span-2">
