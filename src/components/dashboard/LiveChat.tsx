@@ -18,8 +18,6 @@ import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, setDoc, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { chat as callChatApi } from '@/ai/flows/chat-flow';
-import type { ChatHistory } from '@/ai/flows/chat-flow';
 import { format } from "date-fns";
 
 interface LiveChatProps {
@@ -120,23 +118,7 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
       const sessionRef = doc(db, "supportMessages", chatSessionId);
 
       await addDoc(messagesRef, userMessagePayload);
-      await setDoc(sessionRef, { lastMessage: newMessage, lastUpdated: serverTimestamp() }, { merge: true });
-
-      const chatHistory: ChatHistory[] = [...messages, userMessagePayload].map(m => ({
-        role: m.senderId === currentUserId ? 'user' : 'model',
-        message: m.message,
-      }));
-
-      const aiResponse = await callChatApi(chatHistory, newMessage, orderId);
-
-      const aiMessagePayload: Omit<ChatMessage, 'id'> = {
-        senderId: 'support-agent',
-        message: aiResponse,
-        senderRole: 'agent',
-        timestamp: serverTimestamp(),
-      };
-      await addDoc(messagesRef, aiMessagePayload);
-      await setDoc(sessionRef, { lastMessage: aiResponse, lastUpdated: serverTimestamp() }, { merge: true });
+      await setDoc(sessionRef, { lastMessage: newMessage, lastUpdated: serverTimestamp(), status: 'waiting' }, { merge: true });
 
     } catch (error) {
       console.error("Error sending message:", error);
@@ -175,8 +157,8 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
                     <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-md">
                         <Bot className="h-6 w-6 text-primary flex-shrink-0" />
                         <div>
-                            <p className="text-sm font-semibold">Support Bot</p>
-                            <p className="text-sm">Hello! How can I help you with this order?</p>
+                            <p className="text-sm font-semibold">Support Agent</p>
+                            <p className="text-sm">Hello! How can I help you with this order? An agent will be with you shortly.</p>
                         </div>
                     </div>
                 ) : (

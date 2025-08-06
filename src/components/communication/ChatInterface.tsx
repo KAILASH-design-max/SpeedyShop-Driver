@@ -16,8 +16,6 @@ import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp,
 import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
-import { chat as callChatApi } from '@/ai/flows/chat-flow';
-import type { ChatHistory } from '@/ai/flows/chat-flow';
 
 type UnifiedChatThread = (ChatThread & { type: 'customer' }) | (SupportChatSession & { type: 'support' });
 
@@ -137,6 +135,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     const isSupportChat = selectedThread.type === 'support';
     const collectionName = isSupportChat ? 'supportMessages' : 'Customer&deliveryboy';
     const lastUpdatedField = isSupportChat ? 'lastUpdated' : 'lastMessageTimestamp';
+    const statusField = isSupportChat ? 'status' : null;
 
     const messagePayload: Omit<CommunicationMessage, 'id'> = {
       senderId: currentUser.uid,
@@ -152,36 +151,17 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       await addDoc(collection(db, `${collectionName}/${selectedThread.id}/messages`), messagePayload);
       
       const threadRef = doc(db, collectionName, selectedThread.id);
-      await updateDoc(threadRef, {
+      
+      const updateData: {[key: string]: any} = {
         lastMessage: newMessage,
         [lastUpdatedField]: serverTimestamp(),
-        status: 'active',
-      });
+      };
       
-      // If it's a support chat, call the AI flow
-      if (isSupportChat) {
-          const chatHistory: ChatHistory[] = messages.map(m => ({
-            role: m.senderId === currentUser.uid ? 'user' : 'model',
-            message: m.message,
-          }));
-
-          const orderIdForChat = selectedThread.orderId;
-
-          const aiResponse = await callChatApi(chatHistory, newMessage, orderIdForChat);
-
-          // Add AI's response to Firestore
-          const aiMessagePayload: Omit<CommunicationMessage, 'id'> = {
-              senderId: 'support-agent',
-              message: aiResponse,
-              senderRole: 'agent',
-              timestamp: serverTimestamp(),
-          };
-          await addDoc(collection(db, `${collectionName}/${selectedThread.id}/messages`), aiMessagePayload);
-          await updateDoc(threadRef, {
-            lastMessage: aiResponse,
-            [lastUpdatedField]: serverTimestamp(),
-          });
+      if (statusField) {
+          updateData[statusField] = 'waiting'; // Mark as waiting for human agent
       }
+
+      await updateDoc(threadRef, updateData);
 
     } catch (error) {
       console.error("Error sending message:", error);
