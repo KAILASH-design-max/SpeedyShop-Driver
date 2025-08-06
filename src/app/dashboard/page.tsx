@@ -241,7 +241,7 @@ export default function DashboardPage() {
           ) : activeOrders.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {activeOrders.map((order) => (
-                <OrderCard key={order.id} order={order} onChat={() => handleChatOpen(order.id)} />
+                <OrderCard key={order.id} order={order} onChat={handleChatOpen} />
               ))}
             </div>
           ) : (

@@ -344,7 +344,7 @@ export default function OrderPage() {
 
              {order.orderStatus === "out-for-delivery" && (
               <>
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" size="lg" disabled={isUpdating}>
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base" size="lg" disabled={isUpdating}>
                   <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`}>
                      <Navigation className="mr-2 h-4 w-4" /> Navigate to Customer
                   </Link>
@@ -427,10 +427,3 @@ export default function OrderPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
-
