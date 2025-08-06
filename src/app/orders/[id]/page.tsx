@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { updateLocation } from "@/ai/flows/update-location-flow";
 import { useThrottle } from "@/hooks/use-throttle";
 import { RateAndReport } from "@/components/orders/RateAndReport";
+import Link from 'next/link';
 
 
 export default function OrderPage() {
@@ -143,14 +144,6 @@ export default function OrderPage() {
   }, [order?.orderStatus, throttledLocationUpdate, toast]);
 
 
-  const handleStartStoreNavigation = () => {
-    if (order?.pickupLocation) {
-      const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.pickupLocation)}`;
-      window.open(mapsUrl, "_blank");
-      toast({ title: "Navigation Started", description: `Routing to ${order.pickupLocation}.`});
-    }
-  };
-
   const handleArrivedAtStore = async () => {
     if (order && order.orderStatus === "accepted") {
       setIsUpdating(true);
@@ -213,14 +206,6 @@ export default function OrderPage() {
         setIsUpdating(false);
       }
     }
-  };
-
-  const handleStartNavigation = () => {
-      if (order?.dropOffLocation) {
-        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.dropOffLocation)}`;
-        window.open(mapsUrl, "_blank");
-        toast({ title: "Navigation Started", description: `Routing to ${order.dropOffLocation}.`});
-      }
   };
 
   const handleDeliveryConfirmed = async (proof?: {type: 'photo' | 'signature', value: string}) => {
@@ -331,8 +316,10 @@ export default function OrderPage() {
         <div className="space-y-4">
             {order.orderStatus === "accepted" && (
               <>
-                <Button onClick={handleStartStoreNavigation} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                  <Store className="mr-2 h-5 w-5" /> Navigate to Store
+                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.pickupLocation)}&type=pickup`}>
+                     <Store className="mr-2 h-5 w-5" /> Navigate to Store
+                  </Link>
                 </Button>
                 <Button onClick={handleArrivedAtStore} className="w-full bg-teal-500 hover:bg-teal-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-5 w-5" />}
@@ -357,8 +344,10 @@ export default function OrderPage() {
 
              {order.orderStatus === "out-for-delivery" && (
               <>
-                <Button onClick={handleStartNavigation} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-6 font-bold" disabled={isUpdating}>
-                  <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base py-6 font-bold" disabled={isUpdating}>
+                  <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`}>
+                     <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
+                  </Link>
                 </Button>
                 <Button onClick={handleArrived} className="w-full bg-purple-500 hover:bg-purple-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
                     {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-5 w-5" />}
@@ -438,3 +427,5 @@ export default function OrderPage() {
     </div>
   );
 }
+
+    
