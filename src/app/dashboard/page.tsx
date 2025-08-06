@@ -179,12 +179,28 @@ export default function DashboardPage() {
     return () => unsubscribeNew();
 
   }, [currentUser, availabilityStatus, toast]);
+  
+  const handleOrderAction = () => {
+    // This function is called when an order is accepted or rejected from the dialog.
+    // It removes the order from the `newOrders` state to close the dialog.
+    setNewOrders(prev => prev.slice(1));
+  };
+
 
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
   return (
     <div className="space-y-8 p-4 md:p-6">
       <DashboardHeader />
+      
+      {/* New Order Dialog */}
+      {newOrders.length > 0 && currentUser && (
+        <NewOrderCard
+          order={newOrders[0]}
+          currentUserId={currentUser.uid}
+          onOrderAction={handleOrderAction}
+        />
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-6">
@@ -208,11 +224,9 @@ export default function DashboardPage() {
               </div>
             ) : availabilityStatus !== 'online' ? (
                 <p className="text-muted-foreground text-center p-4">Go online to see new order alerts.</p>
-            ) : newOrders.length > 0 && currentUser ? (
+            ) : newOrders.length > 0 ? (
               <div className="space-y-4">
-                {newOrders.map(order => (
-                  <NewOrderCard key={order.id} order={order} currentUserId={currentUser.uid} />
-                ))}
+                 <p className="text-muted-foreground text-center p-4">An order is pending your response...</p>
               </div>
             ) : (
               <p className="text-muted-foreground text-center p-4">No new orders available right now. We'll notify you!</p>

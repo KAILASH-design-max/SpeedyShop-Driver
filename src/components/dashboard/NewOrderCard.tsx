@@ -1,34 +1,34 @@
 
 "use client";
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Clock, Loader2, Milestone, Store, User, Wallet, BellRing, Package, Home, ShoppingBasket, X, Check } from "lucide-react";
+import { Clock, Loader2, Store, Home, ShoppingBasket, X, Check, Package } from "lucide-react";
 import type { Order } from "@/types";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 
 interface NewOrderCardProps {
   order: Order;
   currentUserId: string;
+  onOrderAction: () => void;
 }
 
 // Data URI for a simple notification sound (a short, soft beep)
 const notificationSound = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 
-export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
+export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCardProps) {
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
-  const [isDeclined, setIsDeclined] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(30);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Effect to play notification sound when the card first renders
+  // Effect to play notification sound when the dialog opens
   useEffect(() => {
     if (typeof window !== 'undefined') {
         audioRef.current = new Audio(notificationSound);
@@ -40,7 +40,7 @@ export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
 
 
   useEffect(() => {
-    if (isAccepting || isDeclined) return;
+    if (isAccepting) return;
 
     if (countdown <= 0) {
       handleDecline(true); // Auto-decline when timer runs out
@@ -52,7 +52,7 @@ export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [countdown, isAccepting, isDeclined]);
+  }, [countdown, isAccepting]);
 
   const handleAccept = async () => {
     setIsAccepting(true);
@@ -67,6 +67,7 @@ export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
         description: `Order #${order.id.substring(0,8)} has been moved to your active orders.`,
         className: "bg-green-500 text-white",
       });
+      onOrderAction();
     } catch (error) {
       console.error("Error accepting order:", error);
       toast({
@@ -74,34 +75,30 @@ export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
         title: "Acceptance Failed",
         description: "Could not accept the order. It may have been taken by another driver.",
       });
-    } finally {
-      setIsAccepting(false);
+      setIsAccepting(false); // Allow retry if failed
     }
   };
 
   const handleDecline = (isTimeout = false) => {
-    setIsDeclined(true);
     toast({
         title: isTimeout ? "Order Timed Out" : "Order Declined",
         description: `You have declined order #${order.id.substring(0,8)}.`,
     });
+    onOrderAction();
   };
   
   const displayItems = order.items.map(item => `${item.quantity}x ${item.name}`).join(", ");
 
-  if (isDeclined) {
-    return null;
-  }
-
   return (
-    <Card className="shadow-xl border-2 border-transparent bg-background transition-all duration-300 flex flex-col w-full max-w-sm mx-auto">
-        <CardHeader className="p-4 items-center">
-            <div className="flex items-center text-xl font-bold text-foreground">
-                 <Package className="mr-3 h-8 w-8 text-primary" />
+    <Dialog open={true} onOpenChange={(isOpen) => { if(!isOpen) handleDecline(false) }}>
+      <DialogContent className="sm:max-w-md p-0" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogHeader className="p-6 pb-2">
+            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center">
+                <Package className="mr-3 h-8 w-8 text-primary" />
                  New Delivery Assignment
-            </div>
-        </CardHeader>
-        <CardContent className="p-6 text-center space-y-4">
+            </DialogTitle>
+        </DialogHeader>
+        <div className="p-6 pt-0 text-center space-y-4">
             <div>
                 <p className="text-sm text-muted-foreground">Order ID</p>
                 <p className="text-lg font-bold">ORD{order.id.substring(0,5).toUpperCase()}</p>
@@ -140,8 +137,8 @@ export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
                 </CardContent>
             </Card>
 
-        </CardContent>
-        <CardFooter className="flex flex-col items-center justify-between gap-2 p-4 pt-0">
+        </div>
+        <CardFooter className="flex flex-col items-center justify-between gap-2 p-4 pt-0 bg-muted/50">
             <div className="flex items-center gap-4 w-full">
                 <Button onClick={() => handleDecline(false)} variant="destructive" className="flex-1 bg-red-500 hover:bg-red-600 h-12 text-base font-bold" disabled={isAccepting}>
                   <X className="mr-2 h-5 w-5"/> Reject
@@ -151,10 +148,11 @@ export function NewOrderCard({ order, currentUserId }: NewOrderCardProps) {
                 </Button>
             </div>
              <div className="w-full mt-4">
-                 <Progress value={(countdown / 60) * 100} className="h-2" />
+                 <Progress value={(countdown / 30) * 100} className="h-2" />
                  <p className="text-center text-sm text-muted-foreground mt-2">Auto-rejecting in 00:{countdown.toString().padStart(2, '0')}</p>
             </div>
         </CardFooter>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
