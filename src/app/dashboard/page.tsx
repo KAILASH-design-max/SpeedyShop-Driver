@@ -194,7 +194,7 @@ export default function DashboardPage() {
       <DashboardHeader />
       
       {/* New Order Dialog */}
-      {newOrders.length > 0 && currentUser && (
+      {newOrders.length > 0 && currentUser && availabilityStatus === 'online' && (
         <NewOrderCard
           order={newOrders[0]}
           currentUserId={currentUser.uid}
@@ -211,27 +211,6 @@ export default function DashboardPage() {
           />
 
           <EarningsForecast />
-
-          <Separator />
-          
-           <div>
-             <h2 className="text-[15px] font-semibold mb-4 flex items-center text-primary">
-              <BellDot className="mr-2 h-6 w-6" /> New Order Alerts
-            </h2>
-            {isLoading && newOrders.length === 0 ? (
-               <div className="flex justify-center items-center p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : availabilityStatus !== 'online' ? (
-                <p className="text-muted-foreground text-center p-4">Go online to see new order alerts.</p>
-            ) : newOrders.length > 0 ? (
-              <div className="space-y-4">
-                 <p className="text-muted-foreground text-center p-4">An order is pending your response...</p>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center p-4">No new orders available right now. We'll notify you!</p>
-            )}
-          </div>
 
         </div>
 
