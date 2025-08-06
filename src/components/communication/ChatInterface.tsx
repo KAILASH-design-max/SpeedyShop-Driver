@@ -57,7 +57,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     
     // Listener for support chats
     const supportThreadsQuery = query(collection(db, "supportMessages"), where("userId", "==", currentUser.uid));
-    const unsubscribeSupportChats = onSnapshot(snapshot => {
+    const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, snapshot => {
         const supportThreads = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
