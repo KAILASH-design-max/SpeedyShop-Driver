@@ -170,7 +170,7 @@ export function DocumentManagement({ profile, onUpdate }: DocumentManagementProp
   return (
     <Card className="shadow-xl">
       <CardHeader>
-        <CardTitle className="flex items-center text-[15px] font-semibold text-primary"><FileText className="mr-2 h-6 w-6"/>KYC Documents</CardTitle>
+        <CardTitle className="flex items-center text-lg"><FileText className="mr-2 h-6 w-6 text-primary"/>KYC Documents</CardTitle>
         <CardDescription>Manage your verification documents.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
