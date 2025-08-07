@@ -83,44 +83,27 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             } as UnifiedChatThread
         });
         const customerThreads = await Promise.all(customerThreadsPromises);
-
-        // Listener for support chats
-        const supportThreadsQuery = query(collection(db, "supportMessages"), where("userId", "==", currentUser.uid));
-        const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, snapshot => {
-            const supportThreads = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                type: 'support'
-            } as UnifiedChatThread));
-
-            const allThreads = [...customerThreads, ...supportThreads];
-            
-            allThreads.sort((a, b) => {
-                const tsA = a.lastUpdated || (a as ChatThread).lastMessageTimestamp;
-                const tsB = b.lastUpdated || (b as ChatThread).lastMessageTimestamp;
-                if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
-                return tsB.seconds - tsA.seconds;
-            });
-
-            // Handle pre-selection
-            if (preselectedThreadId) {
-                const threadToSelect = allThreads.find(t => t.id === preselectedThreadId);
-                if (threadToSelect) {
-                    setSelectedThread(threadToSelect);
-                }
-            }
-            
-            setChatThreads(allThreads);
-            setIsLoadingThreads(false);
-        }, error => {
-            console.error("Error fetching support chat threads:", error);
-            toast({ variant: "destructive", title: "Error", description: "Could not fetch support chats." });
-            setIsLoadingThreads(false);
+        
+        customerThreads.sort((a, b) => {
+            const tsA = a.lastUpdated || (a as ChatThread).lastMessageTimestamp;
+            const tsB = b.lastUpdated || (b as ChatThread).lastMessageTimestamp;
+            if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
+            return tsB.seconds - tsA.seconds;
         });
+
+        // Handle pre-selection
+        if (preselectedThreadId) {
+            const threadToSelect = customerThreads.find(t => t.id === preselectedThreadId);
+            if (threadToSelect) {
+                setSelectedThread(threadToSelect);
+            }
+        }
+        
+        setChatThreads(customerThreads);
+        setIsLoadingThreads(false);
 
         return () => {
              unsubscribeCustomerChats();
-             unsubscribeSupportChats();
         }
     }, error => {
         console.error("Error fetching customer chat threads:", error);
