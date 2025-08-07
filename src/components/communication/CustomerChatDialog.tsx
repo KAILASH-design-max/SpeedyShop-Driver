@@ -197,11 +197,6 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
                      <Phone className="h-5 w-5"/>
                    </a>
                  </Button>
-                  <DialogClose asChild>
-                      <Button variant="ghost" size="icon">
-                        <X className="h-5 w-5" />
-                      </Button>
-                  </DialogClose>
               </div>
             </div>
           </DialogHeader>
