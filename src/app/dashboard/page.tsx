@@ -199,8 +199,10 @@ export default function DashboardPage() {
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
   return (
-    <div className="space-y-6 p-6">
-      <DashboardHeader />
+    <div className="space-y-6">
+      <div className="p-6">
+        <DashboardHeader />
+      </div>
       
       {/* New Order Dialog */}
       {newOrders.length > 0 && currentUser && availabilityStatus === 'online' && (
@@ -219,7 +221,7 @@ export default function DashboardPage() {
         />
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
         <div className="md:col-span-1 space-y-6 max-w-[425px] w-full mx-auto md:mx-0">
           <AvailabilityToggle
             currentStatus={availabilityStatus}
