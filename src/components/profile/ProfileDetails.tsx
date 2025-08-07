@@ -54,7 +54,7 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                 </ProfileForm>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 items-start">
                 <Card className="shadow-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center text-lg"><User className="mr-2"/>Profile Information</CardTitle>
