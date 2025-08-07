@@ -155,11 +155,6 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
                 </div>
                 ) : messages.length === 0 ? (
                     <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-md">
-                        <Bot className="h-6 w-6 text-primary flex-shrink-0" />
-                        <div>
-                            <p className="text-sm font-semibold">Support Agent</p>
-                            <p className="text-sm">Hello! How can I help you with this order? An agent will be with you shortly.</p>
-                        </div>
                     </div>
                 ) : (
                     messages.map((msg) => (
