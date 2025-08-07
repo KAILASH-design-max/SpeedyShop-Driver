@@ -137,8 +137,8 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 border-none w-[90vw] sm:max-w-lg">
-        <div className="flex flex-col h-[70vh]">
+      <DialogContent className="p-0 border-none w-[90vw] sm:max-w-[425px] lg:max-w-lg">
+        <div className="flex flex-col max-h-[90vh]">
             <DialogHeader className="p-4 border-b">
                 <DialogTitle className="flex items-center gap-2">
                     <LifeBuoy className="h-6 w-6 text-primary" />
