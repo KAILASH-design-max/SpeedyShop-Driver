@@ -183,7 +183,7 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="p-0 border-none w-[90vw] sm:max-w-[425px] lg:max-w-lg">
         <div className="flex flex-col max-h-[90vh]">
-          <DialogHeader className="p-4 border-b">
+          <DialogHeader className="border-b">
             <div className="flex justify-between items-center">
               <div>
                 <DialogTitle>Customer Chat</DialogTitle>
@@ -205,7 +205,7 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
               </div>
             </div>
           </DialogHeader>
-          <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
+          <ScrollArea className="flex-grow" ref={scrollAreaRef}>
             {isLoading ? (
               <div className="flex justify-center items-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -236,7 +236,7 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
                 ))
             )}
           </ScrollArea>
-          <div className="p-4 border-t">
+          <div className="border-t">
             <div className="w-full flex items-center gap-2">
               <Input
                 value={newMessage}
