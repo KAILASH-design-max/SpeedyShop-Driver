@@ -140,7 +140,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             .filter(d => d.orderStatus === 'delivered')
             .map(d => ({
                 title: `Delivery Pay (Order #${d.id.substring(0,6)})`,
-                transactionId: d.id,
+                transactionId: `${d.id}-delivery`,
                 type: 'Delivery',
                 amount: d.estimatedEarnings
             }));
