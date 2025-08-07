@@ -36,12 +36,13 @@ export function SettingsPage() {
     };
 
   return (
-    <div className="space-y-1">
+    <div>
         <div>
             <h1 className="text-3xl font-bold text-primary">Settings</h1>
             <p className="text-muted-foreground mt-1">Manage your app preferences and settings.</p>
         </div>
 
+      <div className="space-y-1">
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center"><Bell className="mr-2 h-5 w-5" /> Notifications</CardTitle>
@@ -148,7 +149,7 @@ export function SettingsPage() {
             <Button variant="outline" className="flex-1"><Info className="mr-2 h-4 w-4" />App Version: 1.0.0</Button>
         </CardContent>
       </Card>
-
+      </div>
     </div>
   );
 }
