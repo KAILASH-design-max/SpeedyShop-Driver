@@ -63,7 +63,7 @@ export default function RatingsPage() {
   }
 
   return (
-    <div className="space-y-6 px-1 py-6">
+    <div className="space-y-6 px-1 pb-6">
       <Button variant="outline" onClick={() => router.back()}>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
