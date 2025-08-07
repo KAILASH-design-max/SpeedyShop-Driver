@@ -205,10 +205,6 @@ export function CustomerChatDialog({ order, children }: CustomerChatDialogProps)
               </div>
             ) : messages.length === 0 ? (
                 <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-md">
-                    <Bot className="h-6 w-6 text-primary flex-shrink-0" />
-                    <div>
-                        <p className="text-sm">Hello! I need help with my current order.</p>
-                    </div>
                 </div>
             ) : (
                 messages.map((msg) => (
