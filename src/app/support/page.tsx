@@ -9,11 +9,11 @@ import Link from "next/link";
 export default function SupportPage() {
   return (
     <div className="px-1 pb-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-1 items-start">
+        <div className="lg:col-span-2 space-y-1">
           <Faq />
         </div>
-        <div className="space-y-8">
+        <div className="space-y-1">
           <EmergencySupport />
           <Card className="shadow-lg">
             <CardHeader>
