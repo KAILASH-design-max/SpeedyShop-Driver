@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import type { CommunicationMessage, ChatThread } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Bot, Phone, X } from "lucide-react";
+import { Send, Loader2, Phone, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -19,7 +19,6 @@ import {
   doc,
   getDoc,
   updateDoc,
-  where,
   setDoc,
 } from "firebase/firestore";
 import type { User as FirebaseUser } from "firebase/auth";
@@ -35,14 +34,17 @@ import {
   DialogClose,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Avatar } from "../ui/avatar";
+import { AvatarFallback } from "@radix-ui/react-avatar";
 
 interface CustomerChatDialogProps {
   order: Order;
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (isOpen: boolean) => void;
 }
 
-export function CustomerChatDialog({ order, children }: CustomerChatDialogProps) {
-  const [open, setOpen] = useState(false);
+export function CustomerChatDialog({ order, children, open, onOpenChange }: CustomerChatDialogProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [messages, setMessages] = useState<CommunicationMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -177,8 +179,8 @@ export function CustomerChatDialog({ order, children }: CustomerChatDialogProps)
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="p-0 border-none w-[90vw] sm:max-w-[425px] lg:max-w-lg">
         <div className="flex flex-col max-h-[90vh]">
           <DialogHeader className="p-4 border-b">
@@ -215,7 +217,9 @@ export function CustomerChatDialog({ order, children }: CustomerChatDialogProps)
                 messages.map((msg) => (
                     <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUser?.uid ? "justify-end" : "justify-start")}>
                         {msg.senderId !== currentUser?.uid && (
-                           <Bot className="h-6 w-6 text-primary flex-shrink-0 self-start" />
+                           <Avatar className="h-8 w-8">
+                                <AvatarFallback>C</AvatarFallback>
+                           </Avatar>
                         )}
                         <div
                         className={cn(

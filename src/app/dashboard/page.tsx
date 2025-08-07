@@ -15,6 +15,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
 import { LiveChat } from "@/components/dashboard/LiveChat";
+import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -29,6 +30,8 @@ export default function DashboardPage() {
 
   const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
   const [supportChatOrderId, setSupportChatOrderId] = useState<string | null>(null);
+
+  const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
   const { toast } = useToast();
 
@@ -193,6 +196,10 @@ export default function DashboardPage() {
     setSupportChatOrderId(orderId);
     setIsSupportChatOpen(true);
   };
+  
+  const handleCustomerChatOpen = (order: Order) => {
+    setCustomerChatOrder(order);
+  };
 
 
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
@@ -219,6 +226,16 @@ export default function DashboardPage() {
         />
       )}
       
+      {customerChatOrder && (
+          <CustomerChatDialog
+              order={customerChatOrder}
+              open={!!customerChatOrder}
+              onOpenChange={(isOpen) => !isOpen && setCustomerChatOrder(null)}
+          >
+              {/* Trigger is managed externally, so no child needed here */}
+          </CustomerChatDialog>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-6">
           <AvailabilityToggle
@@ -241,7 +258,12 @@ export default function DashboardPage() {
           ) : activeOrders.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {activeOrders.map((order) => (
-                <OrderCard key={order.id} order={order} onChat={handleSupportChatOpen} />
+                <OrderCard 
+                  key={order.id} 
+                  order={order} 
+                  onSupportChat={handleSupportChatOpen}
+                  onCustomerChat={handleCustomerChatOpen}
+                />
               ))}
             </div>
           ) : (

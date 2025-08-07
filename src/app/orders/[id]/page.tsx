@@ -29,8 +29,6 @@ import { updateLocation } from "@/ai/flows/update-location-flow";
 import { useThrottle } from "@/hooks/use-throttle";
 import { RateAndReport } from "@/components/orders/RateAndReport";
 import Link from 'next/link';
-import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
-
 
 export default function OrderPage() {
   const params = useParams();
@@ -41,6 +39,7 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const locationWatcherId = useRef<number | null>(null);
+  const [isCustomerChatOpen, setIsCustomerChatOpen] = useState(false);
 
   const throttledLocationUpdate = useThrottle(async (position: GeolocationPosition) => {
     if (!order) return;
@@ -357,11 +356,9 @@ export default function OrderPage() {
               </>
             )}
 
-            <CustomerChatDialog order={order}>
-                <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete}>
-                    <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
-                </Button>
-            </CustomerChatDialog>
+            <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete} onClick={() => router.push(`/communication?orderId=${order.id}`)}>
+              <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
+            </Button>
 
             {isOrderActive && (
               <AlertDialog>
