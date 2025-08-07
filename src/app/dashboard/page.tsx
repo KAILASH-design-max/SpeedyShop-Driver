@@ -30,6 +30,8 @@ export default function DashboardPage() {
 
   const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
   const [supportChatOrderId, setSupportChatOrderId] = useState<string | null>(null);
+
+  const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
   const { toast } = useToast();
 
@@ -194,6 +196,10 @@ export default function DashboardPage() {
     setSupportChatOrderId(orderId);
     setIsSupportChatOpen(true);
   };
+  
+  const handleCustomerChatOpen = (order: Order) => {
+    setCustomerChatOrder(order);
+  };
 
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
@@ -216,6 +222,14 @@ export default function DashboardPage() {
             onOpenChange={setIsSupportChatOpen}
             orderId={supportChatOrderId}
             currentUserId={currentUser.uid}
+        />
+      )}
+
+      {customerChatOrder && (
+        <CustomerChatDialog
+          order={customerChatOrder}
+          open={!!customerChatOrder}
+          onOpenChange={(isOpen) => !isOpen && setCustomerChatOrder(null)}
         />
       )}
       
@@ -245,6 +259,7 @@ export default function DashboardPage() {
                   key={order.id} 
                   order={order} 
                   onSupportChat={handleSupportChatOpen}
+                  onCustomerChat={handleCustomerChatOpen}
                 />
               ))}
             </div>
