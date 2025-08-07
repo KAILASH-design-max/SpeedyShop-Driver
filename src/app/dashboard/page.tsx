@@ -199,7 +199,7 @@ export default function DashboardPage() {
   const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
 
   return (
-    <div className="space-y-6">
+    <div>
       <DashboardHeader />
       
       {/* New Order Dialog */}
