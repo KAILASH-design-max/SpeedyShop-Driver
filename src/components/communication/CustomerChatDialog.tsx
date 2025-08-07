@@ -61,16 +61,21 @@ export function CustomerChatDialog({ order, children }: CustomerChatDialogProps)
   const ensureChatThreadExists = async (driver: FirebaseUser) => {
       const threadRef = doc(db, "Customer&deliveryboy", order.id);
       const threadSnap = await getDoc(threadRef);
-      if (!threadSnap.exists()) {
-          const customerDoc = order.userId ? await getDoc(doc(db, "users", order.userId)) : null;
 
-          const participantIds = [driver.uid, order.userId].filter(Boolean) as string[];
+      if (!threadSnap.exists()) {
+          if (!order.userId || driver.uid === order.userId) {
+              console.error("Cannot create chat thread: Invalid customer ID.");
+              toast({ variant: "destructive", title: "Chat Error", description: "Could not initiate chat due to invalid participant IDs." });
+              return;
+          }
+
+          const participantIds = [driver.uid, order.userId];
           
           await setDoc(threadRef, {
               participantIds: participantIds,
               participantNames: {
                   [driver.uid]: driver.displayName || "Driver",
-                  ...(order.userId && { [order.userId]: order.customerName || "Customer" }),
+                  [order.userId]: order.customerName || "Customer",
               },
               participantAvatars: {},
               lastMessage: `Conversation about order #${order.id.substring(0,6)} started.`,
