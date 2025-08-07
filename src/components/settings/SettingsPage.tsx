@@ -39,7 +39,7 @@ export function SettingsPage() {
     <div>
         <div>
             <h1 className="text-3xl font-bold text-primary">Settings</h1>
-            <p className="text-muted-foreground mt-1">Manage your app preferences and settings.</p>
+            <p className="text-muted-foreground mt-1 hidden md:block">Manage your app preferences and settings.</p>
         </div>
 
       <div className="space-y-1">

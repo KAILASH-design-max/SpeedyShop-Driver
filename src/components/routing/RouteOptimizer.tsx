@@ -91,7 +91,7 @@ export function RouteOptimizer() {
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center text-2xl font-bold text-primary"><RouteIcon className="mr-2 h-7 w-7"/>Smart Route Optimizer</CardTitle>
-          <CardDescription>Enter details to get the fastest and most efficient delivery route.</CardDescription>
+          <CardDescription className="hidden md:block">Enter details to get the fastest and most efficient delivery route.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

@@ -15,10 +15,10 @@ export default function EarningsPage() {
 
   return (
     <div className="space-y-1 px-1 pb-6">
-      <div className="flex justify-between items-center pt-6 px-5">
+      <div className="flex justify-between items-center px-5">
         <div>
             <h1 className="text-3xl font-bold text-primary">Earnings Breakdown</h1>
-            <p className="text-muted-foreground mt-1">A summary of your current and lifetime earnings.</p>
+            <p className="text-muted-foreground mt-1 hidden md:block">A summary of your current and lifetime earnings.</p>
         </div>
         <Button variant="destructive" onClick={() => router.push('/penalties')}>
             <ShieldX className="mr-2 h-4 w-4" />

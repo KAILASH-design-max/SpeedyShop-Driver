@@ -94,7 +94,7 @@ export function Announcements() {
                 <Megaphone className="mr-3 h-6 w-6"/>
                 Community & Announcements
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="hidden md:block">
                 Updates, tips, and important information from the Velocity team.
             </CardDescription>
         </CardHeader>
