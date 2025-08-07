@@ -53,7 +53,11 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
 
     setIsLoadingThreads(true);
 
-    const supportThreadsQuery = query(collection(db, "supportMessages"), where("userId", "==", currentUser.uid));
+    const supportThreadsQuery = query(
+        collection(db, "supportMessages"), 
+        where("userId", "==", currentUser.uid),
+        where("orderId", "==", null) // Only fetch chats without an orderId
+    );
 
     const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, async (snapshot) => {
         const supportThreads: UnifiedChatThread[] = snapshot.docs.map(doc => ({
