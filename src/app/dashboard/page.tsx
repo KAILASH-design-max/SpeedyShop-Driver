@@ -239,7 +239,7 @@ export default function DashboardPage() {
               <p className="ml-2">Loading...</p>
             </div>
           ) : activeOrders.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
               {activeOrders.map((order) => (
                  <div key={order.id} className="max-w-[425px] w-full mx-auto">
                     <OrderCard 
