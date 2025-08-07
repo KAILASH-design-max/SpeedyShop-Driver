@@ -14,8 +14,8 @@ export default function EarningsPage() {
   const router = useRouter();
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto space-y-8">
+      <div className="flex justify-between items-center p-6 pb-0">
         <div>
             <h1 className="text-3xl font-bold text-primary">Earnings Breakdown</h1>
             <p className="text-muted-foreground mt-1">A summary of your current and lifetime earnings.</p>
@@ -26,9 +26,11 @@ export default function EarningsPage() {
         </Button>
       </div>
 
-      <EarningsOverview />
+      <div className="px-6">
+        <EarningsOverview />
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start px-6">
         <div className="lg:col-span-1 space-y-8">
             <WalletBalanceCard />
             <EarningsForecast />
