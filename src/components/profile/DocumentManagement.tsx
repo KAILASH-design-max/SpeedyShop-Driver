@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { FileText, UploadCloud, CheckCircle, AlertTriangle, LinkIcon, Loader2, PlusCircle, ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { Profile, ProfileDocuments, DocumentMetadata } from "@/types";
 import { storage } from "@/lib/firebase";
@@ -43,7 +43,7 @@ const getStatusInfo = (docKey: DocumentTypeKey, document?: DocumentMetadata) => 
 
 function DocumentItem({ docName, docKey, document, profileUid, onUpdate }: DocumentItemProps) {
   const { toast } = useToast();
-  const fileInputRef = useState<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const statusInfo = getStatusInfo(docKey, document);
 
