@@ -43,7 +43,7 @@ const getStatusInfo = (docKey: DocumentTypeKey, document?: DocumentMetadata) => 
 
 function DocumentItem({ docName, docKey, document, profileUid, onUpdate }: DocumentItemProps) {
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const statusInfo = getStatusInfo(docKey, document);
 
