@@ -309,7 +309,7 @@ export default function OrderPage() {
 
 
   return (
-    <div className="space-y-6 pb-6 px-6">
+    <div className="space-y-6 pb-6 px-1">
       <OrderDetailsDisplay order={order} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
