@@ -24,11 +24,17 @@ interface ChatInterfaceProps {
 }
 
 const fetchParticipantName = async (userId: string): Promise<string> => {
-    const userDoc = await getDoc(doc(db, "users", userId));
-    if (userDoc.exists()) {
-        return userDoc.data().name || `User...${userId.substring(0, 4)}`;
+    if (!userId) return "Customer";
+    try {
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+            return userDoc.data().name || "Customer";
+        }
+        return "Customer";
+    } catch (error) {
+        console.error(`Error fetching user name for ${userId}:`, error);
+        return "Customer";
     }
-    return `User...${userId.substring(0, 4)}`;
 }
 
 export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
@@ -212,12 +218,12 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     if (thread.type === 'support') {
         return {
             name: "Support Agent",
-            avatarUrl: undefined, // No avatar for support
+            avatarUrl: undefined,
             subtext: thread.orderId ? `About Order #${thread.orderId.substring(0,6)}` : "General Support"
         }
     } else {
         const otherParticipantId = thread.participantIds.find(id => id !== currentUserId);
-        const name = (otherParticipantId && participantNames[otherParticipantId]) || thread.participantNames?.[otherParticipantId || ''] || 'Customer';
+        const name = (otherParticipantId && participantNames[otherParticipantId]) || "Customer";
         const avatarUrl = thread.participantAvatars?.[otherParticipantId || ''];
         return {
             name,
@@ -277,7 +283,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                                     <Avatar className="h-10 w-10 border">
                                         {details.avatarUrl && <AvatarImage src={details.avatarUrl} alt={details.name} data-ai-hint="person avatar"/>}
                                         <AvatarFallback className={cn(isSupport && 'bg-blue-500 text-white')}>
-                                            {isSupport ? <LifeBuoy size={20} /> : avatarFallbackChar}
+                                            {isSupport ? <LifeBuoy size={20} /> : <User size={20} />}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-grow overflow-hidden">
