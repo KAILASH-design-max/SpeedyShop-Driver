@@ -89,12 +89,13 @@ export default function AchievementsPage() {
       const overallRating = ratings.length > 0 ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length) : 0;
       
       let fiveStarRatingStreak = 0;
+      // Sort ratings from most recent to oldest to calculate the current streak.
       const sortedRatings = ratings.sort((a,b) => b.ratedAt.seconds - a.ratedAt.seconds);
       for (const rating of sortedRatings) {
           if (rating.rating === 5) {
               fiveStarRatingStreak++;
           } else {
-              break;
+              break; // Streak is broken
           }
       }
 
@@ -105,7 +106,7 @@ export default function AchievementsPage() {
         peakHourDeliveries,
         weekendDeliveries,
         lateNightDeliveries,
-        overallRating,
+        overallRating: overallRating ?? 0, // Ensure overallRating is not null
         fiveStarRatingStreak,
       };
 
