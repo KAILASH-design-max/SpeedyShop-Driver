@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, User, FileText, MessageSquare } from "lucide-react";
+import { MapPin, Package, User, FileText, MessageSquare, LifeBuoy } from "lucide-react";
 import type { Order } from "@/types";
+import { CustomerChatDialog } from "../communication/CustomerChatDialog";
 
 interface OrderCardProps {
   order: Order;
@@ -17,7 +18,7 @@ export function OrderCard({ order, onChat }: OrderCardProps) {
   
   const displayItems = order.items.map(item => `${item.name} (x${item.quantity})`).join(", ");
 
-  const handleChatClick = (e: React.MouseEvent) => {
+  const handleSupportChatClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onChat(order.id);
   };
@@ -28,8 +29,13 @@ export function OrderCard({ order, onChat }: OrderCardProps) {
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold">Order #{order.id.substring(0, 8)}</CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" aria-label="Chat about this order" onClick={handleChatClick}>
-                <MessageSquare className="h-5 w-5 text-muted-foreground" />
+            <CustomerChatDialog order={order}>
+                <Button variant="ghost" size="icon" aria-label="Chat with customer">
+                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                </Button>
+            </CustomerChatDialog>
+             <Button variant="ghost" size="icon" aria-label="Chat with support" onClick={handleSupportChatClick}>
+                <LifeBuoy className="h-5 w-5 text-muted-foreground" />
             </Button>
             <Badge variant={"secondary"} className="capitalize">
                 {order.orderStatus.replace(/-/g, ' ')}

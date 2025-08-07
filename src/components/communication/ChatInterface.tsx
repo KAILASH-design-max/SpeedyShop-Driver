@@ -23,6 +23,14 @@ interface ChatInterfaceProps {
     preselectedThreadId?: string | null;
 }
 
+const fetchParticipantName = async (userId: string): Promise<string> => {
+    const userDoc = await getDoc(doc(db, "users", userId));
+    if (userDoc.exists()) {
+        return userDoc.data().name || `User...${userId.substring(0, 4)}`;
+    }
+    return `User...${userId.substring(0, 4)}`;
+}
+
 export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [selectedThread, setSelectedThread] = useState<UnifiedChatThread | null>(null);
@@ -52,43 +60,67 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     }
 
     setIsLoadingThreads(true);
-    
-    // Listener for support chats
-    const supportThreadsQuery = query(collection(db, "supportMessages"), where("userId", "==", currentUser.uid));
-    const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, snapshot => {
-        const supportThreads = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            type: 'support'
-        } as UnifiedChatThread));
-        
-        supportThreads.sort((a, b) => {
-            const tsA = a.lastUpdated;
-            const tsB = b.lastUpdated;
-            if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
-            return tsB.seconds - tsA.seconds;
+
+    const customerThreadsQuery = query(collection(db, "Customer&deliveryboy"), where("participantIds", "array-contains", currentUser.uid));
+    const unsubscribeCustomerChats = onSnapshot(customerThreadsQuery, async (snapshot) => {
+        const customerThreadsPromises = snapshot.docs.map(async (doc) => {
+            const threadData = doc.data() as ChatThread;
+            const otherParticipantId = threadData.participantIds.find(id => id !== currentUser.uid);
+            if (otherParticipantId && !participantNames[otherParticipantId]) {
+                const name = await fetchParticipantName(otherParticipantId);
+                setParticipantNames(prev => ({...prev, [otherParticipantId]: name}));
+            }
+            return {
+                id: doc.id,
+                ...threadData,
+                type: 'customer'
+            } as UnifiedChatThread
+        });
+        const customerThreads = await Promise.all(customerThreadsPromises);
+
+        // Listener for support chats
+        const supportThreadsQuery = query(collection(db, "supportMessages"), where("userId", "==", currentUser.uid));
+        const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, snapshot => {
+            const supportThreads = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                type: 'support'
+            } as UnifiedChatThread));
+
+            const allThreads = [...customerThreads, ...supportThreads];
+            
+            allThreads.sort((a, b) => {
+                const tsA = a.lastUpdated || (a as ChatThread).lastMessageTimestamp;
+                const tsB = b.lastUpdated || (b as ChatThread).lastMessageTimestamp;
+                if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
+                return tsB.seconds - tsA.seconds;
+            });
+
+            // Handle pre-selection
+            if (preselectedThreadId) {
+                const threadToSelect = allThreads.find(t => t.id === preselectedThreadId);
+                if (threadToSelect) {
+                    setSelectedThread(threadToSelect);
+                }
+            }
+            
+            setChatThreads(allThreads);
+            setIsLoadingThreads(false);
+        }, error => {
+            console.error("Error fetching support chat threads:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not fetch support chats." });
+            setIsLoadingThreads(false);
         });
 
-        // Handle pre-selection
-        if (preselectedThreadId) {
-            const threadToSelect = supportThreads.find(t => t.id === preselectedThreadId);
-            if (threadToSelect) {
-                setSelectedThread(threadToSelect);
-            }
+        return () => {
+             unsubscribeCustomerChats();
+             unsubscribeSupportChats();
         }
-        
-        setChatThreads(supportThreads);
-        setIsLoadingThreads(false);
     }, error => {
-        console.error("Error fetching support chat threads:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not fetch support chats." });
+        console.error("Error fetching customer chat threads:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch customer chats." });
         setIsLoadingThreads(false);
     });
-
-
-    return () => {
-        unsubscribeSupportChats();
-    };
 
   }, [currentUser, toast, preselectedThreadId]);
 
@@ -209,8 +241,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const renderThreadList = () => (
     <Card className="md:col-span-1 lg:col-span-1 h-full flex flex-col shadow-xl">
         <CardHeader>
-            <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Support Chat</CardTitle>
-            <CardDescription>Your conversations with support.</CardDescription>
+            <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Conversations</CardTitle>
+            <CardDescription>Your conversations with customers & support.</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow overflow-hidden p-2">
             <ScrollArea className="h-full">
@@ -219,7 +251,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : chatThreads.length === 0 ? (
-                <p className="text-center text-muted-foreground p-8">No support chats found.</p>
+                <p className="text-center text-muted-foreground p-8">No chats found.</p>
             ) : (
                 <div className="space-y-1">
                     {chatThreads.map(thread => {
@@ -295,7 +327,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                 <div>
                     <CardTitle className="text-lg">{details.name}</CardTitle>
                     <CardDescription className="flex items-center gap-1">
-                        {isSupport && selectedThread.orderId && <Package size={14}/>}
+                        {selectedThread.orderId && <Package size={14}/>}
                         {details.subtext}
                     </CardDescription>
                 </div>

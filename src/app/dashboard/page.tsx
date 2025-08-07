@@ -27,8 +27,8 @@ export default function DashboardPage() {
   const [newOrders, setNewOrders] = useState<Order[]>([]);
   const [loadingNew, setLoadingNew] = useState(true);
 
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatOrderId, setChatOrderId] = useState<string | null>(null);
+  const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
+  const [supportChatOrderId, setSupportChatOrderId] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -189,9 +189,9 @@ export default function DashboardPage() {
     setNewOrders(prev => prev.slice(1));
   };
 
-  const handleChatOpen = (orderId: string) => {
-    setChatOrderId(orderId);
-    setIsChatOpen(true);
+  const handleSupportChatOpen = (orderId: string) => {
+    setSupportChatOrderId(orderId);
+    setIsSupportChatOpen(true);
   };
 
 
@@ -210,11 +210,11 @@ export default function DashboardPage() {
         />
       )}
 
-      {chatOrderId && currentUser && (
+      {supportChatOrderId && currentUser && (
         <LiveChat
-            isOpen={isChatOpen}
-            onOpenChange={setIsChatOpen}
-            orderId={chatOrderId}
+            isOpen={isSupportChatOpen}
+            onOpenChange={setIsSupportChatOpen}
+            orderId={supportChatOrderId}
             currentUserId={currentUser.uid}
         />
       )}
@@ -241,7 +241,7 @@ export default function DashboardPage() {
           ) : activeOrders.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {activeOrders.map((order) => (
-                <OrderCard key={order.id} order={order} onChat={handleChatOpen} />
+                <OrderCard key={order.id} order={order} onChat={handleSupportChatOpen} />
               ))}
             </div>
           ) : (

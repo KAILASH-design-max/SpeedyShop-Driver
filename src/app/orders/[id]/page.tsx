@@ -29,6 +29,7 @@ import { updateLocation } from "@/ai/flows/update-location-flow";
 import { useThrottle } from "@/hooks/use-throttle";
 import { RateAndReport } from "@/components/orders/RateAndReport";
 import Link from 'next/link';
+import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
 
 
 export default function OrderPage() {
@@ -344,9 +345,9 @@ export default function OrderPage() {
 
              {order.orderStatus === "out-for-delivery" && (
               <>
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base" size="lg" disabled={isUpdating}>
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
                   <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`}>
-                     <Navigation className="mr-2 h-4 w-4" /> Navigate to Customer
+                     <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
                   </Link>
                 </Button>
                 <Button onClick={handleArrived} className="w-full bg-purple-500 hover:bg-purple-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
@@ -356,9 +357,11 @@ export default function OrderPage() {
               </>
             )}
 
-             <Button variant="outline" className="w-full" onClick={() => router.push(`/communication?orderId=${order.id}`)} disabled={isUpdating || isOrderComplete}>
-                <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
-            </Button>
+            <CustomerChatDialog order={order}>
+                <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete}>
+                    <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
+                </Button>
+            </CustomerChatDialog>
 
             {isOrderActive && (
               <AlertDialog>
