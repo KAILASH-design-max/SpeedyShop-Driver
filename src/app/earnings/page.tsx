@@ -15,7 +15,7 @@ export default function EarningsPage() {
 
   return (
     <div className="container mx-auto space-y-8">
-      <div className="flex justify-between items-center p-6 pb-0">
+      <div className="flex justify-between items-center px-6">
         <div>
             <h1 className="text-3xl font-bold text-primary">Earnings Breakdown</h1>
             <p className="text-muted-foreground mt-1">A summary of your current and lifetime earnings.</p>
