@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { CommunicationMessage, ChatThread, SupportChatSession } from "@/types";
+import type { CommunicationMessage, ChatThread } from "@/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
 
-type UnifiedChatThread = (ChatThread & { type: 'customer' }) | (SupportChatSession & { type: 'support' });
+type UnifiedChatThread = (ChatThread & { type: 'customer' });
 
 interface ChatInterfaceProps {
     preselectedThreadId?: string | null;
@@ -85,8 +85,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
         const customerThreads = await Promise.all(customerThreadsPromises);
         
         customerThreads.sort((a, b) => {
-            const tsA = a.lastUpdated || (a as ChatThread).lastMessageTimestamp;
-            const tsB = b.lastUpdated || (b as ChatThread).lastMessageTimestamp;
+            const tsA = a.lastMessageTimestamp;
+            const tsB = b.lastMessageTimestamp;
             if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
             return tsB.seconds - tsA.seconds;
         });
@@ -101,15 +101,15 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
         
         setChatThreads(customerThreads);
         setIsLoadingThreads(false);
-
-        return () => {
-             unsubscribeCustomerChats();
-        }
     }, error => {
         console.error("Error fetching customer chat threads:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not fetch customer chats." });
         setIsLoadingThreads(false);
     });
+
+    return () => {
+        unsubscribeCustomerChats();
+    }
 
   }, [currentUser, toast, preselectedThreadId]);
 
@@ -117,8 +117,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   useEffect(() => {
     if (selectedThread && currentUser) {
       setIsLoadingMessages(true);
-      const isSupportChat = selectedThread.type === 'support';
-      const collectionName = isSupportChat ? 'supportMessages' : 'Customer&deliveryboy';
+      const collectionName = 'Customer&deliveryboy';
       const messagesQuery = query(collection(db, `${collectionName}/${selectedThread.id}/messages`), orderBy("timestamp", "asc"));
 
       const unsubscribe = onSnapshot(messagesQuery, snapshot => {
@@ -153,10 +152,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     if (newMessage.trim() === "" || !selectedThread || !currentUser) return;
     setIsSending(true);
 
-    const isSupportChat = selectedThread.type === 'support';
-    const collectionName = isSupportChat ? 'supportMessages' : 'Customer&deliveryboy';
-    const lastUpdatedField = isSupportChat ? 'lastUpdated' : 'lastMessageTimestamp';
-    const statusField = isSupportChat ? 'status' : null;
+    const collectionName = 'Customer&deliveryboy';
+    const lastUpdatedField = 'lastMessageTimestamp';
 
     const messagePayload: Omit<CommunicationMessage, 'id'> = {
       senderId: currentUser.uid,
@@ -178,10 +175,6 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
         [lastUpdatedField]: serverTimestamp(),
       };
       
-      if (statusField) {
-          updateData[statusField] = 'waiting'; // Mark as waiting for human agent
-      }
-
       await updateDoc(threadRef, updateData);
 
     } catch (error) {
@@ -198,22 +191,14 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   };
 
   const getParticipantDetails = (thread: UnifiedChatThread, currentUserId: string) => {
-    if (thread.type === 'support') {
-        return {
-            name: "Support Agent",
-            avatarUrl: undefined,
-            subtext: thread.orderId ? `About Order #${thread.orderId.substring(0,6)}` : "General Support"
-        }
-    } else {
-        const otherParticipantId = thread.participantIds.find(id => id !== currentUserId);
-        const name = (otherParticipantId && participantNames[otherParticipantId]) || "Customer";
-        const avatarUrl = thread.participantAvatars?.[otherParticipantId || ''];
-        return {
-            name,
-            avatarUrl,
-            subtext: `Order #${thread.orderId?.substring(0, 6) || thread.id.substring(0,6)}`
-        }
-    }
+      const otherParticipantId = thread.participantIds.find(id => id !== currentUserId);
+      const name = (otherParticipantId && participantNames[otherParticipantId]) || "Customer";
+      const avatarUrl = thread.participantAvatars?.[otherParticipantId || ''];
+      return {
+          name,
+          avatarUrl,
+          subtext: `Order #${thread.orderId?.substring(0, 6) || thread.id.substring(0,6)}`
+      }
   };
 
   const formatListTimestamp = (timestamp: any) => {
@@ -231,7 +216,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     <Card className="md:col-span-1 lg:col-span-1 h-full flex flex-col shadow-xl">
         <CardHeader>
             <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Conversations</CardTitle>
-            <CardDescription>Your conversations with customers & support.</CardDescription>
+            <CardDescription>Your conversations with customers.</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow overflow-hidden p-2">
             <ScrollArea className="h-full">
@@ -247,8 +232,6 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                         if (!currentUser) return null;
                         const details = getParticipantDetails(thread, currentUser.uid);
                         const isSelected = selectedThread?.id === thread.id;
-                        const avatarFallbackChar = details.name.substring(0,1).toUpperCase();
-                        const isSupport = thread.type === 'support';
                         return (
                              <div 
                                 key={thread.id} 
@@ -265,14 +248,14 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                                 <div className="flex items-start gap-3">
                                     <Avatar className="h-10 w-10 border">
                                         {details.avatarUrl && <AvatarImage src={details.avatarUrl} alt={details.name} data-ai-hint="person avatar"/>}
-                                        <AvatarFallback className={cn(isSupport && 'bg-blue-500 text-white')}>
-                                            {isSupport ? <LifeBuoy size={20} /> : <User size={20} />}
+                                        <AvatarFallback>
+                                            <User size={20} />
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-grow overflow-hidden">
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold truncate">{details.name}</p>
-                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastUpdated || (thread as ChatThread).lastMessageTimestamp)}</p>
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastMessageTimestamp)}</p>
                                         </div>
                                         <p className="text-sm text-muted-foreground truncate">{thread.lastMessage || `New conversation...`}</p>
                                     </div>
@@ -299,7 +282,6 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       }
       
       const details = getParticipantDetails(selectedThread, currentUser.uid);
-      const isSupport = selectedThread.type === 'support';
 
       return (
         <Card className="w-full h-full flex flex-col shadow-xl">
@@ -309,8 +291,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                 </Button>
                 <Avatar>
                     {details.avatarUrl && <AvatarImage src={details.avatarUrl} alt={details.name} />}
-                    <AvatarFallback className={cn(isSupport && 'bg-blue-500 text-white')}>
-                         {isSupport ? <LifeBuoy size={20} /> : <User size={20}/>}
+                    <AvatarFallback>
+                         <User size={20}/>
                     </AvatarFallback>
                 </Avatar>
                 <div>
@@ -331,8 +313,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                     <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUser.uid ? "justify-end" : "justify-start")}>
                         {msg.senderId !== currentUser.uid && (
                            <Avatar className="h-8 w-8">
-                                <AvatarFallback className={cn(isSupport && 'bg-blue-500 text-white')}>
-                                   {isSupport ? 'S' : details.name.substring(0,1).toUpperCase()}
+                                <AvatarFallback>
+                                   {details.name.substring(0,1).toUpperCase()}
                                 </AvatarFallback>
                            </Avatar>
                         )}
@@ -365,7 +347,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                     {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-5 w-5" />}
                 </Button>
                 </div>
-                 {!isSupport && <PredefinedMessages onSelectMessage={handleUsePredefinedMessage}/>}
+                 <PredefinedMessages onSelectMessage={handleUsePredefinedMessage}/>
             </div>
             </CardFooter>
       </Card>

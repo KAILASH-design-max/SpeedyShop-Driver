@@ -32,6 +32,7 @@ import {
   BookOpen,
   Settings,
   HelpCircle,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -52,9 +53,8 @@ const baseNavItems = [
   { href: "/smart-routing", label: "Smart Routing", icon: Route },
   { href: "/earnings", label: "Earnings", icon: IndianRupee },
   { href: "/achievements", label: "Achievements", icon: Trophy },
-  { href: "/community", label: "Community", icon: Users },
-  // Training is now conditional
-  { href: "/communication", label: "Messages", icon: MessagesSquare },
+  { href: "/community", label: "Announcements", icon: Megaphone },
+  { href: "/chat", label: "Chat", icon: MessagesSquare },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/support", label: "Help & Info", icon: HelpCircle },
 ];

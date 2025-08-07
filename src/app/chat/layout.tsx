@@ -1,6 +1,7 @@
+
 import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout';
 
-export default function CommunicationLayout({
+export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode;

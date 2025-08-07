@@ -1,4 +1,6 @@
 
+"use client";
+
 import { Announcements } from "@/components/community/Announcements";
 
 export default function CommunityPage() {
