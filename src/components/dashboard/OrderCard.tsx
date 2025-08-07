@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, User, FileText, MessageSquare, LifeBuoy } from "lucide-react";
+import { MapPin, Package, User, FileText, MessageSquare } from "lucide-react";
 import type { Order } from "@/types";
 
 interface OrderCardProps {
@@ -30,9 +30,6 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
           <div className="flex items-center gap-2">
              <Button variant="ghost" size="icon" aria-label="Chat with customer" onClick={handleCustomerChatClick}>
                 <MessageSquare className="h-5 w-5 text-muted-foreground" />
-            </Button>
-             <Button variant="ghost" size="icon" aria-label="Chat with support" disabled>
-                <LifeBuoy className="h-5 w-5 text-muted-foreground" />
             </Button>
             <Badge variant={"secondary"} className="capitalize">
                 {order.orderStatus.replace(/-/g, ' ')}
