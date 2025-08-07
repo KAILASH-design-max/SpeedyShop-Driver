@@ -221,7 +221,7 @@ export default function DashboardPage() {
         />
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-0 py-6">
         <div className="md:col-span-1 space-y-6 max-w-[425px] w-full mx-auto md:mx-0">
           <AvailabilityToggle
             currentStatus={availabilityStatus}
@@ -232,7 +232,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="md:col-span-2 space-y-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center text-primary">
+          <h2 className="text-lg font-semibold mb-4 flex items-center text-primary px-6">
             <PackageCheck className="mr-2 h-6 w-6" /> Your Active Orders
           </h2>
           {isLoading && activeOrders.length === 0 ? (
