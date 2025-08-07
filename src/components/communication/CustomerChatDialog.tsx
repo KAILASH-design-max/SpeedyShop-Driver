@@ -174,8 +174,8 @@ export function CustomerChatDialog({ order, children }: CustomerChatDialogProps)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="p-0 border-none w-[90vw] max-w-md">
-        <div className="flex flex-col h-[70vh]">
+      <DialogContent className="p-0 border-none w-[90vw] sm:max-w-[425px] lg:max-w-lg">
+        <div className="flex flex-col max-h-[90vh]">
           <DialogHeader className="p-4 border-b">
             <div className="flex justify-between items-center">
               <div>
