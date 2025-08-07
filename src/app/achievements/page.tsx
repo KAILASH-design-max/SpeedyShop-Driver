@@ -106,7 +106,7 @@ export default function AchievementsPage() {
         peakHourDeliveries,
         weekendDeliveries,
         lateNightDeliveries,
-        overallRating: overallRating ?? 0, // Ensure overallRating is not null
+        overallRating,
         fiveStarRatingStreak,
       };
 
