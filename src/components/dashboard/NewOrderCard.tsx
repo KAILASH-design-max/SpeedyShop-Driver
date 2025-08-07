@@ -91,7 +91,7 @@ export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCa
 
   return (
     <Dialog open={true} onOpenChange={(isOpen) => { if(!isOpen) handleDecline(false) }}>
-      <DialogContent className="sm:max-w-md p-0" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-lg p-0" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader className="p-6 pb-2">
             <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center">
                 <Package className="mr-3 h-8 w-8 text-primary" />
