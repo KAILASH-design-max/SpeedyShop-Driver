@@ -2,40 +2,27 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { CommunicationMessage, ChatThread, SupportChatSession } from "@/types";
+import type { CommunicationMessage, SupportChatSession } from "@/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, ArrowLeft, Loader2, LifeBuoy, User, Package } from "lucide-react";
+import { Send, MessageSquare, ArrowLeft, Loader2, LifeBuoy, Package } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PredefinedMessages } from "./PredefinedMessages";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
 
-type UnifiedChatThread = (ChatThread & { type: 'customer' }) | (SupportChatSession & { type: 'support' });
+type UnifiedChatThread = SupportChatSession & { type: 'support' };
 
 interface ChatInterfaceProps {
     preselectedThreadId?: string | null;
 }
 
-const fetchParticipantName = async (userId: string): Promise<string> => {
-    if (!userId) return "Customer";
-    try {
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists()) {
-            return userDoc.data().name || "Customer";
-        }
-        return "Customer";
-    } catch (error) {
-        console.error(`Error fetching user name for ${userId}:`, error);
-        return "Customer";
-    }
-}
 
 export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -48,7 +35,6 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const [participantNames, setParticipantNames] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(user => {
@@ -57,7 +43,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     return () => unsubscribe();
   }, []);
 
-  // Fetch and combine threads from both collections
+  // Fetch only support threads
   useEffect(() => {
     if (!currentUser) {
         setIsLoadingThreads(false);
@@ -67,72 +53,39 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
 
     setIsLoadingThreads(true);
 
-    const customerThreadsQuery = query(collection(db, "Customer&deliveryboy"), where("participantIds", "array-contains", currentUser.uid));
     const supportThreadsQuery = query(collection(db, "supportMessages"), where("userId", "==", currentUser.uid));
 
-    let customerThreads: UnifiedChatThread[] = [];
-    let supportThreads: UnifiedChatThread[] = [];
-
-    const combineAndSetThreads = async () => {
-        const allThreads = [...customerThreads, ...supportThreads];
-        
-        // Fetch names for any new participants
-        for (const thread of customerThreads) {
-            if (thread.type === 'customer') {
-                const otherParticipantId = thread.participantIds.find(id => id !== currentUser.uid);
-                if (otherParticipantId && !participantNames[otherParticipantId]) {
-                    const name = await fetchParticipantName(otherParticipantId);
-                    setParticipantNames(prev => ({ ...prev, [otherParticipantId]: name }));
-                }
-            }
-        }
-
-        allThreads.sort((a, b) => {
-            const tsA = a.lastMessageTimestamp || a.lastUpdated;
-            const tsB = b.lastMessageTimestamp || b.lastUpdated;
-            if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
-            return tsB.seconds - tsA.seconds;
-        });
-        
-        // Handle pre-selection
-        if (preselectedThreadId) {
-            const threadToSelect = allThreads.find(t => t.id === preselectedThreadId);
-            if (threadToSelect) {
-                setSelectedThread(threadToSelect);
-            }
-        }
-
-        setChatThreads(allThreads);
-        setIsLoadingThreads(false);
-    }
-
-    const unsubscribeCustomerChats = onSnapshot(customerThreadsQuery, async (snapshot) => {
-        customerThreads = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...(doc.data() as ChatThread),
-            type: 'customer'
-        }));
-        combineAndSetThreads();
-    }, error => {
-        console.error("Error fetching customer chat threads:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not fetch customer chats." });
-    });
-
     const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, async (snapshot) => {
-        supportThreads = snapshot.docs.map(doc => ({
+        const supportThreads: UnifiedChatThread[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...(doc.data() as SupportChatSession),
             type: 'support'
         }));
-        combineAndSetThreads();
+
+        supportThreads.sort((a, b) => {
+            const tsA = a.lastUpdated;
+            const tsB = b.lastUpdated;
+            if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
+            return tsB.seconds - tsA.seconds;
+        });
+
+        if (preselectedThreadId) {
+            const threadToSelect = supportThreads.find(t => t.id === preselectedThreadId);
+            if (threadToSelect) {
+                setSelectedThread(threadToSelect);
+            }
+        }
+        
+        setChatThreads(supportThreads);
+        setIsLoadingThreads(false);
     }, error => {
         console.error("Error fetching support chat threads:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not fetch support chats." });
+        setIsLoadingThreads(false);
     });
 
 
     return () => {
-        unsubscribeCustomerChats();
         unsubscribeSupportChats();
     }
 
@@ -142,7 +95,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   useEffect(() => {
     if (selectedThread && currentUser) {
       setIsLoadingMessages(true);
-      const collectionName = selectedThread.type === 'customer' ? `Customer&deliveryboy/${selectedThread.id}/messages` : `supportMessages/${selectedThread.id}/messages`;
+      const collectionName = `supportMessages/${selectedThread.id}/messages`;
       const messagesQuery = query(collection(db, collectionName), orderBy("timestamp", "asc"));
 
       const unsubscribe = onSnapshot(messagesQuery, snapshot => {
@@ -177,11 +130,9 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     if (newMessage.trim() === "" || !selectedThread || !currentUser) return;
     setIsSending(true);
 
-    const isSupportChat = selectedThread.type === 'support';
-    const collectionName = isSupportChat ? `supportMessages/${selectedThread.id}/messages` : `Customer&deliveryboy/${selectedThread.id}/messages`;
-    const threadRef = doc(db, isSupportChat ? 'supportMessages' : 'Customer&deliveryboy', selectedThread.id);
-    const lastUpdatedField = isSupportChat ? 'lastUpdated' : 'lastMessageTimestamp';
-
+    const collectionName = `supportMessages/${selectedThread.id}/messages`;
+    const threadRef = doc(db, 'supportMessages', selectedThread.id);
+    
     const messagePayload: Omit<CommunicationMessage, 'id'> = {
       senderId: currentUser.uid,
       message: newMessage,
@@ -196,11 +147,9 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       
       const updateData: {[key: string]: any} = {
         lastMessage: newMessage,
-        [lastUpdatedField]: serverTimestamp(),
+        lastUpdated: serverTimestamp(),
+        status: 'waiting', // Driver replied, needs agent attention
       };
-      if (isSupportChat) {
-          updateData.status = 'waiting'; // Driver replied, needs agent attention
-      }
       
       await updateDoc(threadRef, updateData);
 
@@ -217,25 +166,12 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     setNewMessage(prev => prev ? `${prev} ${message}`: message);
   };
 
-  const getParticipantDetails = (thread: UnifiedChatThread, currentUserId: string) => {
-      if (thread.type === 'support') {
-          return {
-              name: "Support Agent",
-              avatarUrl: undefined,
-              subtext: thread.orderId ? `About Order #${thread.orderId}` : "General Support",
-              Icon: LifeBuoy
-          }
-      }
-      
-      // Customer Chat
-      const otherParticipantId = thread.participantIds.find(id => id !== currentUserId);
-      const name = (otherParticipantId && participantNames[otherParticipantId]) || "Customer";
-      const avatarUrl = thread.participantAvatars?.[otherParticipantId || ''];
+  const getParticipantDetails = (thread: UnifiedChatThread) => {
       return {
-          name,
-          avatarUrl,
-          subtext: `Order #${thread.orderId?.substring(0, 6) || thread.id.substring(0,6)}`,
-          Icon: User,
+          name: "Support Agent",
+          avatarUrl: undefined,
+          subtext: thread.orderId ? `About Order #${thread.orderId}` : "General Support",
+          Icon: LifeBuoy
       }
   };
 
@@ -254,7 +190,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     <Card className="md:col-span-1 lg:col-span-1 h-full flex flex-col shadow-xl">
         <CardHeader>
             <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Conversations</CardTitle>
-            <CardDescription>Your conversations with customers & support.</CardDescription>
+            <CardDescription>Your conversations with support.</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow overflow-hidden p-2">
             <ScrollArea className="h-full">
@@ -268,7 +204,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                 <div className="space-y-1">
                     {chatThreads.map(thread => {
                         if (!currentUser) return null;
-                        const details = getParticipantDetails(thread, currentUser.uid);
+                        const details = getParticipantDetails(thread);
                         const isSelected = selectedThread?.id === thread.id;
                         return (
                              <div 
@@ -285,7 +221,6 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                             >
                                 <div className="flex items-start gap-3">
                                     <Avatar className="h-10 w-10 border">
-                                        {details.avatarUrl && <AvatarImage src={details.avatarUrl} alt={details.name} data-ai-hint="person avatar"/>}
                                         <AvatarFallback>
                                             <details.Icon size={20} />
                                         </AvatarFallback>
@@ -293,7 +228,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                                     <div className="flex-grow overflow-hidden">
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold truncate">{details.name}</p>
-                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastMessageTimestamp || thread.lastUpdated)}</p>
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">{formatListTimestamp(thread.lastUpdated)}</p>
                                         </div>
                                         <p className="text-sm text-muted-foreground truncate">{thread.lastMessage || `New conversation...`}</p>
                                     </div>
@@ -319,7 +254,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
           );
       }
       
-      const details = getParticipantDetails(selectedThread, currentUser.uid);
+      const details = getParticipantDetails(selectedThread);
 
       return (
         <Card className="w-full h-full flex flex-col shadow-xl">
@@ -328,7 +263,6 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <Avatar>
-                    {details.avatarUrl && <AvatarImage src={details.avatarUrl} alt={details.name} />}
                     <AvatarFallback>
                          <details.Icon size={20}/>
                     </AvatarFallback>
@@ -403,5 +337,3 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     </div>
   );
 }
-
-    
