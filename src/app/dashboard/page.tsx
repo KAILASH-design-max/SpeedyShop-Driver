@@ -192,11 +192,6 @@ export default function DashboardPage() {
     setNewOrders(prev => prev.slice(1));
   };
 
-  const handleSupportChatOpen = (orderId: string) => {
-    setSupportChatOrderId(orderId);
-    setIsSupportChatOpen(true);
-  };
-  
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
   };
@@ -213,15 +208,6 @@ export default function DashboardPage() {
           order={newOrders[0]}
           currentUserId={currentUser.uid}
           onOrderAction={handleOrderAction}
-        />
-      )}
-
-      {supportChatOrderId && currentUser && (
-        <LiveChat
-            isOpen={isSupportChatOpen}
-            onOpenChange={setIsSupportChatOpen}
-            orderId={supportChatOrderId}
-            currentUserId={currentUser.uid}
         />
       )}
 
@@ -258,7 +244,6 @@ export default function DashboardPage() {
                 <OrderCard 
                   key={order.id} 
                   order={order} 
-                  onSupportChat={handleSupportChatOpen}
                   onCustomerChat={handleCustomerChatOpen}
                 />
               ))}

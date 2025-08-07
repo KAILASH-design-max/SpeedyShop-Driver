@@ -10,19 +10,13 @@ import type { Order } from "@/types";
 
 interface OrderCardProps {
   order: Order;
-  onSupportChat: (orderId: string) => void;
   onCustomerChat: (order: Order) => void;
 }
 
-export function OrderCard({ order, onSupportChat, onCustomerChat }: OrderCardProps) {
+export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   
   const displayItems = order.items.map(item => `${item.name} (x${item.quantity})`).join(", ");
 
-  const handleSupportChatClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onSupportChat(order.id);
-  };
-  
   const handleCustomerChatClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onCustomerChat(order);
@@ -37,7 +31,7 @@ export function OrderCard({ order, onSupportChat, onCustomerChat }: OrderCardPro
              <Button variant="ghost" size="icon" aria-label="Chat with customer" onClick={handleCustomerChatClick}>
                 <MessageSquare className="h-5 w-5 text-muted-foreground" />
             </Button>
-             <Button variant="ghost" size="icon" aria-label="Chat with support" onClick={handleSupportChatClick}>
+             <Button variant="ghost" size="icon" aria-label="Chat with support" disabled>
                 <LifeBuoy className="h-5 w-5 text-muted-foreground" />
             </Button>
             <Badge variant={"secondary"} className="capitalize">
