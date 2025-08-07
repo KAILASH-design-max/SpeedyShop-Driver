@@ -219,7 +219,7 @@ export default function DashboardPage() {
         />
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-0 py-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-0 pb-6">
         <div className="md:col-span-1 space-y-6 max-w-[425px] w-full mx-auto md:mx-0">
           <AvailabilityToggle
             currentStatus={availabilityStatus}
