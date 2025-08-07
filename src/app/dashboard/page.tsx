@@ -200,9 +200,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="p-6">
-        <DashboardHeader />
-      </div>
+      <DashboardHeader />
       
       {/* New Order Dialog */}
       {newOrders.length > 0 && currentUser && availabilityStatus === 'online' && (
