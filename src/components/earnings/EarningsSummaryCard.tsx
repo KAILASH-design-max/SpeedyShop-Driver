@@ -64,16 +64,18 @@ export function EarningsSummaryCard() {
         // Listener for ratings (tips) this month
         const monthlyRatingsQuery = query(
             collection(db, "deliveryPartnerRatings"),
-            where("deliveryPartnerId", "==", currentUser.uid),
-            where("ratedAt", ">=", startOfMonth)
+            where("deliveryPartnerId", "==", currentUser.uid)
         );
 
         const unsubscribeRatings = onSnapshot(monthlyRatingsQuery, (snapshot) => {
             let totalMonthTips = 0;
             snapshot.forEach(doc => {
                 const ratingData = doc.data() as DeliveryRating;
-                if (ratingData.tip && ratingData.tip > 0) {
-                    totalMonthTips += ratingData.tip;
+                if (ratingData.tip && ratingData.tip > 0 && ratingData.ratedAt?.toDate) {
+                    // Filter for the current month on the client
+                    if(ratingData.ratedAt.toDate() >= startOfMonth) {
+                       totalMonthTips += ratingData.tip;
+                    }
                 }
             });
              // Combine delivery earnings with tips
