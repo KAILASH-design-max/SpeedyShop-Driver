@@ -156,23 +156,36 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
         const deliveryIds = deliveriesToDisplay.map(d => d.id);
 
         if(deliveryIds.length > 0) {
-            const ratingsQuery = query(
-                collection(db, 'deliveryPartnerRatings'),
-                where('deliveryPartnerId', '==', currentUser.uid),
-                where('orderId', 'in', deliveryIds)
-            );
-            const ratingsSnapshot = await getDocs(ratingsQuery);
+             // Firestore 'in' query has a limit of 30 values. We need to chunk the array.
+            const chunkArray = <T>(arr: T[], size: number): T[][] =>
+              Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+                arr.slice(i * size, i * size + size)
+              );
 
-            ratingsSnapshot.forEach(doc => {
-                const rating = doc.data() as DeliveryRating;
-                if(rating.tip && rating.tip > 0) {
-                     tipTransactions.push({
-                        title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
-                        transactionId: `${rating.orderId}-tip`,
-                        type: 'Tip',
-                        amount: rating.tip
-                    });
-                }
+            const chunks = chunkArray(deliveryIds, 30);
+            const ratingsPromises = chunks.map(chunk => {
+                 const ratingsQuery = query(
+                    collection(db, 'deliveryPartnerRatings'),
+                    where('deliveryPartnerId', '==', currentUser.uid),
+                    where('orderId', 'in', chunk)
+                );
+                return getDocs(ratingsQuery);
+            });
+            
+            const ratingsSnapshots = await Promise.all(ratingsPromises);
+
+            ratingsSnapshots.forEach(snapshot => {
+                 snapshot.forEach(doc => {
+                    const rating = doc.data() as DeliveryRating;
+                    if(rating.tip && rating.tip > 0) {
+                        tipTransactions.push({
+                            title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
+                            transactionId: `${rating.orderId}-tip`,
+                            type: 'Tip',
+                            amount: rating.tip
+                        });
+                    }
+                });
             });
         }
         
