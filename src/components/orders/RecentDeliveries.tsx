@@ -80,7 +80,8 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
     const deliveriesQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "in", ["delivered", "cancelled"])
+      where("orderStatus", "in", ["delivered", "cancelled"]),
+      orderBy("completedAt", "desc")
     );
 
     const unsubscribe = onSnapshot(
@@ -92,12 +93,6 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             mapFirestoreDocToOrder(doc)
           );
           fetchedDeliveries = await Promise.all(ordersDataPromises);
-          
-          fetchedDeliveries.sort((a, b) => {
-            const dateA = a.completedAt?.toDate ? a.completedAt.toDate() : new Date(0);
-            const dateB = b.completedAt?.toDate ? b.completedAt.toDate() : new Date(0);
-            return dateB.getTime() - dateA.getTime();
-          });
         }
         setAllDeliveries(fetchedDeliveries);
         setLoading(false);
