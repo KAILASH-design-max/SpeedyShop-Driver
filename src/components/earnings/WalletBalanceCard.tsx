@@ -30,9 +30,9 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, doc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, Timestamp, getDocs } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import type { Profile } from "@/types";
+import type { Profile, DeliveryRating } from "@/types";
 
 const payoutSchema = z.object({
     amount: z.coerce.number().positive("Amount must be greater than 0."),
@@ -77,57 +77,42 @@ export function WalletBalanceCard() {
 
         setIsLoading(true);
 
-        let totalLifetimeDeliveryEarnings = 0;
+        const fetchAllEarnings = async () => {
+            let totalDeliveryEarnings = 0;
+            let totalTips = 0;
 
-        // Listener for all deliveries
-        const allDeliveriesQuery = query(
-            collection(db, "orders"),
-            where("deliveryPartnerId", "==", currentUser.uid),
-            where("orderStatus", "==", "delivered")
-        );
-        
-        const unsubscribeDeliveries = onSnapshot(allDeliveriesQuery, (snapshot) => {
-            totalLifetimeDeliveryEarnings = 0;
-            snapshot.forEach(doc => {
+            // Fetch delivery earnings
+            const deliveriesQuery = query(
+                collection(db, "orders"),
+                where("deliveryPartnerId", "==", currentUser.uid),
+                where("orderStatus", "==", "delivered")
+            );
+            const deliveriesSnapshot = await getDocs(deliveriesQuery);
+            deliveriesSnapshot.forEach(doc => {
                 const orderData = doc.data();
-                const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
-                totalLifetimeDeliveryEarnings += earning;
+                totalDeliveryEarnings += orderData.estimatedEarnings ?? 0;
             });
-            // Initially set earnings without tips
-            setLifetimeEarnings(totalLifetimeDeliveryEarnings);
-        }, (error) => {
-            console.error("Error fetching earnings summary:", error);
+
+            // Fetch tips
+            const ratingsQuery = query(
+                collection(db, "deliveryPartnerRatings"),
+                where("deliveryPartnerId", "==", currentUser.uid)
+            );
+            const ratingsSnapshot = await getDocs(ratingsQuery);
+            ratingsSnapshot.forEach(doc => {
+                const ratingData = doc.data() as DeliveryRating;
+                totalTips += ratingData.tip ?? 0;
+            });
+            
+            setLifetimeEarnings(totalDeliveryEarnings + totalTips);
             setIsLoading(false);
-        });
-
-        // Listener for user profile to get tips
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const profile = docSnap.data() as Profile;
-                const ratings = profile.deliveryRatings || [];
-
-                let totalLifetimeTips = 0;
-                ratings.forEach(rating => {
-                    if (rating.tip && rating.tip > 0) {
-                        totalLifetimeTips += rating.tip;
-                    }
-                });
-
-                // Combine delivery earnings with tips
-                setLifetimeEarnings(totalLifetimeDeliveryEarnings + totalLifetimeTips);
-            }
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching profile for tips:", error);
-            setIsLoading(false); // still stop loading on error
-        });
-
-
-        return () => {
-            unsubscribeDeliveries();
-            unsubscribeProfile();
         };
+        
+        fetchAllEarnings().catch(error => {
+            console.error("Error fetching lifetime earnings:", error);
+            setIsLoading(false);
+        });
+        
     }, [currentUser]);
 
 

@@ -32,6 +32,7 @@ import {
   doc,
   getDoc,
   Timestamp,
+  getDocs,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Order, Profile, DeliveryRating } from "@/types";
@@ -150,25 +151,27 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
             return;
         }
         
-        const userDocRef = doc(db, "users", currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
         let tipTransactions: Transaction[] = [];
+        
+        const deliveryIds = deliveriesToDisplay.map(d => d.id);
 
-        if (userDocSnap.exists()) {
-            const profile = userDocSnap.data() as Profile;
-            const ratings = profile.deliveryRatings || [];
-            
-            ratings.forEach((rating: DeliveryRating) => {
-                if(rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
-                    const deliveryForTip = deliveriesToDisplay.find(d => d.id === rating.orderId);
-                    if (deliveryForTip) {
-                         tipTransactions.push({
-                            title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
-                            transactionId: `${rating.orderId}-tip`,
-                            type: 'Tip',
-                            amount: rating.tip
-                        });
-                    }
+        if(deliveryIds.length > 0) {
+            const ratingsQuery = query(
+                collection(db, 'deliveryPartnerRatings'),
+                where('deliveryPartnerId', '==', currentUser.uid),
+                where('orderId', 'in', deliveryIds)
+            );
+            const ratingsSnapshot = await getDocs(ratingsQuery);
+
+            ratingsSnapshot.forEach(doc => {
+                const rating = doc.data() as DeliveryRating;
+                if(rating.tip && rating.tip > 0) {
+                     tipTransactions.push({
+                        title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
+                        transactionId: `${rating.orderId}-tip`,
+                        type: 'Tip',
+                        amount: rating.tip
+                    });
                 }
             });
         }
