@@ -6,7 +6,7 @@ import { Truck, Star, Loader2, IndianRupee, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import type { Profile, DeliveryRating } from "@/types";
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
@@ -30,15 +30,15 @@ export function EarningsOverview() {
     const [isLoadingDeliveries, setIsLoadingDeliveries] = useState(true);
     const [currentWeekEarnings, setCurrentWeekEarnings] = useState(0);
     const [isLoadingWeekEarnings, setIsLoadingWeekEarnings] = useState(true);
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+    const [overallRating, setOverallRating] = useState<number | null>(null);
+    const [isLoadingRatings, setIsLoadingRatings] = useState(true);
 
     useEffect(() => {
         const unsubscribeAuth = auth.onAuthStateChanged((user) => {
             setCurrentUser(user);
             if (!user) {
                 setIsLoadingDeliveries(false);
-                setIsLoadingProfile(false);
+                setIsLoadingRatings(false);
                 setIsLoadingWeekEarnings(false);
             }
         });
@@ -49,7 +49,7 @@ export function EarningsOverview() {
         if (!currentUser) {
             if(!auth.currentUser) {
                 setIsLoadingDeliveries(false);
-                setIsLoadingProfile(false);
+                setIsLoadingRatings(false);
                 setIsLoadingWeekEarnings(false);
             }
             return;
@@ -57,32 +57,46 @@ export function EarningsOverview() {
 
         setIsLoadingDeliveries(true);
         setIsLoadingWeekEarnings(true);
-        setIsLoadingProfile(true);
+        setIsLoadingRatings(true);
 
-        // --- Profile Listener (for Rating and Tips) ---
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                setProfile(docSnap.data() as Profile);
-            } else {
-                setProfile(null);
-            }
-            setIsLoadingProfile(false);
-        }, (error) => {
-            console.error("Error fetching user profile:", error);
-            setProfile(null);
-            setIsLoadingProfile(false);
-        });
-
-
-        // --- Weekly Deliveries and Earnings Logic ---
         const now = new Date();
         const weekStart = startOfWeek(now, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
         const todayStart = startOfDay(now);
         const todayEnd = endOfDay(now);
+        
+        // --- Ratings Listener ---
+        const ratingsQuery = query(collection(db, 'deliveryPartnerRatings'), where('deliveryPartnerId', '==', currentUser.uid));
+        const unsubscribeRatings = onSnapshot(ratingsQuery, (snapshot) => {
+            const ratings = snapshot.docs.map(doc => doc.data() as DeliveryRating);
+            if (ratings.length > 0) {
+                 const total = ratings.reduce((acc, r) => acc + r.rating, 0);
+                 setOverallRating(total / ratings.length);
+            } else {
+                 setOverallRating(0);
+            }
 
+            const weeklyTips = ratings.reduce((acc, rating) => {
+                if (rating.tip && rating.ratedAt?.toDate) {
+                    const ratedDate = rating.ratedAt.toDate();
+                    if (ratedDate >= weekStart && ratedDate <= weekEnd) {
+                        return acc + rating.tip;
+                    }
+                }
+                return acc;
+            }, 0) || 0;
+            
+            // This relies on delivery earnings being calculated first
+            setCurrentWeekEarnings(prev => prev + weeklyTips);
 
+            setIsLoadingRatings(false);
+        }, (error) => {
+             console.error("Error fetching ratings:", error);
+             setOverallRating(null);
+             setIsLoadingRatings(false);
+        });
+
+        // --- Weekly Deliveries and Earnings Logic ---
         const weekDeliveriesQuery = query(
             collection(db, "orders"),
             where("deliveryPartnerId", "==", currentUser.uid),
@@ -109,11 +123,11 @@ export function EarningsOverview() {
                 }
             });
 
-            // This will be combined with tips once profile is loaded
+            // Set base earnings from deliveries, tips will be added by the other listener
             setCurrentWeekEarnings(totalDeliveryEarnings);
             setDeliveriesToday(deliveriesTodayCount);
-            setIsLoadingDeliveries(false); // Base deliveries loaded
-            setIsLoadingWeekEarnings(false); // Base earnings loaded
+            setIsLoadingDeliveries(false);
+            setIsLoadingWeekEarnings(false);
 
         }, (error) => {
             console.error("Error fetching weekly deliveries:", error);
@@ -123,39 +137,10 @@ export function EarningsOverview() {
 
         return () => {
             unsubscribeDeliveries();
-            unsubscribeProfile();
+            unsubscribeRatings();
         };
     }, [currentUser]);
 
-    // This effect combines delivery earnings and tips once both are loaded
-    useEffect(() => {
-        if (profile) {
-            const now = new Date();
-            const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-            const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-
-            const weeklyTips = profile.deliveryRatings?.reduce((acc, rating) => {
-                if (rating.tip && rating.ratedAt?.toDate) {
-                    const ratedDate = rating.ratedAt.toDate();
-                    if (ratedDate >= weekStart && ratedDate <= weekEnd) {
-                        return acc + rating.tip;
-                    }
-                }
-                return acc;
-            }, 0) || 0;
-            
-            // Re-set the weekly earnings by adding tips to the already calculated delivery earnings
-            setCurrentWeekEarnings(prev => prev + weeklyTips);
-        }
-    }, [profile]); // Reruns when profile data (with tips) arrives
-
-    const overallRating = useMemo(() => {
-        if (!profile?.deliveryRatings) return null;
-        const ratings = profile.deliveryRatings.filter(r => typeof r.rating === 'number' && r.rating > 0);
-        if (ratings.length === 0) return 0;
-        const total = ratings.reduce((acc, r) => acc + r.rating, 0);
-        return total / ratings.length;
-    }, [profile]);
 
     const allStats = [
         {
@@ -181,13 +166,13 @@ export function EarningsOverview() {
         ...staticStats,
         {
             title: "Overall Rating",
-            value: isLoadingProfile ? null : (overallRating !== null ? `${overallRating.toFixed(1)}/5` : "N/A"),
+            value: isLoadingRatings ? null : (overallRating !== null ? `${overallRating.toFixed(1)}/5` : "N/A"),
             subtext: "Your average customer rating",
             icon: Star,
             color: "text-yellow-500",
             href: "/ratings",
             isCurrency: false,
-            isLoading: isLoadingProfile,
+            isLoading: isLoadingRatings,
         },
     ];
     

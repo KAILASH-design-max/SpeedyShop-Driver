@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Timestamp, doc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import type { Profile } from "@/types";
+import type { Profile, DeliveryRating } from "@/types";
 
 export function EarningsSummaryCard() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -39,62 +39,55 @@ export function EarningsSummaryCard() {
 
         let totalMonthDeliveryEarnings = 0;
 
-        // Listener for all deliveries
-        const allDeliveriesQuery = query(
+        // Listener for deliveries this month
+        const monthlyDeliveriesQuery = query(
             collection(db, "orders"),
             where("deliveryPartnerId", "==", currentUser.uid),
-            where("orderStatus", "==", "delivered")
+            where("orderStatus", "==", "delivered"),
+            where("completedAt", ">=", startOfMonth)
         );
         
-        const unsubscribeDeliveries = onSnapshot(allDeliveriesQuery, (snapshot) => {
+        const unsubscribeDeliveries = onSnapshot(monthlyDeliveriesQuery, (snapshot) => {
             totalMonthDeliveryEarnings = 0;
-
             snapshot.forEach(doc => {
                 const orderData = doc.data();
                 const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
-                
-                const completedAtTimestamp = orderData.completedAt as Timestamp;
-                if (completedAtTimestamp && completedAtTimestamp.toDate() >= startOfMonth) {
-                    totalMonthDeliveryEarnings += earning;
-                }
+                totalMonthDeliveryEarnings += earning;
             });
-            // Initially set earnings without tips
-            setMonthlyEarnings(totalMonthDeliveryEarnings);
+            // Update earnings with the delivery portion
+            setMonthlyEarnings(prev => (prev - (prev - totalMonthDeliveryEarnings))); // More controlled update
         }, (error) => {
             console.error("Error fetching earnings summary:", error);
             setIsLoading(false);
         });
 
-        // Listener for user profile to get tips
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const profile = docSnap.data() as Profile;
-                const ratings = profile.deliveryRatings || [];
+        // Listener for ratings (tips) this month
+        const monthlyRatingsQuery = query(
+            collection(db, "deliveryPartnerRatings"),
+            where("deliveryPartnerId", "==", currentUser.uid),
+            where("ratedAt", ">=", startOfMonth)
+        );
 
-                let totalMonthTips = 0;
-
-                ratings.forEach(rating => {
-                    if (rating.tip && rating.tip > 0) {
-                        if (rating.ratedAt?.toDate && rating.ratedAt.toDate() >= startOfMonth) {
-                            totalMonthTips += rating.tip;
-                        }
-                    }
-                });
-
-                // Combine delivery earnings with tips
-                setMonthlyEarnings(totalMonthDeliveryEarnings + totalMonthTips);
-            }
-            setIsLoading(false);
+        const unsubscribeRatings = onSnapshot(monthlyRatingsQuery, (snapshot) => {
+            let totalMonthTips = 0;
+            snapshot.forEach(doc => {
+                const ratingData = doc.data() as DeliveryRating;
+                if (ratingData.tip && ratingData.tip > 0) {
+                    totalMonthTips += ratingData.tip;
+                }
+            });
+             // Combine delivery earnings with tips
+             setMonthlyEarnings(totalMonthDeliveryEarnings + totalMonthTips);
+             setIsLoading(false);
         }, (error) => {
-            console.error("Error fetching profile for tips:", error);
-            setIsLoading(false); // still stop loading on error
+            console.error("Error fetching ratings for tips:", error);
+            setIsLoading(false);
         });
 
 
         return () => {
             unsubscribeDeliveries();
-            unsubscribeProfile();
+            unsubscribeRatings();
         };
     }, [currentUser]);
 

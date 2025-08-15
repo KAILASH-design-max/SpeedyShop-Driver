@@ -1,5 +1,6 @@
 
 
+
 import { z } from 'genkit';
 
 export interface OrderItem {
@@ -81,6 +82,8 @@ export interface BankDetails {
 
 export interface DeliveryRating {
   orderId: string;
+  deliveryPartnerId: string;
+  userId: string;
   ratedAt: any; // Firestore Timestamp
   rating: number;
   comment?: string;
@@ -142,7 +145,7 @@ export interface Profile {
   updatedAt?: string; // ISO string for last update
 
   // Performance metrics (populated by another system, read-only here)
-  deliveryRatings?: DeliveryRating[];
+  deliveryRatings?: DeliveryRating[]; // This is now deprecated, use the top-level collection
   maintenanceLog?: MaintenanceLogEntry[];
   penalties?: Penalty[];
 }

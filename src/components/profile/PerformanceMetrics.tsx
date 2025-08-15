@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { Order, Profile } from "@/types";
+import type { Order, Profile, DeliveryRating } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Star, ThumbsUp, Loader2, Package, Percent, Gift } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -36,6 +36,8 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [deliveryRatings, setDeliveryRatings] = useState<DeliveryRating[]>([]);
+  const [loadingRatings, setLoadingRatings] = useState(true);
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -47,16 +49,19 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   useEffect(() => {
     if (!currentUser) {
         setLoadingOrders(false);
+        setLoadingRatings(false);
         return;
     }
 
     setLoadingOrders(true);
+    setLoadingRatings(true);
+
     const ordersQuery = query(
         collection(db, "orders"),
         where("deliveryPartnerId", "==", currentUser.uid)
     );
 
-    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+    const unsubscribeOrders = onSnapshot(ordersQuery, (snapshot) => {
         const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
         setOrders(fetchedOrders);
         setLoadingOrders(false);
@@ -64,13 +69,26 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
         console.error("Error fetching orders for metrics:", error);
         setLoadingOrders(false);
     });
+    
+    const ratingsQuery = query(
+        collection(db, 'deliveryPartnerRatings'),
+        where('deliveryPartnerId', '==', currentUser.uid)
+    );
+    const unsubscribeRatings = onSnapshot(ratingsQuery, (snapshot) => {
+        const fetchedRatings = snapshot.docs.map(doc => doc.data() as DeliveryRating);
+        setDeliveryRatings(fetchedRatings);
+        setLoadingRatings(false);
+    });
 
-    return () => unsubscribe();
+    return () => {
+        unsubscribeOrders();
+        unsubscribeRatings();
+    }
   }, [currentUser]);
 
   const { overallRating, ratingBreakdown, totalRatings, lifetimeTips } = useMemo(() => {
-    const ratings = profile.deliveryRatings?.filter(r => typeof r.rating === 'number') || [];
-    const tips = profile.deliveryRatings?.reduce((acc, r) => acc + (r.tip || 0), 0) || 0;
+    const ratings = deliveryRatings.filter(r => typeof r.rating === 'number') || [];
+    const tips = deliveryRatings.reduce((acc, r) => acc + (r.tip || 0), 0) || 0;
     
     if (!ratings || ratings.length === 0) {
       return {
@@ -105,7 +123,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     })).sort((a, b) => b.stars - a.stars);
 
     return { overallRating, ratingBreakdown: breakdown, totalRatings: ratings.length, lifetimeTips: tips };
-  }, [profile.deliveryRatings]);
+  }, [deliveryRatings]);
   
    const performanceStats = useMemo(() => {
     const totalOrders = orders.length;
@@ -122,7 +140,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   useEffect(() => {
     const processFeedback = () => {
       setLoadingFeedback(true);
-      const validRatings = profile.deliveryRatings?.filter(r => typeof r.rating === 'number') || [];
+      const validRatings = deliveryRatings.filter(r => typeof r.rating === 'number') || [];
       if (validRatings.length === 0) {
         setLoadingFeedback(false);
         setFeedbackList([]);
@@ -153,7 +171,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     };
 
     processFeedback();
-  }, [profile.deliveryRatings]);
+  }, [deliveryRatings]);
   
   const renderStars = (rating: number, size: "sm" | "lg" = "sm") => {
     const starArray = [];
@@ -225,7 +243,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
                 value={`₹${performanceStats.lifetimeTips.toFixed(2)}`}
                 icon={Gift}
                 color="text-orange-500"
-                isLoading={false} // This comes from profile, not orders
+                isLoading={loadingRatings}
               />
            </div>
         </div>

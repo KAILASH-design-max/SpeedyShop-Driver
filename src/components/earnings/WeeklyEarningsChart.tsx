@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Timestamp, doc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import type { Profile } from '@/types';
+import type { Profile, DeliveryRating } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
 
@@ -78,23 +78,24 @@ export function WeeklyEarningsChart() {
         updateChartData();
     });
 
-    // Listener for user profile (tips)
-    const userDocRef = doc(db, 'users', currentUser.uid);
-    const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-            const profile = docSnap.data() as Profile;
-            profile.deliveryRatings?.forEach(rating => {
-                if (rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
-                    const ratedDate = rating.ratedAt.toDate();
-                    if (ratedDate >= weekStart && ratedDate <= weekEnd) {
-                        const dayKey = format(ratedDate, 'E');
-                        if (dailyEarnings.hasOwnProperty(dayKey)) {
-                            dailyEarnings[dayKey] += rating.tip;
-                        }
-                    }
+    // Listener for ratings (tips)
+    const weekRatingsQuery = query(
+        collection(db, 'deliveryPartnerRatings'),
+        where('deliveryPartnerId', '==', currentUser.uid),
+        where('ratedAt', '>=', weekStart),
+        where('ratedAt', '<=', weekEnd)
+    );
+    const unsubscribeRatings = onSnapshot(weekRatingsQuery, (snapshot) => {
+        snapshot.forEach(doc => {
+            const ratingData = doc.data() as DeliveryRating;
+            if (ratingData.tip && ratingData.tip > 0 && ratingData.ratedAt?.toDate) {
+                const ratedDate = ratingData.ratedAt.toDate();
+                const dayKey = format(ratedDate, 'E');
+                if (dailyEarnings.hasOwnProperty(dayKey)) {
+                    dailyEarnings[dayKey] += ratingData.tip;
                 }
-            });
-        }
+            }
+        });
         updateChartData();
     });
 
@@ -111,7 +112,7 @@ export function WeeklyEarningsChart() {
 
     return () => {
         unsubscribeDeliveries();
-        unsubscribeProfile();
+        unsubscribeRatings();
     };
   }, [currentUser]);
 

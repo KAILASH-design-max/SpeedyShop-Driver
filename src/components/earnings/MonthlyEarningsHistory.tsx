@@ -12,10 +12,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Calendar, Wallet, Loader2, Star, Gift, ShoppingBag, TrendingUp, Package } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy, Timestamp, doc } from 'firebase/firestore';
-import { format, getWeekOfMonth, startOfMonth, parse } from 'date-fns';
+import { collection, query, where, onSnapshot, orderBy, Timestamp, doc, getDocs } from 'firebase/firestore';
+import { format, getWeekOfMonth, parse } from 'date-fns';
 import type { User } from 'firebase/auth';
-import type { MonthlyEarning, Order, Profile } from '@/types';
+import type { MonthlyEarning, Order, Profile, DeliveryRating } from '@/types';
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 
 // Helper function to format the month string
@@ -80,19 +80,18 @@ export function MonthlyEarningsHistory() {
           where("deliveryPartnerId", "==", currentUser.uid),
           where("orderStatus", "==", "delivered")
         );
-        const deliveriesSnapshot = await new Promise<any>((resolve, reject) => {
-            onSnapshot(deliveriesQuery, resolve, reject);
-        });
+        const deliveriesSnapshot = await getDocs(deliveriesQuery);
         
         const ordersPromises = deliveriesSnapshot.docs.map((doc: any) => mapFirestoreDocToOrder(doc));
         const allOrders = await Promise.all(ordersPromises);
 
-        // Fetch user profile for tips
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDocSnap = await new Promise<any>((resolve, reject) => {
-            onSnapshot(userDocRef, resolve, reject);
-        });
-        const profile: Profile | null = userDocSnap.exists() ? userDocSnap.data() as Profile : null;
+        // Fetch user ratings for tips
+        const ratingsQuery = query(
+            collection(db, 'deliveryPartnerRatings'),
+            where('deliveryPartnerId', '==', currentUser.uid)
+        );
+        const ratingsSnapshot = await getDocs(ratingsQuery);
+        const allRatings = ratingsSnapshot.docs.map(doc => doc.data() as DeliveryRating);
         
         // --- Process Data ---
         const earningsByMonth: { [key: string]: MonthlyEarning } = {};
@@ -126,8 +125,7 @@ export function MonthlyEarningsHistory() {
         });
 
         // Process tips
-        if (profile?.deliveryRatings) {
-          profile.deliveryRatings.forEach(rating => {
+        allRatings.forEach(rating => {
             if (rating.tip && rating.tip > 0 && rating.ratedAt?.toDate) {
               const ratedDate = rating.ratedAt.toDate();
               const monthKey = format(ratedDate, 'yyyy-MM');
@@ -141,7 +139,6 @@ export function MonthlyEarningsHistory() {
               }
             }
           });
-        }
         
         const sortedEarnings = Object.values(earningsByMonth).sort((a, b) => b.month.localeCompare(a.month));
 
@@ -154,11 +151,6 @@ export function MonthlyEarningsHistory() {
     };
     
     fetchData();
-
-    // The onSnapshot listener is useful for real-time but complex for this combined logic.
-    // A fetch-on-load approach (like in fetchData) is simpler here.
-    // To keep it real-time, you'd set up two separate onSnapshot listeners
-    // and a useEffect to combine their results, which adds complexity.
 
   }, [currentUser]);
 

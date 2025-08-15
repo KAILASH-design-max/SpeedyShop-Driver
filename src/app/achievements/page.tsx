@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import type { User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
-import type { Order, Profile } from "@/types";
+import type { Order, Profile, DeliveryRating } from "@/types";
 import { getAchievements, Achievement } from "@/ai/flows/get-achievements-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,15 +61,18 @@ export default function AchievementsPage() {
         where("orderStatus", "==", "delivered")
       );
       
-      const profileRef = doc(db, "users", currentUser.uid);
+      const ratingsQuery = query(
+        collection(db, "deliveryPartnerRatings"),
+        where("deliveryPartnerId", "==", currentUser.uid)
+      );
 
-      const [ordersSnapshot, profileSnap] = await Promise.all([
+      const [ordersSnapshot, ratingsSnapshot] = await Promise.all([
         getDocs(deliveredOrdersQuery),
-        getDoc(profileRef)
+        getDocs(ratingsQuery)
       ]);
       
       const allOrders = ordersSnapshot.docs.map(doc => doc.data() as Order);
-      const profile = profileSnap.exists() ? profileSnap.data() as Profile : null;
+      const ratings = ratingsSnapshot.docs.map(doc => doc.data() as DeliveryRating);
 
       // --- Process the data ---
       const totalDeliveries = allOrders.length;
@@ -85,7 +88,6 @@ export default function AchievementsPage() {
       const weekendDeliveries = allOrders.filter(o => o.completedAt?.toDate() >= lastWeekendStart && o.completedAt?.toDate() <= lastWeekendEnd).length;
       const lateNightDeliveries = allOrders.filter(o => o.completedAt?.toDate() >= monthStart && o.completedAt?.toDate().getHours() >= 22).length;
 
-      const ratings = profile?.deliveryRatings || [];
       const overallRating = ratings.length > 0 ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length) : 0;
       
       let fiveStarRatingStreak = 0;
