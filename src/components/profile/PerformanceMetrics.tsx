@@ -90,7 +90,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     const ratings = deliveryRatings.filter(r => typeof r.rating === 'number') || [];
     const tips = deliveryRatings.reduce((acc, r) => acc + (r.tip || 0), 0) || 0;
     
-    if (!ratings || ratings.length === 0) {
+    if (ratings.length === 0) {
       return {
         overallRating: 0,
         totalRatings: 0,
