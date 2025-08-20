@@ -106,7 +106,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
     }
     
     const totalRatingValue = ratings.reduce((acc, r) => acc + r.rating, 0);
-    const overallRatingValue = totalRatingValue / ratings.length;
+    const overallRatingValue = ratings.length > 0 ? totalRatingValue / ratings.length : 0;
     const overallRating = isNaN(overallRatingValue) ? 0 : overallRatingValue;
 
 

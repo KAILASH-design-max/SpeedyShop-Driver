@@ -30,7 +30,7 @@ export function EarningsOverview() {
     const [isLoadingDeliveries, setIsLoadingDeliveries] = useState(true);
     const [currentWeekEarnings, setCurrentWeekEarnings] = useState(0);
     const [isLoadingWeekEarnings, setIsLoadingWeekEarnings] = useState(true);
-    const [overallRating, setOverallRating] = useState<number | null>(null);
+    const [overallRating, setOverallRating] = useState<number | null>(0);
     const [isLoadingRatings, setIsLoadingRatings] = useState(true);
 
     useEffect(() => {
