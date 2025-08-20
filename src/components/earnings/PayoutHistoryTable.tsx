@@ -41,8 +41,8 @@ export function PayoutHistoryTable({ transactions, deliveries }: PayoutHistoryTa
 
     return (
         <div>
-            <CardTitle className="text-2xl font-bold flex items-center"><Wallet className="mr-2 h-6 w-6"/>Withdraw funds from your wallet</CardTitle>
-            <CardDescription className="mt-1">A detailed breakdown of transactions for the selected day.</CardDescription>
+            <CardTitle className="text-2xl font-bold flex items-center"><Wallet className="mr-2 h-6 w-6"/>Daily Transaction Breakdown</CardTitle>
+            <CardDescription className="mt-1">A detailed breakdown of transactions for the selected day in your history.</CardDescription>
             <div className="mt-6 border rounded-md">
                 <Table>
                     <TableHeader>
@@ -80,7 +80,7 @@ export function PayoutHistoryTable({ transactions, deliveries }: PayoutHistoryTa
                         )}
                          {transactions.length > 0 && (
                             <TableRow className="bg-muted/50 font-bold">
-                                <TableCell colSpan={2}>Total Earned Today</TableCell>
+                                <TableCell colSpan={2}>Total Earned for Selected Day</TableCell>
                                 <TableCell className="text-right text-lg text-green-700">
                                     ₹{totalEarned.toFixed(2)}
                                 </TableCell>
