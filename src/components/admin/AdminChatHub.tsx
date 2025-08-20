@@ -148,6 +148,7 @@ export function AdminChatHub() {
        await updateDoc(sessionRef, {
            lastMessage: newMessage,
            lastUpdated: serverTimestamp(),
+           status: 'active' // Agent replied, now it's active from agent's POV
        });
     } catch (error) {
       console.error("Error sending message:", error);
@@ -261,8 +262,8 @@ export function AdminChatHub() {
                     </div>
                 ) : (
                     messages.map((msg) => (
-                    <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUser.uid ? "justify-end" : "justify-start")}>
-                        {msg.senderId !== currentUser.uid && (
+                    <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderRole === 'agent' ? "justify-end" : "justify-start")}>
+                        {msg.senderRole !== 'agent' && (
                             <Avatar className="h-8 w-8">
                                 <AvatarFallback>{selectedSession.userName?.substring(0,1).toUpperCase()}</AvatarFallback>
                             </Avatar>
@@ -270,15 +271,15 @@ export function AdminChatHub() {
                         <div
                             className={cn(
                                 "max-w-[70%] p-3 rounded-xl text-sm",
-                                msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                                msg.senderRole === 'agent' ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
                             )}
                         >
                             <p>{msg.message}</p>
-                            <p className={cn("text-xs mt-1", msg.senderId === currentUser.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+                            <p className={cn("text-xs mt-1", msg.senderRole === 'agent' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
                                 {formatMessageTimestamp(msg.timestamp)}
                             </p>
                         </div>
-                        {msg.senderId === currentUser.uid && (
+                        {msg.senderRole === 'agent' && (
                             <Avatar className="h-8 w-8">
                                 <AvatarFallback className="bg-muted-foreground text-white">A</AvatarFallback>
                             </Avatar>

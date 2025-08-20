@@ -356,8 +356,8 @@ export default function OrderPage() {
               </>
             )}
 
-            <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete} onClick={() => router.push(`/communication?orderId=${order.id}`)}>
-              <MessageSquare className="mr-2 h-5 w-5" /> Contact Customer
+            <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete} onClick={() => router.push(`/chat?orderId=${order.id}`)}>
+              <MessageSquare className="mr-2 h-5 w-5" /> Contact Support
             </Button>
 
             {isOrderActive && (

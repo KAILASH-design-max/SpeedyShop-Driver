@@ -15,36 +15,47 @@ import { Button } from "@/components/ui/button";
 import { Send, Loader2, Bot, LifeBuoy } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, setDoc, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import type { User } from "firebase/auth";
 
 interface LiveChatProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   orderId: string;
-  currentUserId: string;
 }
 
-export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveChatProps) {
+export function LiveChat({ isOpen, onOpenChange, orderId }: LiveChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const chatSessionId = `order_${orderId}`; // Use a consistent ID format
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  
+  // Use a consistent ID format, now prefixed for clarity
+  const chatSessionId = `order_${orderId}`;
+
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
 
   // Function to ensure a support session for this order exists
   const ensureSupportSessionExists = async () => {
-    if (!orderId || !currentUserId) return;
+    if (!orderId || !currentUser) return;
     const sessionRef = doc(db, "supportMessages", chatSessionId);
     try {
         const docSnap = await getDoc(sessionRef);
         if (!docSnap.exists()) {
             await setDoc(sessionRef, {
-                userId: currentUserId,
+                userId: currentUser.uid,
                 orderId: orderId,
                 status: 'active',
                 createdAt: serverTimestamp(),
@@ -63,7 +74,7 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
     if (isOpen) {
       ensureSupportSessionExists();
     }
-  }, [isOpen, orderId, currentUserId]);
+  }, [isOpen, orderId, currentUser]);
 
 
   useEffect(() => {
@@ -101,13 +112,13 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (newMessage.trim() === "" || !currentUserId || isSending) return;
+    if (newMessage.trim() === "" || !currentUser || isSending) return;
     setIsSending(true);
 
     const userMessagePayload: Omit<ChatMessage, 'id'> = {
       message: newMessage,
-      senderId: currentUserId,
-      senderRole: 'user',
+      senderId: currentUser.uid,
+      senderRole: 'driver',
       timestamp: serverTimestamp(),
     };
     
@@ -158,18 +169,18 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
                     </div>
                 ) : (
                     messages.map((msg) => (
-                        <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUserId ? "justify-end" : "justify-start")}>
-                            {msg.senderId !== currentUserId && (
+                        <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUser?.uid ? "justify-end" : "justify-start")}>
+                            {msg.senderRole === 'agent' && (
                                 <Bot className="h-6 w-6 text-primary flex-shrink-0 self-start" />
                             )}
                             <div
                             className={cn(
                                 "max-w-[80%] p-3 rounded-xl text-sm",
-                                msg.senderId === currentUserId ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                                msg.senderRole === 'driver' ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
                             )}
                             >
                                 <p>{msg.message}</p>
-                                <p className={cn("text-xs mt-1", msg.senderId === currentUserId ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+                                <p className={cn("text-xs mt-1", msg.senderRole === 'driver' ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
                                     {formatMessageTimestamp(msg.timestamp)}
                                 </p>
                             </div>

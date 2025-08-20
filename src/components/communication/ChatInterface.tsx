@@ -55,8 +55,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
 
     const supportThreadsQuery = query(
         collection(db, "supportMessages"), 
-        where("userId", "==", currentUser.uid),
-        where("orderId", "==", null) // Only fetch chats without an orderId
+        where("userId", "==", currentUser.uid)
     );
 
     const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, async (snapshot) => {
