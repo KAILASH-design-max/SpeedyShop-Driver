@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, User, FileText, MessageSquare, Store, Home, Truck, ChevronRight, PackageCheck } from "lucide-react";
+import { MapPin, Package, User, FileText, MessageSquare, Store, Home, Truck, ChevronRight, PackageCheck, Navigation } from "lucide-react";
 import type { Order } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,27 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   }
   
   const currentStatus = statusInfo[order.orderStatus];
+
+  const getNavAction = () => {
+    switch (order.orderStatus) {
+        case 'accepted':
+        case 'arrived-at-store':
+            return {
+                href: `/navigate/${order.id}?destination=${encodeURIComponent(order.pickupLocation)}&type=pickup`,
+                text: "Navigate to Store"
+            };
+        case 'picked-up':
+        case 'out-for-delivery':
+             return {
+                href: `/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`,
+                text: "Navigate to Customer"
+            };
+        default:
+            return null;
+    }
+  }
+
+  const navAction = getNavAction();
 
   return (
     <Link href={`/orders/${order.id}`} className="block hover:no-underline group">
@@ -68,15 +89,24 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
             </CardContent>
 
             <CardFooter className="p-3 mt-auto border-t bg-muted/30">
-                <div className="flex justify-between items-center w-full">
+                <div className="flex justify-between items-center w-full gap-2">
                      <Button variant="ghost" size="sm" aria-label="Chat with customer" onClick={handleCustomerChatClick}>
                         <MessageSquare className="mr-2 h-4 w-4" />
                         Chat
                     </Button>
-                    <div className="flex items-center text-primary font-semibold text-sm group-hover:underline">
-                        View Details
-                        <ChevronRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
-                    </div>
+                    {navAction ? (
+                        <Button asChild size="sm" onClick={(e) => e.stopPropagation()}>
+                            <Link href={navAction.href}>
+                                <Navigation className="mr-2 h-4 w-4" />
+                                {navAction.text}
+                            </Link>
+                        </Button>
+                    ) : (
+                         <div className="flex items-center text-primary font-semibold text-sm group-hover:underline">
+                            View Details
+                            <ChevronRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
+                        </div>
+                    )}
                 </div>
             </CardFooter>
         </Card>
