@@ -38,7 +38,7 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
       <CardHeader className="pb-4">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-2xl font-bold text-primary">Order #{order.id.substring(0,8)}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-primary">Order #{order.id}</CardTitle>
             <CardDescription className="mt-1">Detailed delivery summary</CardDescription>
           </div>
           <Badge variant="outline" className={cn("text-sm capitalize font-semibold", getStatusBadgeClass(order.orderStatus))}>

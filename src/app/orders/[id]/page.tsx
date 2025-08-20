@@ -166,7 +166,7 @@ export default function OrderPage() {
       try {
         const orderRef = doc(db, "orders", order.id);
         await updateDoc(orderRef, { orderStatus: "picked-up" });
-        toast({ title: "Pickup Confirmed", description: `Order ${order.id.substring(0,8)} marked as picked-up.`, className: "bg-blue-500 text-white" });
+        toast({ title: "Pickup Confirmed", description: `Order #${order.id} marked as picked-up.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error confirming pickup:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not confirm pickup." });
@@ -182,7 +182,7 @@ export default function OrderPage() {
       try {
         const orderRef = doc(db, "orders", order.id);
         await updateDoc(orderRef, { orderStatus: "out-for-delivery" });
-        toast({ title: "Out for Delivery", description: `Order ${order.id.substring(0,8)} is now out for delivery.`, className: "bg-blue-500 text-white" });
+        toast({ title: "Out for Delivery", description: `Order #${order.id} is now out for delivery.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting out for delivery:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not update status." });
@@ -225,7 +225,7 @@ export default function OrderPage() {
 
         await updateDoc(orderRef, updateData);
 
-        toast({ title: "Delivery Confirmed!", description: `Order ${order.id.substring(0,8)} marked as delivered.`, className: "bg-green-500 text-white" });
+        toast({ title: "Delivery Confirmed!", description: `Order #${order.id} marked as delivered.`, className: "bg-green-500 text-white" });
         // We no longer redirect, so the user can see the confirmation on this page.
         // router.push("/dashboard"); 
       } catch (error) {

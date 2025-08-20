@@ -80,7 +80,7 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
                   [order.userId]: order.customerName || "Customer",
               },
               participantAvatars: {},
-              lastMessage: `Conversation about order #${order.id.substring(0,6)} started.`,
+              lastMessage: `Conversation about order #${order.id} started.`,
               lastMessageTimestamp: serverTimestamp(),
               orderId: order.id,
           });
@@ -188,7 +188,7 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
               <div>
                 <DialogTitle>Customer Chat</DialogTitle>
                 <DialogDescription>
-                  Chatting about order #ORD{order.id.substring(0, 6).toUpperCase()}
+                  Chatting about order #{order.id}
                 </DialogDescription>
               </div>
               <div className="flex items-center gap-2">

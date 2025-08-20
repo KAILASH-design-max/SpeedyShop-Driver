@@ -223,7 +223,7 @@ export function AdminChatHub() {
                                             <Badge variant="outline" className={cn("capitalize text-xs font-normal", getStatusBadgeClass(session.status))}>
                                                 {session.status || 'Active'}
                                             </Badge>
-                                            {session.orderId && <Badge variant="secondary" className="font-normal">#{session.orderId.substring(0,6)}</Badge>}
+                                            {session.orderId && <Badge variant="secondary" className="font-normal">#{session.orderId}</Badge>}
                                         </div>
                                     </div>
                                 </div>

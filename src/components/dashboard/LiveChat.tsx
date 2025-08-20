@@ -49,7 +49,7 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
                 status: 'active',
                 createdAt: serverTimestamp(),
                 lastUpdated: serverTimestamp(),
-                lastMessage: `Support chat initiated for order #${orderId.substring(0,6)}`,
+                lastMessage: `Support chat initiated for order #${orderId}`,
             });
         }
     } catch (error) {
@@ -145,7 +145,7 @@ export function LiveChat({ isOpen, onOpenChange, orderId, currentUserId }: LiveC
                     Support Chat
                 </DialogTitle>
                 <DialogDescription>
-                    Chatting about order #{orderId.substring(0, 6)}
+                    Chatting about order #{orderId}
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>

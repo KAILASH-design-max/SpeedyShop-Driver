@@ -66,7 +66,7 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
                         </CardTitle>
                     </div>
                     <Badge variant={"secondary"} className="capitalize">
-                        #{order.id.substring(0, 6)}
+                        #{order.id}
                     </Badge>
                 </CardHeader>
             )}

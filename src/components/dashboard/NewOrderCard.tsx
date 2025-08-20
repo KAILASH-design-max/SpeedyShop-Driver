@@ -64,7 +64,7 @@ export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCa
       });
       toast({
         title: "Order Accepted!",
-        description: `Order #${order.id.substring(0,8)} has been moved to your active orders.`,
+        description: `Order #${order.id} has been moved to your active orders.`,
         className: "bg-green-500 text-white",
       });
       onOrderAction();
@@ -82,7 +82,7 @@ export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCa
   const handleDecline = (isTimeout = false) => {
     toast({
         title: isTimeout ? "Order Timed Out" : "Order Declined",
-        description: `You have declined order #${order.id.substring(0,8)}.`,
+        description: `You have declined order #${order.id}.`,
     });
     onOrderAction();
   };
@@ -101,7 +101,7 @@ export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCa
         <div className="p-6 pt-0 text-center space-y-4">
             <div>
                 <p className="text-sm text-muted-foreground">Order ID</p>
-                <p className="text-lg font-bold">ORD{order.id.substring(0,5).toUpperCase()}</p>
+                <p className="text-lg font-bold">#{order.id}</p>
             </div>
             
             <Card className="text-left w-full bg-muted/30">

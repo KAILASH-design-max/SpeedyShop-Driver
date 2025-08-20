@@ -135,7 +135,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
         const deliveryTransactions: Transaction[] = deliveriesToDisplay
             .filter(d => d.orderStatus === 'delivered')
             .map(d => ({
-                title: `Delivery Pay (Order #${d.id.substring(0,6)})`,
+                title: `Delivery Pay (Order #${d.id})`,
                 transactionId: `${d.id}-delivery`,
                 type: 'Delivery',
                 amount: d.estimatedEarnings || 0
@@ -174,7 +174,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                     const rating = doc.data() as DeliveryRating;
                     if(rating.tip && rating.tip > 0) {
                         tipTransactions.push({
-                            title: `Customer Tip (Order #${rating.orderId.substring(0,6)})`,
+                            title: `Customer Tip (Order #${rating.orderId})`,
                             transactionId: `${rating.orderId}-tip`,
                             type: 'Tip',
                             amount: rating.tip
@@ -306,7 +306,7 @@ export function RecentDeliveries({ onDeliveriesFetched, onTransactionsCalculated
                     <TableRow key={delivery.id}>
                         <TableCell className="font-medium">
                            <Link href={`/orders/${delivery.id}`} className="flex items-center gap-1 text-primary hover:underline">
-                             #{delivery.id.substring(0, 6)} <Link2 size={12}/>
+                             #{delivery.id} <Link2 size={12}/>
                            </Link>
                         </TableCell>
                         <TableCell>{delivery.customerName}</TableCell>
