@@ -4,105 +4,51 @@
 import { useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { BatteryWarning, WifiOff } from 'lucide-react';
+import { useDeviceStatus } from '@/hooks/use-device-status';
 
 export function DeviceStatusMonitor() {
   const { toast } = useToast();
+  const { batteryStatus, gpsStatus } = useDeviceStatus();
   const hasShownBatteryWarning = useRef(false);
   const hasShownGpsWarning = useRef(false);
 
   useEffect(() => {
-    // --- Battery Status Check ---
-    const checkBattery = async () => {
-      if ('getBattery' in navigator) {
-        try {
-          const battery = await (navigator as any).getBattery();
-          
-          const handleBatteryChange = () => {
-            // Using 15% threshold as requested
-            if (!battery.charging && battery.level < 0.15) { 
-              if (!hasShownBatteryWarning.current) {
-                toast({
-                  variant: "destructive",
-                  title: "Low Battery Warning",
-                  description: `Your battery is at ${(battery.level * 100).toFixed(0)}%. Please connect to a power source.`,
-                  duration: 10000,
-                  action: <BatteryWarning className="text-white" />
-                });
-                hasShownBatteryWarning.current = true;
-              }
-            } else if (battery.charging || battery.level >= 0.15) {
-                // Reset the warning if the condition is no longer met
-                hasShownBatteryWarning.current = false;
-            }
-          };
-
-          handleBatteryChange(); // Initial check
-          battery.addEventListener('levelchange', handleBatteryChange);
-          battery.addEventListener('chargingchange', handleBatteryChange);
-
-          return () => {
-            battery.removeEventListener('levelchange', handleBatteryChange);
-            battery.removeEventListener('chargingchange', handleBatteryChange);
-          };
-        } catch (err) {
-            console.warn("Could not access Battery Status API.", err);
+    if (batteryStatus) {
+      if (!batteryStatus.charging && batteryStatus.level < 0.15) {
+        if (!hasShownBatteryWarning.current) {
+          toast({
+            variant: "destructive",
+            title: "Low Battery Warning",
+            description: `Your battery is at ${(batteryStatus.level * 100).toFixed(0)}%. Please connect to a power source.`,
+            duration: 10000,
+            action: <BatteryWarning className="text-white" />
+          });
+          hasShownBatteryWarning.current = true;
         }
+      } else if (batteryStatus.charging || batteryStatus.level >= 0.15) {
+        hasShownBatteryWarning.current = false;
       }
-    };
-
-    // --- GPS Status Check ---
-    const checkGps = async () => {
-      if ('permissions' in navigator) {
-        try {
-          const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-
-          const handleGpsChange = () => {
-            if (permissionStatus.state === 'denied') {
-              if (!hasShownGpsWarning.current) {
-                toast({
-                  variant: "destructive",
-                  title: "GPS Access Denied",
-                  description: "Location tracking is required for deliveries. Please enable location permissions.",
-                  duration: 10000,
-                  action: <WifiOff className="text-white" />
-                });
-                hasShownGpsWarning.current = true;
-              }
-            } else if (permissionStatus.state === 'granted') {
-                hasShownGpsWarning.current = false;
-            }
-          };
-
-          handleGpsChange(); // Initial check
-          permissionStatus.onchange = handleGpsChange;
-
-          return () => {
-            permissionStatus.onchange = null;
-          };
-
-        } catch (err) {
-            console.warn("Could not access Geolocation Permissions API.", err);
-        }
-      }
-    };
-    
-    let batteryCleanup: (() => void) | undefined;
-    let gpsCleanup: (() => void) | undefined;
-    
-    const runChecks = async () => {
-        const cleanupBat = await checkBattery();
-        const cleanupGps = await checkGps();
-        batteryCleanup = cleanupBat;
-        gpsCleanup = cleanupGps;
     }
-    
-    runChecks();
+  }, [batteryStatus, toast]);
 
-    return () => {
-        if (batteryCleanup) batteryCleanup();
-        if (gpsCleanup) gpsCleanup();
-    };
-  }, [toast]);
+  useEffect(() => {
+    if (gpsStatus) {
+      if (gpsStatus === 'denied') {
+        if (!hasShownGpsWarning.current) {
+          toast({
+            variant: "destructive",
+            title: "GPS Access Denied",
+            description: "Location tracking is required for deliveries. Please enable location permissions.",
+            duration: 10000,
+            action: <WifiOff className="text-white" />
+          });
+          hasShownGpsWarning.current = true;
+        }
+      } else {
+        hasShownGpsWarning.current = false;
+      }
+    }
+  }, [gpsStatus, toast]);
 
   return null; // This component does not render any UI itself
 }
