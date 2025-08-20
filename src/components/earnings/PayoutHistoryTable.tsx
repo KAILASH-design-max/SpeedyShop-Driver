@@ -13,14 +13,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Wallet } from "lucide-react";
-import type { Order } from "@/types";
-
-export interface Transaction {
-  title: string;
-  transactionId: string;
-  type: 'Delivery' | 'Tip' | 'Bonus' | 'Adjustment';
-  amount: number;
-}
+import type { Order, Transaction } from "@/types";
 
 interface PayoutHistoryTableProps {
     transactions: Transaction[];

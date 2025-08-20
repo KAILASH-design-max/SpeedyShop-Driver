@@ -251,3 +251,10 @@ export const GetEarningsForecastOutputSchema = z.object({
   forecastInsight: z.string().describe("A brief, encouraging insight about the forecast, explaining why it might be higher or lower than average."),
 });
 export type GetEarningsForecastOutput = z.infer<typeof GetEarningsForecastOutputSchema>;
+
+export interface Transaction {
+  title: string;
+  transactionId: string;
+  type: 'Delivery' | 'Tip' | 'Bonus' | 'Adjustment';
+  amount: number;
+}
