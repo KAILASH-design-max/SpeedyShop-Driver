@@ -162,7 +162,7 @@ export default function DashboardPage() {
     const newOrdersQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", null),
-      where("orderStatus", "==", "Placed")
+      where("status", "==", "Placed")
     );
     
     const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {

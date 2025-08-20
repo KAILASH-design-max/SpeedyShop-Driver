@@ -5,7 +5,8 @@ import type { Order, OrderItem } from '@/types';
 
 export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Order> => {
   const data = docSnap.data();
-  const address = data.address || {};
+  // New structure uses deliveryAddress map
+  const address = data.deliveryAddress || {};
   
   let items: OrderItem[] = [];
   if (Array.isArray(data.items)) {
@@ -27,21 +28,13 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   if (dropOffLocationString === ',' || !dropOffLocationString) dropOffLocationString = "N/A";
 
   // Use top-level 'name' from the order document as the primary source for customer name.
-  // The 'name' inside the address object is also a fallback.
-  let customerName = data.name || address.name || "Customer";
-  if (!customerName && data.userId) {
-    try {
-      const userDoc = await getDoc(doc(db, "users", data.userId));
-      if (userDoc.exists()) {
-        customerName = userDoc.data().name || "Customer";
-      }
-    } catch (e) {
-      console.error(`Failed to fetch user ${data.userId}`, e);
-    }
-  }
+  let customerName = data.name || "Customer";
 
   // Use deliveryCharge for earnings.
   const estimatedEarnings = data.deliveryCharge ?? 0;
+  
+  // Map the new status field to orderStatus
+  const orderStatus = data.status || "Placed";
 
   return {
     id: docSnap.id,
@@ -49,13 +42,13 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     pickupLocation: "GrocerMart", // Default pickup location
     dropOffLocation: dropOffLocationString,
     items: items,
-    orderStatus: data.orderStatus || "Placed",
+    orderStatus: orderStatus,
     estimatedEarnings: estimatedEarnings,
     deliveryCharge: data.deliveryCharge,
     total: data.totalAmount, // Use totalAmount from the provided structure
     estimatedTime: 30, // Default estimated time
     deliveryInstructions: data.deliveryInstructions,
-    customerContact: data.phoneNumber || address.phoneNumber,
+    customerContact: data.phoneNumber,
     deliveryPartnerId: data.deliveryPartnerId,
     completedAt: data.completedAt || data.orderDate, // Fallback to orderDate if completedAt is missing
     noContactDelivery: data.noContactDelivery ?? false,
