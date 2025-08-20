@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Announcements } from "@/components/community/Announcements";
