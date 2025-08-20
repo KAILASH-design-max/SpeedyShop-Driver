@@ -11,6 +11,7 @@ import type { Profile } from "@/types";
 import { cn } from "@/lib/utils";
 import { ProfileForm } from "./ProfileForm";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileDetailsProps {
     profile: Profile;
@@ -31,6 +32,14 @@ const getStatusBadgeClass = (isVerified?: boolean) => {
 }
 
 export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
+    const { toast } = useToast();
+
+    const handleTaxStatementClick = () => {
+        toast({
+            title: "Feature Coming Soon",
+            description: "Downloading tax statements will be available in a future update.",
+        });
+    };
 
     const vehicleString = `${profile.vehicleType.charAt(0).toUpperCase() + profile.vehicleType.slice(1)} - ${profile.vehicleRegistrationNumber}`;
     const bankAccountNumberCensored = profile.bankDetails?.accountNumber ? `********${profile.bankDetails.accountNumber.slice(-4)}` : 'N/A';
@@ -108,7 +117,7 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                             <Switch id="auto-withdrawal" checked={profile.autoWithdrawalEnabled} onCheckedChange={(checked) => onUpdate({ autoWithdrawalEnabled: checked })}/>
                         </div>
                          <p className="text-xs text-muted-foreground -mt-2">Automatically process payouts every Tuesday.</p>
-                         <Button variant="outline" className="w-full">
+                         <Button variant="outline" className="w-full" onClick={handleTaxStatementClick}>
                             <Download className="mr-2 h-4 w-4"/> Tax Statements (Form 16)
                          </Button>
                     </CardContent>
