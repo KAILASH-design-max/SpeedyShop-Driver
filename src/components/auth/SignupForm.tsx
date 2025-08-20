@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import type { Profile } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -33,6 +34,9 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   vehicleType: z.enum(["bike", "scooter", "car"], { required_error: "Please select a vehicle type." }),
   vehicleRegistrationNumber: z.string().min(2, { message: "Vehicle registration number is required." }),
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the terms and conditions to continue." }),
+  }),
 });
 
 export function SignupForm() {
@@ -47,6 +51,7 @@ export function SignupForm() {
       email: "",
       password: "",
       vehicleRegistrationNumber: "",
+      termsAccepted: false,
     },
   });
 
@@ -77,6 +82,7 @@ export function SignupForm() {
           accountNumber: "",
           ifscCode: ""
         },
+        termsAccepted: values.termsAccepted,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         availabilityStatus: 'offline', // Default availability status
@@ -199,6 +205,35 @@ export function SignupForm() {
                 Document uploads will be handled on your profile page after signup.
               </FormDescription>
             </FormItem>
+            <FormField
+              control={form.control}
+              name="termsAccepted"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      I agree to the{" "}
+                      <Link href="/terms" target="_blank" className="font-medium text-primary hover:underline">
+                        Terms & Conditions
+                      </Link>{" "}
+                      and{" "}
+                       <Link href="/terms" target="_blank" className="font-medium text-primary hover:underline">
+                        Privacy Policy
+                      </Link>
+                      .
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
              {isLoading ? "Signing up..." : <><UserPlus className="mr-2 h-5 w-5" /> Sign Up</>}
             </Button>

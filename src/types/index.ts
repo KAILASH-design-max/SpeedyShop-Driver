@@ -139,6 +139,7 @@ export interface Profile {
   documents: ProfileDocuments;
   bankDetails?: BankDetails;
   autoWithdrawalEnabled?: boolean;
+  termsAccepted?: boolean;
 
   // Timestamps
   createdAt?: string; // ISO string
