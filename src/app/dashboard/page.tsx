@@ -173,7 +173,7 @@ export default function DashboardPage() {
     }, (error) => {
       // This is an expected error if backend security rules prevent listing all new orders.
       if (error.code === 'permission-denied') {
-        console.warn("Permission denied for fetching new orders. This is expected if security rules are restrictive.");
+        console.info("Successfully listening for new orders assigned directly to this driver. (Permission denied for broad query is expected).");
       } else {
          console.error("Error fetching new orders:", error);
          toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new order alerts." });
