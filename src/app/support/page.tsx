@@ -26,7 +26,9 @@ export default function SupportPage() {
                 <Link href="/training" passHref>
                     <Button variant="outline" className="w-full justify-start"><Info className="mr-2 h-4 w-4" />Training & Tutorials</Button>
                 </Link>
-                <Button variant="outline" className="w-full justify-start"><Siren className="mr-2 h-4 w-4"/>Terms of Service</Button>
+                <Link href="/terms" passHref>
+                    <Button variant="outline" className="w-full justify-start"><Siren className="mr-2 h-4 w-4"/>Terms of Service</Button>
+                </Link>
                 <Button variant="outline" className="w-full justify-start"><ShieldCheck className="mr-2 h-4 w-4" />Privacy Policy</Button>
             </CardContent>
           </Card>
