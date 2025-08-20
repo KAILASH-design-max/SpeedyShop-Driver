@@ -161,14 +161,15 @@ export default function DashboardPage() {
     setLoadingNew(true);
     const newOrdersQuery = query(
       collection(db, "orders"),
-      where("deliveryPartnerId", "==", null),
       where("status", "==", "Placed")
     );
     
     const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
       const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
       const ordersData = await Promise.all(ordersDataPromises);
-      setNewOrders(ordersData);
+      // Filter out any orders that already have a delivery partner, in case of race conditions
+      const trulyNewOrders = ordersData.filter(order => !order.deliveryPartnerId);
+      setNewOrders(trulyNewOrders);
       setLoadingNew(false);
     }, (error) => {
       // This is an expected error if backend security rules prevent listing all new orders.
