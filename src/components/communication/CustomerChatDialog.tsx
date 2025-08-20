@@ -65,9 +65,9 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
       const threadSnap = await getDoc(threadRef);
 
       if (!threadSnap.exists()) {
+          // Prevent creating a chat where the driver and customer are the same user, which can happen in testing.
           if (!order.userId || driver.uid === order.userId) {
-              console.error("Cannot create chat thread: Invalid customer ID.");
-              toast({ variant: "destructive", title: "Chat Error", description: "Could not initiate chat due to invalid participant IDs." });
+              console.warn("Skipping chat thread creation: driver and customer are the same user.");
               return;
           }
 
