@@ -29,8 +29,8 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   let customerName = data.name || "Customer";
   const estimatedEarnings = data.deliveryCharge ?? 0;
   
-  // Clean up the status string: trim whitespace, convert to lowercase, and standardize.
-  let rawStatus = data.orderStatus || data.status || "Placed";
+  // Use the 'status' field from Firestore and standardize it.
+  let rawStatus = data.status || "Placed";
   rawStatus = rawStatus.trim().toLowerCase();
   
   let orderStatus: Order['orderStatus'];
