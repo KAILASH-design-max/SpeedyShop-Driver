@@ -4,30 +4,26 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Clock, Loader2, Store, Home, ShoppingBasket, X, Check, Package } from "lucide-react";
+import { Clock, Loader2, Store, Home, ShoppingBasket, X, Check, Package, ThumbsUp } from "lucide-react";
 import type { Order } from "@/types";
-import { db } from "@/lib/firebase";
-import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
-import { Progress } from "@/components/ui/progress";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface NewOrderCardProps {
   order: Order;
-  currentUserId: string;
-  onOrderAction: (orderId: string) => void;
-  onOrderAccept: (acceptedOrder: Order) => void;
+  onDismiss: () => void;
 }
 
 // Data URI for a simple notification sound (a short, soft beep)
 const notificationSound = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 
-export function NewOrderCard({ order, currentUserId, onOrderAction, onOrderAccept }: NewOrderCardProps) {
+export function NewOrderCard({ order, onDismiss }: NewOrderCardProps) {
   const { toast } = useToast();
-  const [isAccepting, setIsAccepting] = useState(false);
-  const [countdown, setCountdown] = useState(30);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const router = useRouter();
 
   // Effect to play notification sound when the dialog opens
   useEffect(() => {
@@ -38,70 +34,20 @@ export function NewOrderCard({ order, currentUserId, onOrderAction, onOrderAccep
         });
     }
   }, []);
-
-
-  useEffect(() => {
-    if (isAccepting) return;
-
-    if (countdown <= 0) {
-      handleDecline(true); // Auto-decline when timer runs out
-      return;
-    }
-
-    const timerId = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(timerId);
-  }, [countdown, isAccepting]);
-
-  const handleAccept = async () => {
-    setIsAccepting(true);
-    try {
-      const orderRef = doc(db, "orders", order.id);
-      await updateDoc(orderRef, { 
-        orderStatus: "accepted",
-        deliveryPartnerId: currentUserId
-      });
-
-      const acceptedOrder = { ...order, orderStatus: "accepted" as const, deliveryPartnerId: currentUserId };
-      onOrderAccept(acceptedOrder);
-
-      toast({
-        title: "Order Accepted!",
-        description: `Order #${order.id} has been moved to your active orders.`,
-        className: "bg-green-500 text-white",
-      });
-      onOrderAction(order.id);
-    } catch (error) {
-      console.error("Error accepting order:", error);
-      toast({
-        variant: "destructive",
-        title: "Acceptance Failed",
-        description: "Could not accept the order. It may have been taken by another driver.",
-      });
-      setIsAccepting(false); // Allow retry if failed
-    }
-  };
-
-  const handleDecline = (isTimeout = false) => {
-    toast({
-        title: isTimeout ? "Order Timed Out" : "Order Declined",
-        description: `You have declined order #${order.id}.`,
-    });
-    onOrderAction(order.id);
-  };
   
   const displayItems = order.items.map(item => `${item.quantity}x ${item.name}`).join(", ");
 
   return (
-    <Dialog open={true} onOpenChange={(isOpen) => { if(!isOpen) handleDecline(false) }}>
+    <Dialog open={true} onOpenChange={(isOpen) => { if(!isOpen) onDismiss() }}>
       <DialogContent className="sm:max-w-lg p-0" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader className="p-6 pb-2">
             <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center">
                 <Package className="mr-3 h-8 w-8 text-primary" />
                  New Delivery Assignment
             </DialogTitle>
+             <CardDescription className="text-center pt-2">
+                A new order has been assigned to you.
+             </CardDescription>
         </DialogHeader>
         <div className="p-6 pt-0 text-center space-y-4">
             <div>
@@ -144,18 +90,11 @@ export function NewOrderCard({ order, currentUserId, onOrderAction, onOrderAccep
 
         </div>
         <CardFooter className="flex flex-col items-center justify-between gap-2 p-4 pt-0 bg-muted/50">
-            <div className="flex items-center gap-4 w-full">
-                <Button onClick={() => handleDecline(false)} variant="destructive" className="flex-1 bg-red-500 hover:bg-red-600 h-12 text-base font-bold" disabled={isAccepting}>
-                  <X className="mr-2 h-5 w-5"/> Reject
+            <Link href={`/orders/${order.id}`} className="w-full">
+                <Button className="w-full bg-green-500 hover:bg-green-600 text-white h-12 text-base font-bold">
+                  <ThumbsUp className="mr-2 h-5 w-5" /> View Order Details
                 </Button>
-                <Button onClick={handleAccept} className="flex-1 bg-green-500 hover:bg-green-600 text-white h-12 text-base font-bold" disabled={isAccepting}>
-                  {isAccepting ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="mr-2 h-5 w-5" /> Accept</>}
-                </Button>
-            </div>
-             <div className="w-full mt-4">
-                 <Progress value={(countdown / 30) * 100} className="h-2" />
-                 <p className="text-center text-sm text-muted-foreground mt-2">Auto-rejecting in 00:{countdown.toString().padStart(2, '0')}</p>
-            </div>
+            </Link>
         </CardFooter>
       </DialogContent>
     </Dialog>

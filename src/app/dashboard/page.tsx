@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
 import { PackageCheck, Loader2 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, limit } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
@@ -18,14 +18,12 @@ export default function DashboardPage() {
   
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [loadingActive, setLoadingActive] = useState(true);
-  const [newOrder, setNewOrder] = useState<Order | null>(null);
-  const [ignoredOrderId, setIgnoredOrderId] = useState<string | null>(null);
-  const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus']>();
-
+  const [newlyAssignedOrder, setNewlyAssignedOrder] = useState<Order | null>(null);
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
   const { toast } = useToast();
+  const previousOrderIds = useRef(new Set());
 
   useEffect(() => {
     // Load active orders from cache on initial render
@@ -50,20 +48,7 @@ export default function DashboardPage() {
     return () => unsubscribeAuth();
   }, []);
 
-  useEffect(() => {
-    if(currentUser) {
-       const profileRef = doc(db, "users", currentUser.uid);
-       const unsubscribe = onSnapshot(profileRef, (docSnap) => {
-           if (docSnap.exists()) {
-               const profileData = docSnap.data() as Profile;
-               setAvailabilityStatus(profileData.availabilityStatus);
-           }
-       });
-       return () => unsubscribe();
-    }
-  }, [currentUser]);
-
-  // Listener for ACTIVE orders
+  // Listener for ACTIVE orders assigned to the current user
   useEffect(() => {
     if (!currentUser) {
       setActiveOrders([]);
@@ -80,76 +65,49 @@ export default function DashboardPage() {
 
     const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
       const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-      const ordersData = await Promise.all(ordersDataPromises);
-      setActiveOrders(ordersData);
+      const newOrdersData = await Promise.all(ordersDataPromises);
+      
+      // Check for a new order that wasn't in the previous list
+      const brandNewOrder = newOrdersData.find(order => 
+          !previousOrderIds.current.has(order.id) && order.orderStatus === 'accepted'
+      );
+
+      if (brandNewOrder) {
+          setNewlyAssignedOrder(brandNewOrder);
+      }
+
+      setActiveOrders(newOrdersData);
+      
+      // Update the set of previous order IDs
+      previousOrderIds.current = new Set(newOrdersData.map(o => o.id));
+
       setLoadingActive(false);
       try {
-        localStorage.setItem('activeOrdersCache', JSON.stringify(ordersData));
+        localStorage.setItem('activeOrdersCache', JSON.stringify(newOrdersData));
       } catch (error) {
         console.error("Failed to cache active orders:", error);
       }
     }, (error) => {
       console.error("Error fetching active orders:", error);
+      if (error.code === 'permission-denied') {
+          toast({
+              variant: "destructive",
+              title: "Permission Error",
+              description: "You do not have permission to view active orders. Please contact support."
+          });
+      }
       setLoadingActive(false);
     });
 
     return () => unsubscribeActive();
-  }, [currentUser]);
-
-  // Listener for NEW unassigned orders
-  useEffect(() => {
-    if (availabilityStatus !== 'online' || !currentUser) {
-        if(newOrder) setNewOrder(null);
-        return;
-    };
-    
-    const newOrdersQuery = query(
-      collection(db, "orders"),
-      where("orderStatus", "==", "Placed"),
-      limit(10) // Fetch a few potential orders
-    );
-
-    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
-      // Find the first document that does NOT have a deliveryPartnerId.
-      const unassignedDoc = snapshot.docs.find(doc => !doc.data().deliveryPartnerId);
-
-      if (unassignedDoc) {
-        if (unassignedDoc.id === ignoredOrderId) {
-            return;
-        }
-        const mappedOrder = await mapFirestoreDocToOrder(unassignedDoc);
-        setNewOrder(mappedOrder);
-      } else {
-        setNewOrder(null);
-      }
-    }, (error) => {
-      if (error.code !== 'permission-denied') {
-        console.error("Error fetching new orders:", error);
-      }
-    });
-
-    return () => unsubscribeNew();
-
-  }, [availabilityStatus, currentUser, ignoredOrderId]);
+  }, [currentUser, toast]);
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
   };
-
-  const handleOrderAction = (orderId: string) => {
-    setIgnoredOrderId(orderId);
-    setNewOrder(null);
-  }
   
-  const handleOrderAccept = (acceptedOrder: Order) => {
-     // Prevent adding duplicates. The real-time listener will also add the order.
-     setActiveOrders(prevOrders => {
-        if (prevOrders.some(o => o.id === acceptedOrder.id)) {
-            return prevOrders;
-        }
-        return [acceptedOrder, ...prevOrders];
-     });
-     handleOrderAction(acceptedOrder.id);
+  const handleNewOrderDismiss = () => {
+    setNewlyAssignedOrder(null);
   }
 
   const isLoading = loadingActive;
@@ -157,12 +115,10 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
 
-      {newOrder && currentUser && (
+      {newlyAssignedOrder && (
         <NewOrderCard 
-          order={newOrder} 
-          currentUserId={currentUser.uid} 
-          onOrderAction={handleOrderAction}
-          onOrderAccept={handleOrderAccept}
+          order={newlyAssignedOrder}
+          onDismiss={handleNewOrderDismiss}
         />
       )}
 
