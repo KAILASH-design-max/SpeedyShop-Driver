@@ -150,7 +150,7 @@ export default function OrderPage() {
 
     return () => stopWatching(); // Cleanup on component unmount or when order status changes
 
-  }, [order?.orderStatus, throttledLocationUpdate, toast]);
+  }, [order, throttledLocationUpdate, toast]);
 
   const handleAcceptOrder = async () => {
     if (order && order.orderStatus === "Placed") {
