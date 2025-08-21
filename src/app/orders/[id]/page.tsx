@@ -163,10 +163,10 @@ export default function OrderPage() {
         try {
             const orderRef = doc(db, "orders", order.id);
             await updateDoc(orderRef, { 
-                status: "accepted",
+                orderStatus: "accepted",
                 deliveryPartnerId: currentUser.uid,
             });
-            toast({ title: "Order Accepted!", description: `You can now proceed to the store.`, className: "bg-green-500 text-white" });
+            toast({ title: "Order Accepted!", description: `Order #${order.id} has been moved to your active orders.`, className: "bg-green-500 text-white" });
         } catch (error) {
             console.error("Error accepting order:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not accept order. It might have been taken." });
@@ -182,7 +182,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "arrived-at-store" });
+        await updateDoc(orderRef, { orderStatus: "arrived-at-store" });
         toast({ title: "Arrived at Store", description: `You have arrived at the pickup location.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting arrived at store:", error);
@@ -198,7 +198,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "picked-up" });
+        await updateDoc(orderRef, { orderStatus: "picked-up" });
         toast({ title: "Pickup Confirmed", description: `Order #${order.id} marked as picked-up.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error confirming pickup:", error);
@@ -214,7 +214,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "out-for-delivery" });
+        await updateDoc(orderRef, { orderStatus: "out-for-delivery" });
         toast({ title: "Out for Delivery", description: `Order #${order.id} is now out for delivery.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting out for delivery:", error);
@@ -230,7 +230,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "arrived" });
+        await updateDoc(orderRef, { orderStatus: "arrived" });
         toast({ title: "Arrived at Location", description: `You have arrived at the customer's location.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting arrived:", error);
@@ -248,7 +248,7 @@ export default function OrderPage() {
         const orderRef = doc(db, "orders", order.id);
 
         const updateData: any = {
-          status: "delivered",
+          orderStatus: "delivered",
           completedAt: serverTimestamp(),
         };
 
@@ -277,7 +277,7 @@ export default function OrderPage() {
       const orderRef = doc(db, "orders", order.id);
       await updateDoc(orderRef, {
         deliveryPartnerId: null,
-        status: "Placed",
+        orderStatus: "Placed",
       });
       toast({
         title: "Order Released",
