@@ -138,10 +138,10 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
     // Then filter by date range
     if (dateRange?.from) {
         deliveriesToDisplay = deliveriesToDisplay.filter(delivery => {
-            if (!delivery.completedAt?.toDate) return false;
-            const completedDate = delivery.completedAt.toDate();
+            const completedDate = delivery.completedAt?.toDate ? delivery.completedAt.toDate() : null;
+            if (!completedDate) return false;
             // Reset time to start of day for 'from' and end of day for 'to' for accurate range selection
-            const fromDate = new Date(dateRange.from.setHours(0, 0, 0, 0));
+            const fromDate = new Date(dateRange.from!.setHours(0, 0, 0, 0));
             const toDate = dateRange.to ? new Date(dateRange.to.setHours(23, 59, 59, 999)) : new Date(fromDate.setHours(23, 59, 59, 999));
             return completedDate >= fromDate && completedDate <= toDate;
         });
