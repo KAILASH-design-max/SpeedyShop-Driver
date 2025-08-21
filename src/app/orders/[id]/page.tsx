@@ -8,7 +8,7 @@ import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin, Map } from "lucide-react";
+import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin, Map, LayoutDashboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -149,7 +149,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "arrived-at-store" });
+        await updateDoc(orderRef, { status: "arrived-at-store" });
         toast({ title: "Arrived at Store", description: `You have arrived at the pickup location.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting arrived at store:", error);
@@ -165,7 +165,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "picked-up" });
+        await updateDoc(orderRef, { status: "picked-up" });
         toast({ title: "Pickup Confirmed", description: `Order #${order.id} marked as picked-up.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error confirming pickup:", error);
@@ -181,7 +181,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "out-for-delivery" });
+        await updateDoc(orderRef, { status: "out-for-delivery" });
         toast({ title: "Out for Delivery", description: `Order #${order.id} is now out for delivery.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting out for delivery:", error);
@@ -197,7 +197,7 @@ export default function OrderPage() {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "arrived" });
+        await updateDoc(orderRef, { status: "arrived" });
         toast({ title: "Arrived at Location", description: `You have arrived at the customer's location.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting arrived:", error);
@@ -215,7 +215,7 @@ export default function OrderPage() {
         const orderRef = doc(db, "orders", order.id);
 
         const updateData: any = {
-          orderStatus: "delivered",
+          status: "delivered",
           completedAt: serverTimestamp(),
         };
 
@@ -244,7 +244,7 @@ export default function OrderPage() {
       const orderRef = doc(db, "orders", order.id);
       await updateDoc(orderRef, {
         deliveryPartnerId: null,
-        orderStatus: "Placed",
+        status: "Placed",
       });
       toast({
         title: "Order Released",
@@ -315,6 +315,22 @@ export default function OrderPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
+            {order.orderStatus === "placed" && (
+                <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Order Not Accepted</AlertTitle>
+                    <AlertDescription>
+                        This order has not been accepted yet. Please go to your dashboard to find and accept new orders.
+                        <Button asChild className="w-full mt-4">
+                           <Link href="/dashboard">
+                                <LayoutDashboard className="mr-2 h-4 w-4" />
+                                Go to Dashboard
+                           </Link>
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            )}
+
             {order.orderStatus === "accepted" && (
               <>
                 <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>

@@ -34,7 +34,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   const estimatedEarnings = data.deliveryCharge ?? 0;
   
   // Map the new status field to orderStatus
-  const orderStatus = data.status || "Placed";
+  const orderStatus = data.status || "placed";
 
   return {
     id: docSnap.id,
@@ -42,7 +42,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     pickupLocation: "GrocerMart", // Default pickup location
     dropOffLocation: dropOffLocationString,
     items: items,
-    orderStatus: orderStatus,
+    orderStatus: orderStatus.toLowerCase() as Order['orderStatus'],
     estimatedEarnings: estimatedEarnings,
     deliveryCharge: data.deliveryCharge,
     total: data.totalAmount, // Use totalAmount from the provided structure
