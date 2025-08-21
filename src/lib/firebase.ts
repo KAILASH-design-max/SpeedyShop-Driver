@@ -8,24 +8,22 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-if (typeof window !== "undefined") {
-    // This code only runs on the client
+if (typeof window !== "undefined" && !getApps().length) {
     const firebaseConfigString = process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
     if (!firebaseConfigString) {
-        throw new Error("Firebase config not found in environment variables");
+        throw new Error("Firebase config not found in environment variables. Make sure NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG is set.");
     }
-    
     const firebaseConfig = JSON.parse(firebaseConfigString);
-
-    if (!getApps().length) {
-        app = initializeApp(firebaseConfig);
-    } else {
-        app = getApp();
-    }
-
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+} else if (typeof window !== "undefined") {
+    app = getApp();
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
 }
+
 
 export { app, auth, db, storage };
