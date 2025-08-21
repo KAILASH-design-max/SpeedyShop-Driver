@@ -41,10 +41,6 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
             <CardTitle className="text-2xl font-bold text-primary">Order #{order.id}</CardTitle>
             <CardDescription className="mt-1">Detailed delivery summary</CardDescription>
           </div>
-          <Badge variant="outline" className={cn("text-sm capitalize font-semibold", getStatusBadgeClass(order.orderStatus))}>
-            <Check className="mr-1 h-3.5 w-3.5" />
-            {order.orderStatus.replace(/-/g, ' ')}
-          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-6 pt-0">
