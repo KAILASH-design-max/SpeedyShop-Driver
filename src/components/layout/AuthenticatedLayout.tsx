@@ -42,11 +42,13 @@ import { useEffect, useState, useRef } from "react";
 import { endSession } from "@/lib/sessionManager";
 import { ActiveTimeTracker } from "@/components/dashboard/ActiveTimeTracker";
 import { ThemeToggle } from "./ThemeToggle";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Profile } from "@/types";
 import { DeviceStatusMonitor } from "./DeviceStatusMonitor";
 import { NotificationBell } from "./NotificationBell";
+import { AvailabilityToggle } from "../dashboard/AvailabilityToggle";
+
 
 const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -83,12 +85,16 @@ export default function AuthenticatedLayout({
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus'] | undefined>(undefined);
+  const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
         setCurrentUser(user);
         if(!user) {
             setProfile(null);
+            setIsAvailabilityLoading(false);
+            setAvailabilityStatus(undefined);
         }
     });
     return () => unsubscribeAuth();
@@ -98,21 +104,36 @@ export default function AuthenticatedLayout({
       if (currentUser) {
           const profileRef = doc(db, "users", currentUser.uid);
           const unsubscribe = onSnapshot(profileRef, (docSnap) => {
+              setIsAvailabilityLoading(true);
               if (docSnap.exists()) {
-                  setProfile(docSnap.data() as Profile);
+                  const profileData = docSnap.data() as Profile;
+                  setProfile(profileData);
+                  if (profileData.availabilityStatus === undefined) {
+                      updateDoc(profileRef, { availabilityStatus: 'offline' });
+                      setAvailabilityStatus('offline');
+                  } else {
+                      setAvailabilityStatus(profileData.availabilityStatus);
+                  }
               } else {
                   setProfile(null);
+                  setAvailabilityStatus('offline');
               }
+              setIsAvailabilityLoading(false);
+          }, (error) => {
+               console.error("Error fetching user profile for availability:", error);
+               setAvailabilityStatus('offline');
+               setIsAvailabilityLoading(false);
           });
           return () => unsubscribe();
+      } else {
+          setIsAvailabilityLoading(false);
+          setAvailabilityStatus(undefined);
       }
   }, [currentUser]);
 
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // This will attempt to end the session when the tab is closed.
-      // Note: This is not guaranteed to complete, especially on mobile browsers.
       endSession();
     };
 
@@ -122,6 +143,25 @@ export default function AuthenticatedLayout({
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
+  
+  const handleAvailabilityChange = async (newStatus: Required<Profile['availabilityStatus']>) => {
+    if (!currentUser) {
+      toast({ variant: "destructive", title: "Error", description: "Not logged in." });
+      return;
+    }
+    setIsAvailabilityLoading(true);
+    try {
+      const userDocRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userDocRef, { availabilityStatus: newStatus });
+      setAvailabilityStatus(newStatus);
+      toast({ title: "Status Updated", description: `You are now ${newStatus}.`, className: newStatus === 'online' ? "bg-green-500 text-white" : newStatus === 'on_break' ? "bg-yellow-500 text-black" : "" });
+    } catch (error) {
+      console.error("Error updating availability status:", error);
+      toast({ variant: "destructive", title: "Update Failed", description: "Could not update status." });
+    } finally {
+      setIsAvailabilityLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -210,7 +250,13 @@ export default function AuthenticatedLayout({
             <div className="flex items-center gap-4">
                 <MobileNav />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+                <ActiveTimeTracker />
+                 <AvailabilityToggle
+                    currentStatus={availabilityStatus}
+                    onStatusChange={handleAvailabilityChange}
+                    isLoading={isAvailabilityLoading}
+                />
                 <NotificationBell />
                 <ThemeToggle />
             </div>

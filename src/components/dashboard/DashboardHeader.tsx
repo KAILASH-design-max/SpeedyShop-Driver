@@ -1,27 +1,13 @@
 
 "use client";
 
-import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
-import type { Profile } from "@/types";
-import { ActiveTimeTracker } from "./ActiveTimeTracker";
+interface DashboardHeaderProps {}
 
-interface DashboardHeaderProps {
-  currentStatus: Profile['availabilityStatus'];
-  onStatusChange: (newStatus: Required<Profile['availabilityStatus']>) => void;
-  isLoading?: boolean;
-}
-
-export function DashboardHeader({ currentStatus, onStatusChange, isLoading }: DashboardHeaderProps) {
+export function DashboardHeader({}: DashboardHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row justify-end items-center gap-4 p-4 rounded-lg bg-card border">
-        <div className="flex items-center gap-4">
-            <ActiveTimeTracker />
-             <AvailabilityToggle
-                currentStatus={currentStatus}
-                onStatusChange={onStatusChange}
-                isLoading={isLoading}
-            />
-        </div>
+    <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 rounded-lg bg-card border">
+        <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+        <p className="text-muted-foreground">Manage your status and view active orders.</p>
     </div>
   );
 }

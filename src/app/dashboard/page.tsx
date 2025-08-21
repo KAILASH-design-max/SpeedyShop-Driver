@@ -16,8 +16,6 @@ import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus'] | undefined>(undefined);
-  const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(true);
   
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [loadingActive, setLoadingActive] = useState(true);
@@ -44,65 +42,12 @@ export default function DashboardPage() {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
       if (!user) {
-        setIsAvailabilityLoading(false);
-        setAvailabilityStatus(undefined);
         setActiveOrders([]);
         setLoadingActive(false);
       }
     });
     return () => unsubscribeAuth();
   }, []);
-
-  useEffect(() => {
-    if (currentUser) {
-      const userDocRef = doc(db, "users", currentUser.uid);
-      const unsubscribeProfile = onSnapshot(userDocRef, async (docSnap) => {
-        setIsAvailabilityLoading(true);
-        if (docSnap.exists()) {
-          const profileData = docSnap.data() as Profile;
-          if (profileData.availabilityStatus === undefined) {
-            await updateDoc(userDocRef, { availabilityStatus: 'offline' });
-            setAvailabilityStatus('offline');
-          } else {
-            setAvailabilityStatus(profileData.availabilityStatus);
-          }
-        } else {
-          setAvailabilityStatus('offline');
-           await setDoc(userDocRef, { availabilityStatus: 'offline' }, { merge: true });
-        }
-        setIsAvailabilityLoading(false);
-      }, (error) => {
-        console.error("Error fetching user profile for availability:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not load availability status." });
-        setAvailabilityStatus('offline');
-        setIsAvailabilityLoading(false);
-      });
-      return () => unsubscribeProfile();
-    } else {
-      setIsAvailabilityLoading(false);
-      setAvailabilityStatus(undefined); 
-    }
-  }, [currentUser, toast]);
-
-
-  const handleAvailabilityChange = async (newStatus: Required<Profile['availabilityStatus']>) => {
-    if (!currentUser) {
-      toast({ variant: "destructive", title: "Error", description: "Not logged in." });
-      return;
-    }
-    setIsAvailabilityLoading(true);
-    try {
-      const userDocRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userDocRef, { availabilityStatus: newStatus });
-      setAvailabilityStatus(newStatus);
-      toast({ title: "Status Updated", description: `You are now ${newStatus}.`, className: newStatus === 'online' ? "bg-green-500 text-white" : newStatus === 'on_break' ? "bg-yellow-500 text-black" : "" });
-    } catch (error) {
-      console.error("Error updating availability status:", error);
-      toast({ variant: "destructive", title: "Update Failed", description: "Could not update status." });
-    } finally {
-      setIsAvailabilityLoading(false);
-    }
-  };
 
   // Listener for ACTIVE orders
   useEffect(() => {
@@ -139,40 +84,49 @@ export default function DashboardPage() {
 
   // Listener for NEW unassigned orders
   useEffect(() => {
-    if (availabilityStatus !== 'online') {
-      if(newOrder) setNewOrder(null); // Clear any stale new order if user goes offline
-      return;
-    }
+    if (!currentUser) return;
+    
+    // This logic relies on the availability status from the AuthenticatedLayout now.
+    // For this to work seamlessly, we'd ideally use a global state manager (like Context or Zustand).
+    // For now, we'll assume the status check happens at a higher level and this just listens.
+    // A slight delay might occur if the status isn't propagated instantly.
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists() && docSnap.data().availabilityStatus === 'online') {
+            const newOrdersQuery = query(
+              collection(db, "orders"),
+              where("deliveryPartnerId", "==", null),
+              where("orderStatus", "==", "Placed"),
+              limit(1)
+            );
 
-    const newOrdersQuery = query(
-      collection(db, "orders"),
-      where("deliveryPartnerId", "==", null),
-      where("orderStatus", "==", "Placed"),
-      limit(1)
-    );
+            const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
+              if (!snapshot.empty) {
+                const orderDoc = snapshot.docs[0];
+                if (orderDoc.id === ignoredOrderId) {
+                    return;
+                }
 
-    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
-      if (!snapshot.empty) {
-        const orderDoc = snapshot.docs[0];
-        // Do not show the order if it has been ignored in the current session.
-        if (orderDoc.id === ignoredOrderId) {
-            return;
+                const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
+                setNewOrder(mappedOrder);
+              } else {
+                setNewOrder(null);
+              }
+            }, (error) => {
+              if (error.code !== 'permission-denied') {
+                console.error("Error fetching new orders:", error);
+              }
+            });
+            return () => unsubscribeNew();
+        } else {
+             if(newOrder) setNewOrder(null);
         }
-
-        const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
-        setNewOrder(mappedOrder);
-      } else {
-        setNewOrder(null);
-      }
-    }, (error) => {
-      if (error.code !== 'permission-denied') {
-        console.error("Error fetching new orders:", error);
-      }
     });
 
-    return () => unsubscribeNew();
 
-  }, [availabilityStatus, ignoredOrderId]);
+    return () => unsubscribeProfile();
+
+  }, [currentUser, ignoredOrderId, newOrder]);
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
@@ -183,15 +137,11 @@ export default function DashboardPage() {
     setNewOrder(null);
   }
 
-  const isLoading = isAvailabilityLoading || loadingActive;
+  const isLoading = loadingActive;
 
   return (
     <div className="p-6 space-y-6">
-      <DashboardHeader 
-        currentStatus={availabilityStatus}
-        onStatusChange={handleAvailabilityChange}
-        isLoading={isAvailabilityLoading}
-      />
+      <DashboardHeader />
 
       {newOrder && currentUser && (
         <NewOrderCard 
