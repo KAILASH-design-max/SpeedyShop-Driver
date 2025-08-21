@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { collection, onSnapshot, query, where, getDocs, doc } from "firebase/firestore";
+import { collection, onSnapshot, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { User } from "firebase/auth";
 
