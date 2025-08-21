@@ -16,13 +16,14 @@ interface NewOrderCardProps {
   order: Order;
   currentUserId: string;
   onOrderAction: (orderId: string) => void;
+  onOrderAccept: (acceptedOrder: Order) => void;
 }
 
 // Data URI for a simple notification sound (a short, soft beep)
 const notificationSound = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 
-export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCardProps) {
+export function NewOrderCard({ order, currentUserId, onOrderAction, onOrderAccept }: NewOrderCardProps) {
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
   const [countdown, setCountdown] = useState(30);
@@ -62,6 +63,10 @@ export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCa
         orderStatus: "accepted",
         deliveryPartnerId: currentUserId
       });
+
+      const acceptedOrder = { ...order, orderStatus: "accepted" as const, deliveryPartnerId: currentUserId };
+      onOrderAccept(acceptedOrder);
+
       toast({
         title: "Order Accepted!",
         description: `Order #${order.id} has been moved to your active orders.`,

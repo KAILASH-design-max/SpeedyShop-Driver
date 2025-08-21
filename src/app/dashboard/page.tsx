@@ -198,6 +198,9 @@ export default function DashboardPage() {
           order={newOrder} 
           currentUserId={currentUser.uid} 
           onOrderAction={() => handleOrderAction(newOrder.id)}
+          onOrderAccept={(acceptedOrder) => {
+            setActiveOrders(prevOrders => [acceptedOrder, ...prevOrders]);
+          }}
         />
       )}
 
