@@ -17,8 +17,10 @@ export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingActiveOrders, setLoadingActiveOrders] = useState(true);
+
   const [newOrder, setNewOrder] = useState<Order | null>(null);
+  const [loadingNewOrder, setLoadingNewOrder] = useState(true);
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
@@ -26,137 +28,111 @@ export default function DashboardPage() {
   const seenOrderIds = useRef(new Set<string>());
 
   useEffect(() => {
-    // Load active orders from cache on initial render
-    try {
-      const cachedActiveOrders = localStorage.getItem('activeOrdersCache');
-      if (cachedActiveOrders) {
-        const parsedOrders: Order[] = JSON.parse(cachedActiveOrders);
-        setActiveOrders(parsedOrders);
-        parsedOrders.forEach((o: Order) => seenOrderIds.current.add(o.id));
-      }
-    } catch (error) {
-      console.error("Failed to load cached active orders:", error);
-    }
-  }, []);
-
-  useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
       if (!user) {
         setActiveOrders([]);
-        setLoading(false);
         setNewOrder(null);
+        setLoadingActiveOrders(false);
+        setLoadingNewOrder(false);
       }
     });
     return () => unsubscribeAuth();
   }, []);
-  
-  // UNIFIED LISTENER FOR NEW AND ACTIVE ORDERS
+
+  // Dedicated listener for ACTIVE orders assigned to the driver
   useEffect(() => {
-      if (!currentUser) {
-          setLoading(false);
-          setActiveOrders([]);
-          setNewOrder(null);
-          return;
-      }
-  
-      setLoading(true);
-  
-      // This query gets all orders that are either assigned to the driver OR available for them to accept.
-      // NOTE: Firestore does not support logical OR queries on different fields.
-      // We must fetch both and merge them on the client. This is acceptable for a small number of drivers.
-      // For a larger scale app, a backend would manage a dedicated 'jobs' collection for each driver.
-  
-      const activeOrdersQuery = query(
-          collection(db, "orders"),
-          where("deliveryPartnerId", "==", currentUser.uid),
-          where("orderStatus", "in", ["accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
-      );
-  
-      const availableOrdersQuery = query(
-          collection(db, "orders"),
-          where("orderStatus", "==", "Placed"),
-          where("accessibleTo", "array-contains", currentUser.uid)
-      );
-  
-      const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
-          const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-          const newActiveOrders = await Promise.all(ordersDataPromises);
-          
-          setActiveOrders(newActiveOrders);
-          newActiveOrders.forEach(order => seenOrderIds.current.add(order.id));
-          
-          try {
-              localStorage.setItem('activeOrdersCache', JSON.stringify(newActiveOrders));
-          } catch (error) {
-              console.error("Failed to cache active orders:", error);
-          }
-          setLoading(false);
-      }, (error) => {
-          console.error("Error fetching active orders:", error);
-          if (error.code !== 'permission-denied') {
-              toast({ variant: "destructive", title: "Load Failed", description: "Could not load active orders."});
-          }
-          setLoading(false);
-      });
-  
-      const unsubscribeAvailable = onSnapshot(availableOrdersQuery, async (snapshot) => {
-          if (snapshot.empty) {
-              setNewOrder(null);
-              return;
-          }
-          
-          const assignedOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-          const assignedOrders = await Promise.all(assignedOrdersPromises);
-          
-          // Find the first available order that hasn't been seen/dismissed
-          const justAssignedOrder = assignedOrders.find(order => !seenOrderIds.current.has(order.id));
-  
-          if (justAssignedOrder) {
-              setNewOrder(justAssignedOrder);
-          } else {
-              setNewOrder(null);
-          }
-      }, (error) => {
-          console.error("Error fetching newly assigned orders:", error);
-          if (error.code !== 'permission-denied') {
-              toast({ variant: "destructive", title: "Notification Error", description: "Could not listen for new orders."});
-          }
-      });
-  
-      return () => {
-          unsubscribeActive();
-          unsubscribeAvailable();
-      };
-  
+    if (!currentUser) {
+      setLoadingActiveOrders(false);
+      return;
+    }
+
+    setLoadingActiveOrders(true);
+    const activeOrdersQuery = query(
+      collection(db, "orders"),
+      where("deliveryPartnerId", "==", currentUser.uid),
+      where("orderStatus", "in", ["accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
+    );
+
+    const unsubscribe = onSnapshot(activeOrdersQuery, async (snapshot) => {
+      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+      const newActiveOrders = await Promise.all(ordersDataPromises);
+      setActiveOrders(newActiveOrders);
+      setLoadingActiveOrders(false);
+    }, (error) => {
+      console.error("Error fetching active orders:", error);
+      toast({ variant: "destructive", title: "Load Failed", description: "Could not load active orders." });
+      setLoadingActiveOrders(false);
+    });
+
+    return () => unsubscribe();
   }, [currentUser, toast]);
 
+  // Dedicated listener for NEWLY AVAILABLE orders
+  useEffect(() => {
+    if (!currentUser) {
+      setLoadingNewOrder(false);
+      return;
+    }
+    setLoadingNewOrder(true);
+    const availableOrdersQuery = query(
+      collection(db, "orders"),
+      where("orderStatus", "==", "Placed"),
+      where("accessibleTo", "array-contains", currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(availableOrdersQuery, async (snapshot) => {
+      if (snapshot.empty) {
+        setNewOrder(null);
+        setLoadingNewOrder(false);
+        return;
+      }
+      
+      const assignedOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+      const assignedOrders = await Promise.all(assignedOrdersPromises);
+      
+      // Find the first available order that hasn't been seen/dismissed this session
+      const justAssignedOrder = assignedOrders.find(order => !seenOrderIds.current.has(order.id));
+
+      if (justAssignedOrder) {
+          setNewOrder(justAssignedOrder);
+      } else {
+          setNewOrder(null);
+      }
+      setLoadingNewOrder(false);
+    }, (error) => {
+      console.error("Error fetching newly assigned orders:", error);
+      toast({ variant: "destructive", title: "Notification Error", description: "Could not listen for new orders." });
+      setLoadingNewOrder(false);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, toast]);
 
   const handleOrderAccept = async (orderToAccept: Order) => {
-      if (!currentUser) return;
+    if (!currentUser) return;
 
-      const orderRef = doc(db, "orders", orderToAccept.id);
-      try {
-        await updateDoc(orderRef, {
-          deliveryPartnerId: currentUser.uid,
-          orderStatus: "accepted",
-          accessibleTo: [], // Clear the accessibleTo field after acceptance
-        });
-        
-        // Remove the order from the new order state
-        setNewOrder(null);
-        // Add its ID to the seen set to prevent it from reappearing as new
-        seenOrderIds.current.add(orderToAccept.id);
+    const orderRef = doc(db, "orders", orderToAccept.id);
+    try {
+      await updateDoc(orderRef, {
+        deliveryPartnerId: currentUser.uid,
+        orderStatus: "accepted",
+        accessibleTo: [], // Clear the accessibleTo field after acceptance
+      });
       
-        toast({
-              title: "Order Accepted!",
-              description: "The order has been added to your active list.",
-              className: "bg-green-500 text-white"
-        });
-      } catch (error) {
-          console.error("Error accepting order:", error);
-          toast({ variant: "destructive", title: "Acceptance Failed", description: "Could not accept the order."});
-      }
+      // No need to optimistically update state. The active order listener will pick it up.
+      setNewOrder(null);
+      seenOrderIds.current.add(orderToAccept.id);
+    
+      toast({
+            title: "Order Accepted!",
+            description: "The order has been added to your active list.",
+            className: "bg-green-500 text-white"
+      });
+    } catch (error) {
+        console.error("Error accepting order:", error);
+        toast({ variant: "destructive", title: "Acceptance Failed", description: "Could not accept the order."});
+    }
   };
   
   const handleCustomerChatOpen = (order: Order) => {
@@ -165,12 +141,9 @@ export default function DashboardPage() {
   
   const handleNewOrderDismiss = async (orderToDismiss: Order) => {
     if (currentUser) {
-      // Add to seen list so it doesn't pop up again this session
       seenOrderIds.current.add(orderToDismiss.id);
       setNewOrder(null);
       
-      // Attempt to remove user from accessibleTo list so they don't get it again from the backend.
-      // This is an optimistic update.
       const orderRef = doc(db, "orders", orderToDismiss.id);
       try {
         const orderDoc = await getDoc(orderRef);
@@ -184,10 +157,11 @@ export default function DashboardPage() {
         });
       } catch (error) {
         console.error("Error dismissing order:", error);
-        // Don't toast here as it's a non-critical background failure
       }
     }
   }
+
+  const isLoading = loadingActiveOrders || loadingNewOrder;
 
   return (
     <div className="p-6 space-y-6">
@@ -213,10 +187,10 @@ export default function DashboardPage() {
             <PackageCheck className="mr-2 h-6 w-6" />
             Active Orders
         </h2>
-        {loading && activeOrders.length === 0 ? (
+        {isLoading ? (
             <div className="flex justify-center items-center p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2">Loading active orders...</p>
+            <p className="ml-2">Loading orders...</p>
             </div>
         ) : activeOrders.length > 0 ? (
             <div className="flex flex-col gap-4">
