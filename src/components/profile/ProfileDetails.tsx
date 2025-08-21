@@ -28,7 +28,7 @@ const getVerificationBadgeVariant = (status?: string) => {
 }
 
 const getStatusBadgeClass = (isVerified?: boolean) => {
-    return isVerified ? "bg-green-100 text-green-800 border-green-200" : "bg-yellow-100 text-yellow-800 border-yellow-200";
+    return isVerified ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
 }
 
 export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
@@ -63,16 +63,15 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                 </ProfileForm>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 items-start">
-                <Card className="shadow-lg">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center text-lg"><User className="mr-2"/>Profile Information</CardTitle>
-                        <CardDescription>Your personal and vehicle details.</CardDescription>
+                        <CardTitle className="flex items-center text-lg"><User className="mr-2 text-primary"/>Profile Information</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm">
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground flex items-center gap-2"><MapPin size={16}/>Current Address</span>
-                            <span className="font-medium">{addressString}</span>
+                            <span className="font-medium text-right">{addressString}</span>
                         </div>
                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground flex items-center gap-2"><Bike size={16}/>Vehicle</span>
@@ -87,10 +86,9 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                     </CardContent>
                 </Card>
 
-                 <Card className="shadow-lg">
+                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center text-lg"><Banknote className="mr-2"/>Bank, Payment & Taxes</CardTitle>
-                        <CardDescription>Manage your payout and tax information.</CardDescription>
+                        <CardTitle className="flex items-center text-lg"><Banknote className="mr-2 text-primary"/>Bank & Payment</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm">
                         <div className="flex justify-between items-center">
@@ -98,7 +96,7 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                                 <p className="text-muted-foreground">Bank Account</p>
                                 <p className="font-medium">{bankAccountNumberCensored} ({profile.bankDetails?.ifscCode})</p>
                             </div>
-                            <Badge variant="outline" className={getStatusBadgeClass(profile.bankDetails?.isVerified)}>
+                            <Badge variant="outline" className={cn(getStatusBadgeClass(profile.bankDetails?.isVerified))}>
                                 {profile.bankDetails?.isVerified ? 'Verified' : 'Pending'}
                             </Badge>
                         </div>
@@ -107,16 +105,10 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                                 <p className="text-muted-foreground">UPI ID</p>
                                 <p className="font-medium">{profile.bankDetails?.upiId || 'Not provided'}</p>
                             </div>
-                            {profile.bankDetails?.upiId && <Badge variant="outline" className={getStatusBadgeClass(profile.bankDetails?.isVerified)}>
+                            {profile.bankDetails?.upiId && <Badge variant="outline" className={cn(getStatusBadgeClass(profile.bankDetails?.isVerified))}>
                                 {profile.bankDetails?.isVerified ? 'Verified' : 'Pending'}
                             </Badge>}
                         </div>
-                        <Separator />
-                        <div className="flex justify-between items-center">
-                            <label htmlFor="auto-withdrawal" className="font-medium">Auto-Withdrawal</label>
-                            <Switch id="auto-withdrawal" checked={profile.autoWithdrawalEnabled} onCheckedChange={(checked) => onUpdate({ autoWithdrawalEnabled: checked })}/>
-                        </div>
-                         <p className="text-xs text-muted-foreground -mt-2">Automatically process payouts every Tuesday.</p>
                          <Button variant="outline" className="w-full" onClick={handleTaxStatementClick}>
                             <Download className="mr-2 h-4 w-4"/> Tax Statements (Form 16)
                          </Button>

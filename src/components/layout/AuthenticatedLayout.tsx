@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -134,8 +135,6 @@ export default function AuthenticatedLayout({
     }
   };
 
-  const isHistoryPage = pathname.includes('/earnings/history');
-  
   const navItems = [
     ...baseNavItems.slice(0, 5),
     ...(profile?.verificationStatus === 'pending' ? [trainingNavItem] : []),
@@ -210,11 +209,6 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
             <div className="flex items-center gap-4">
                 <MobileNav />
-                {!isHistoryPage && (
-                  <>
-                    <ActiveTimeTracker />
-                  </>
-                )}
             </div>
             <div className="flex items-center gap-2">
                 <NotificationBell />

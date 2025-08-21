@@ -2,11 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
-import { Separator } from "@/components/ui/separator";
-import { PackageCheck, Loader2, BellDot } from "lucide-react";
+import { PackageCheck, Loader2 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, limit } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -189,6 +187,12 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <DashboardHeader 
+        currentStatus={availabilityStatus}
+        onStatusChange={handleAvailabilityChange}
+        isLoading={isAvailabilityLoading}
+      />
+
       {newOrder && currentUser && (
         <NewOrderCard 
           order={newOrder} 
@@ -205,42 +209,32 @@ export default function DashboardPage() {
         />
       )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-6">
-           <AvailabilityToggle
-            currentStatus={availabilityStatus}
-            onStatusChange={handleAvailabilityChange}
-            isLoading={isAvailabilityLoading}
-          />
-        </div>
-
-        <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-semibold text-primary flex items-center">
-                <PackageCheck className="mr-2 h-6 w-6" />
-                Your Active Orders
-            </h2>
-            {isLoading && activeOrders.length === 0 ? (
-                <div className="flex justify-center items-center p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="ml-2">Loading active orders...</p>
-                </div>
-            ) : activeOrders.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                {activeOrders.map((order) => (
-                    <OrderCard 
-                    key={order.id} 
-                    order={order} 
-                    onCustomerChat={handleCustomerChatOpen}
-                    />
-                ))}
-                </div>
-            ) : (
-                <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground">
-                <p className="font-semibold">You have no active orders.</p>
-                <p className="text-sm mt-1">Go online to see new delivery requests.</p>
-                </div>
-            )}
-        </div>
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-primary flex items-center">
+            <PackageCheck className="mr-2 h-6 w-6" />
+            Active Orders
+        </h2>
+        {isLoading && activeOrders.length === 0 ? (
+            <div className="flex justify-center items-center p-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-2">Loading active orders...</p>
+            </div>
+        ) : activeOrders.length > 0 ? (
+            <div className="flex flex-col gap-4">
+            {activeOrders.map((order) => (
+                <OrderCard 
+                key={order.id} 
+                order={order} 
+                onCustomerChat={handleCustomerChatOpen}
+                />
+            ))}
+            </div>
+        ) : (
+            <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
+              <p className="font-semibold">You have no active orders.</p>
+              <p className="text-sm mt-1">Go online to see new delivery requests.</p>
+            </div>
+        )}
       </div>
     </div>
   );

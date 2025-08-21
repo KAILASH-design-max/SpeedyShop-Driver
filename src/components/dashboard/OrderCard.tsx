@@ -16,11 +16,11 @@ interface OrderCardProps {
 }
 
 const statusInfo: { [key in Order['orderStatus']]?: { icon: React.ElementType, label: string, color: string } } = {
-    'accepted': { icon: PackageCheck, label: 'Accepted', color: 'text-blue-500' },
-    'arrived-at-store': { icon: Store, label: 'At Store', color: 'text-teal-500' },
-    'picked-up': { icon: Truck, label: 'Picked Up', color: 'text-cyan-500' },
-    'out-for-delivery': { icon: Truck, label: 'Out for Delivery', color: 'text-purple-500' },
-    'arrived': { icon: MapPin, label: 'Arrived at Drop-off', color: 'text-indigo-500' },
+    'accepted': { icon: PackageCheck, label: 'Accepted', color: 'text-blue-400' },
+    'arrived-at-store': { icon: Store, label: 'At Store', color: 'text-teal-400' },
+    'picked-up': { icon: Truck, label: 'Picked Up', color: 'text-cyan-400' },
+    'out-for-delivery': { icon: Truck, label: 'Out for Delivery', color: 'text-purple-400' },
+    'arrived': { icon: MapPin, label: 'Arrived at Drop-off', color: 'text-indigo-400' },
 }
 
 export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
@@ -55,16 +55,16 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   const navAction = getNavAction();
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full hover:border-primary">
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-card/80 border-border/50 hover:border-primary/50">
         {currentStatus && (
-            <CardHeader className={cn("p-4 flex flex-row items-center justify-between", currentStatus.color.replace('text-','bg-') + '/10')}>
+            <CardHeader className={cn("p-4 flex flex-row items-center justify-between", "bg-accent/10 border-b border-accent/20")}>
                 <div className="flex items-center gap-2">
-                    <currentStatus.icon className={cn("h-5 w-5", currentStatus.color)} />
-                    <CardTitle className={cn("text-base font-semibold", currentStatus.color)}>
+                    <currentStatus.icon className={cn("h-5 w-5", "text-accent")} />
+                    <CardTitle className={cn("text-base font-semibold", "text-accent")}>
                         {currentStatus.label}
                     </CardTitle>
                 </div>
-                <Badge variant={"secondary"} className="capitalize">
+                <Badge variant={"secondary"} className="capitalize bg-muted/50 border-border/50 text-muted-foreground">
                     #{order.id}
                 </Badge>
             </CardHeader>
@@ -87,9 +87,9 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
             </div>
         </CardContent>
 
-        <CardFooter className="p-3 mt-auto border-t bg-muted/30 flex flex-col items-stretch gap-2">
+        <CardFooter className="p-3 mt-auto border-t bg-muted/20 flex flex-col items-stretch gap-2">
             {navAction && (
-                <Button asChild size="lg" className="font-bold">
+                <Button asChild size="lg" className="font-bold bg-accent hover:bg-accent/90 text-accent-foreground">
                     <Link href={navAction.href}>
                         <Navigation className="mr-2 h-4 w-4" />
                         {navAction.text}
