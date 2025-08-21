@@ -13,11 +13,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ currentStatus, onStatusChange, isLoading }: DashboardHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 rounded-lg bg-card border">
-        <div>
-            <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Manage your status and view active orders.</p>
-        </div>
+    <div className="flex flex-col md:flex-row justify-end items-center gap-4 p-4 rounded-lg bg-card border">
         <div className="flex items-center gap-4">
             <ActiveTimeTracker />
              <AvailabilityToggle
