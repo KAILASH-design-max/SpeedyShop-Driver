@@ -6,7 +6,7 @@ import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
 import { PackageCheck, Loader2 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, limit } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
@@ -23,14 +23,14 @@ export default function DashboardPage() {
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
   const { toast } = useToast();
-  const seenOrderIds = useRef(new Set());
+  const seenOrderIds = useRef(new Set<string>());
 
   useEffect(() => {
     // Load active orders from cache on initial render
     try {
       const cachedActiveOrders = localStorage.getItem('activeOrdersCache');
       if (cachedActiveOrders) {
-        const parsedOrders = JSON.parse(cachedActiveOrders);
+        const parsedOrders: Order[] = JSON.parse(cachedActiveOrders);
         setActiveOrders(parsedOrders);
         parsedOrders.forEach((o: Order) => seenOrderIds.current.add(o.id));
       }
@@ -52,7 +52,38 @@ export default function DashboardPage() {
   }, []);
 
 
-  // Combined listener for both active orders and detecting newly assigned orders
+  // Dedicated listener for NEWLY ASSIGNED orders to show the popup
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const newOrderQuery = query(
+      collection(db, "orders"),
+      where("deliveryPartnerId", "==", currentUser.uid),
+      where("orderStatus", "==", "accepted")
+    );
+    
+    const unsubscribeNewOrder = onSnapshot(newOrderQuery, async (snapshot) => {
+      const assignedOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+      const assignedOrders = await Promise.all(assignedOrdersPromises);
+      
+      const justAssignedOrder = assignedOrders.find(order => !seenOrderIds.current.has(order.id));
+
+      if (justAssignedOrder) {
+        setNewOrder(justAssignedOrder);
+        seenOrderIds.current.add(justAssignedOrder.id);
+      }
+    }, (error) => {
+        console.error("Error fetching newly assigned orders:", error);
+        if (error.code !== 'permission-denied') {
+          toast({ variant: "destructive", title: "Notification Error", description: "Could not listen for new orders."});
+        }
+    });
+
+    return () => unsubscribeNewOrder();
+  }, [currentUser, toast]);
+
+
+  // Listener for ALL OTHER ACTIVE orders (from accepted to arrived)
   useEffect(() => {
     if (!currentUser) {
       setActiveOrders([]);
@@ -71,15 +102,6 @@ export default function DashboardPage() {
       const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
       const newOrdersData = await Promise.all(ordersDataPromises);
       
-      // Detect if a new order was just assigned
-      const justAssignedOrder = newOrdersData.find(order => 
-        order.orderStatus === 'accepted' && !seenOrderIds.current.has(order.id)
-      );
-      
-      if (justAssignedOrder) {
-        setNewOrder(justAssignedOrder);
-      }
-
       // Update the set of seen orders
       newOrdersData.forEach(order => seenOrderIds.current.add(order.id));
       
@@ -106,17 +128,13 @@ export default function DashboardPage() {
   const handleOrderAccept = async (orderToAccept: Order) => {
       if (!currentUser) return;
       setNewOrder(null); // Dismiss the card immediately
-
-      // Optimistically add to active orders if it's not already there.
+      
+      // The order should already be in the active list via the listener,
+      // but if not, this prevents a UI flicker.
       if (!activeOrders.some(o => o.id === orderToAccept.id)) {
-        setActiveOrders(prev => [...prev, { ...orderToAccept, orderStatus: 'accepted' }]);
+          setActiveOrders(prev => [...prev, orderToAccept]);
       }
       
-      // Note: The original logic for accepting an order would be triggered
-      // by a backend function or another user action. For this UI, we assume
-      // the assignment has happened, and this is just acknowledging it.
-      // If the driver needs to explicitly accept, the logic would be different.
-      // For now, we just ensure the UI is in a consistent state.
       toast({
             title: "Order Accepted!",
             description: "The order has been added to your active list.",
