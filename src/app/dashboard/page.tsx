@@ -103,31 +103,26 @@ export default function DashboardPage() {
         return;
     };
     
-    // This query is more robust. It looks for any placed order that is NOT assigned to the current driver.
-    // This avoids issues where deliveryPartnerId might not exist on a document vs. being explicitly null.
     const newOrdersQuery = query(
       collection(db, "orders"),
-      where("deliveryPartnerId", "!=", currentUser.uid),
       where("orderStatus", "==", "Placed"),
-      limit(1)
+      limit(10) // Fetch a few potential orders
     );
 
     const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
-      const unassignedDocs = snapshot.docs.filter(doc => !doc.data().deliveryPartnerId);
+      // Find the first document that does NOT have a deliveryPartnerId.
+      const unassignedDoc = snapshot.docs.find(doc => !doc.data().deliveryPartnerId);
 
-      if (unassignedDocs.length > 0) {
-        const orderDoc = unassignedDocs[0];
-         if (orderDoc.id === ignoredOrderId) {
+      if (unassignedDoc) {
+        if (unassignedDoc.id === ignoredOrderId) {
             return;
         }
-        const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
+        const mappedOrder = await mapFirestoreDocToOrder(unassignedDoc);
         setNewOrder(mappedOrder);
-
       } else {
         setNewOrder(null);
       }
     }, (error) => {
-      // Don't show permission denied errors, as they are expected when rules block reads.
       if (error.code !== 'permission-denied') {
         console.error("Error fetching new orders:", error);
       }
