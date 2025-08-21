@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -20,14 +21,24 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { LoginActivity } from "./LoginActivity";
 import { Input } from "@/components/ui/input";
+import type { User } from "firebase/auth";
 
 
 export function SettingsPage() {
     const { toast } = useToast();
-    const currentUser = auth.currentUser;
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            setCurrentUser(user);
+        });
+        return () => unsubscribe();
+    }, []);
+    
     const referralCode = currentUser ? `VELOCITY-${currentUser.uid.substring(0, 8).toUpperCase()}` : '';
 
     const copyToClipboard = () => {
+        if (!referralCode) return;
         navigator.clipboard.writeText(referralCode);
         toast({
             title: "Copied to Clipboard!",
