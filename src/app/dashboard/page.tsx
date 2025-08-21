@@ -6,7 +6,7 @@ import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
 import { PackageCheck, Loader2 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, limit } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
@@ -56,8 +56,6 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!currentUser) return;
     
-    // This query securely listens for "Placed" orders that have been made available
-    // to the current driver via the `accessibleTo` field.
     const newOrderQuery = query(
       collection(db, "orders"),
       where("orderStatus", "==", "Placed"),
@@ -144,11 +142,6 @@ export default function DashboardPage() {
         });
         
         setNewOrder(null); // Dismiss the card immediately
-
-        // Optimistically add to active orders list to prevent UI flicker
-        if (!activeOrders.some(o => o.id === orderToAccept.id)) {
-            setActiveOrders(prev => [...prev, { ...orderToAccept, orderStatus: 'accepted' }]);
-        }
       
         toast({
               title: "Order Accepted!",
@@ -170,8 +163,10 @@ export default function DashboardPage() {
       // To dismiss, we remove the current user from the `accessibleTo` array.
       const orderRef = doc(db, "orders", orderToDismiss.id);
       try {
-        // This requires reading the doc first, which should be fine as we have access.
-        const currentOrderDoc = await mapFirestoreDocToOrder(await doc(db, "orders", orderToDismiss.id).get());
+        const orderDoc = await getDoc(orderRef);
+        if (!orderDoc.exists()) return;
+
+        const currentOrderDoc = await mapFirestoreDocToOrder(orderDoc);
         const updatedAccessibleTo = (currentOrderDoc.accessibleTo || []).filter(uid => uid !== currentUser.uid);
 
         await updateDoc(orderRef, {
