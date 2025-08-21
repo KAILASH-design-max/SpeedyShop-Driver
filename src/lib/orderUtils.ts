@@ -29,8 +29,9 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   let customerName = data.name || "Customer";
   const estimatedEarnings = data.deliveryCharge ?? 0;
   
-  // Use `status` from the new structure and map to `orderStatus`
-  const orderStatus = data.status || "Placed";
+  // Clean up the status string: trim whitespace and convert to lowercase.
+  const rawStatus = data.status || data.orderStatus || "Placed";
+  const orderStatus = rawStatus.trim().toLowerCase();
 
   let pickupLocation = "GrocerMart";
   if (data.storeId) {
@@ -52,7 +53,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     pickupLocation: pickupLocation,
     dropOffLocation: dropOffLocationString,
     items: items,
-    orderStatus: orderStatus.toLowerCase() as Order['orderStatus'],
+    orderStatus: orderStatus as Order['orderStatus'],
     estimatedEarnings: estimatedEarnings,
     deliveryCharge: data.deliveryCharge,
     total: data.totalAmount,

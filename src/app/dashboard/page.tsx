@@ -75,7 +75,7 @@ export default function DashboardPage() {
     const activeOrdersQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "not-in", ["delivered", "cancelled"])
+      where("orderStatus", "in", ["accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
     );
 
     const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
@@ -140,6 +140,11 @@ export default function DashboardPage() {
     setIgnoredOrderId(orderId);
     setNewOrder(null);
   }
+  
+  const handleAcceptOrder = (acceptedOrder: Order) => {
+     setActiveOrders(prevOrders => [acceptedOrder, ...prevOrders]);
+     handleOrderAction(acceptedOrder.id);
+  }
 
   const isLoading = loadingActive;
 
@@ -151,10 +156,7 @@ export default function DashboardPage() {
           order={newOrder} 
           currentUserId={currentUser.uid} 
           onOrderAction={handleOrderAction}
-          onOrderAccept={(acceptedOrder) => {
-             setActiveOrders(prevOrders => [acceptedOrder, ...prevOrders]);
-             handleOrderAction(acceptedOrder.id);
-          }}
+          onOrderAccept={handleAcceptOrder}
         />
       )}
 
