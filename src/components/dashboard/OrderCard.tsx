@@ -16,7 +16,7 @@ interface OrderCardProps {
 }
 
 const statusInfo: { [key in Order['orderStatus']]?: { icon: React.ElementType, label: string, color: string } } = {
-    'accepted': { icon: PackageCheck, label: 'Accepted', color: 'text-blue-400' },
+    'accepted': { icon: PackageCheck, label: 'Accepted', color: 'text-accent' },
     'arrived-at-store': { icon: Store, label: 'At Store', color: 'text-teal-400' },
     'picked-up': { icon: Truck, label: 'Picked Up', color: 'text-cyan-400' },
     'out-for-delivery': { icon: Truck, label: 'Out for Delivery', color: 'text-purple-400' },

@@ -57,11 +57,12 @@ const baseNavItems = [
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/community", label: "Announcements", icon: Megaphone },
   { href: "/chat", label: "Chat", icon: MessagesSquare },
+];
+
+const bottomNavItems = [
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/support", label: "Help & Info", icon: HelpCircle },
 ];
-
-const trainingNavItem = { href: "/training", label: "Training", icon: BookOpen };
 
 
 function MobileNav() {
@@ -95,10 +96,11 @@ export default function AuthenticatedLayout({
             setProfile(null);
             setIsAvailabilityLoading(false);
             setAvailabilityStatus(undefined);
+            router.push('/');
         }
     });
     return () => unsubscribeAuth();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
       if (currentUser) {
@@ -154,7 +156,7 @@ export default function AuthenticatedLayout({
       const userDocRef = doc(db, "users", currentUser.uid);
       await updateDoc(userDocRef, { availabilityStatus: newStatus });
       setAvailabilityStatus(newStatus);
-      toast({ title: "Status Updated", description: `You are now ${newStatus}.`, className: newStatus === 'online' ? "bg-green-500 text-white" : newStatus === 'on_break' ? "bg-yellow-500 text-black" : "" });
+      toast({ title: "Status Updated", description: `You are now ${newStatus}.`, className: newStatus === 'online' ? "bg-green-500 text-white" : "" });
     } catch (error) {
       console.error("Error updating availability status:", error);
       toast({ variant: "destructive", title: "Update Failed", description: "Could not update status." });
@@ -176,9 +178,8 @@ export default function AuthenticatedLayout({
   };
 
   const navItems = [
-    ...baseNavItems.slice(0, 5),
-    ...(profile?.verificationStatus === 'pending' ? [trainingNavItem] : []),
-    ...baseNavItems.slice(5)
+    ...baseNavItems,
+    ...(profile?.verificationStatus === 'pending' ? [{ href: "/training", label: "Training", icon: BookOpen }] : []),
   ];
 
   return (
@@ -216,6 +217,24 @@ export default function AuthenticatedLayout({
         </SidebarContent>
         <SidebarFooter className="p-4 border-t border-sidebar-border">
            <SidebarMenu>
+             {bottomNavItems.map((item) => (
+                <SidebarMenuItem key={item.label}>
+                  <Link href={item.href} passHref>
+                    <SidebarMenuButton
+                      className={cn(
+                        pathname.startsWith(item.href)
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      )}
+                      isActive={pathname.startsWith(item.href)}
+                      tooltip={{ children: item.label, className: "group-data-[collapsible=icon]:block hidden" }}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
               <SidebarMenuItem>
                   <Link href="/profile" passHref>
                       <SidebarMenuButton
@@ -249,14 +268,14 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
             <div className="flex items-center gap-4">
                 <MobileNav />
-            </div>
-            <div className="flex items-center gap-4">
-                <ActiveTimeTracker />
                  <AvailabilityToggle
                     currentStatus={availabilityStatus}
                     onStatusChange={handleAvailabilityChange}
                     isLoading={isAvailabilityLoading}
                 />
+            </div>
+            <div className="flex items-center gap-4">
+                <ActiveTimeTracker />
                 <NotificationBell />
                 <ThemeToggle />
             </div>

@@ -20,7 +20,7 @@ body {
     --secondary-foreground: 222.2 84% 4.9%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 318 81% 53%; /* Bright Pink/Magenta */
+    --accent: 142 76% 36%; /* Vibrant Green */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -48,7 +48,7 @@ body {
     --secondary-foreground: 210 40% 98%;
     --muted: 230 20% 15%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 318 81% 53%; /* Glowing Magenta */
+    --accent: 142 66% 42%; /* Vibrant Green - Dark Mode */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 74% 52%;
     --destructive-foreground: 0 0% 98%;
@@ -56,7 +56,7 @@ body {
     --input: 230 20% 20%;
     --ring: 198 81% 53%;
     --chart-1: 198 81% 53%;
-    --chart-2: 318 81% 53%;
+    --chart-2: 142 66% 42%;
     --chart-3: 258 81% 53%;
     --chart-4: 158 81% 53%;
     --chart-5: 58 81% 53%;
