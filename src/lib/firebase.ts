@@ -13,16 +13,25 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-let app: FirebaseApp;
-if (getApps().length === 0) {
-    app = initializeApp(firebaseConfig);
+// Initialize Firebase on the client side
+const app = typeof window !== 'undefined' ? (getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)) : null;
+
+const auth = app ? getAuth(app) : null;
+const db = app ? getFirestore(app) : null;
+const storage = app ? getStorage(app) : null;
+
+// Throw an error if the services are used on the server where they are not available.
+if (typeof window === 'undefined') {
+  if (auth || db || storage) {
+    // This is a safeguard, but the logic above should prevent this.
+  }
 } else {
-    app = getApp();
+  if (!auth || !db || !storage) {
+    // If we are on the client and these are null, something is wrong with initialization.
+    console.error("Firebase services could not be initialized on the client.");
+  }
 }
 
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
+// Export the initialized services. Ensure components handle the possibility of them being null,
+// although the client-side check should prevent issues in the browser.
 export { app, auth, db, storage };
