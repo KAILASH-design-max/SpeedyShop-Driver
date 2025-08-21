@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import type { Profile, DeliveryRating } from "@/types";
+import type { Order, Profile, DeliveryRating } from "@/types";
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 
 const staticStats = [
@@ -75,20 +75,6 @@ export function EarningsOverview() {
             } else {
                  setOverallRating(0);
             }
-
-            const weeklyTips = ratings.reduce((acc, rating) => {
-                if (rating.tip && rating.ratedAt?.toDate) {
-                    const ratedDate = rating.ratedAt.toDate();
-                    if (ratedDate >= weekStart && ratedDate <= weekEnd) {
-                        return acc + rating.tip;
-                    }
-                }
-                return acc;
-            }, 0) || 0;
-            
-            // This relies on delivery earnings being calculated first
-            setCurrentWeekEarnings(prev => prev + weeklyTips);
-
             setIsLoadingRatings(false);
         }, (error) => {
              console.error("Error fetching ratings:", error);
@@ -100,19 +86,19 @@ export function EarningsOverview() {
         const weekDeliveriesQuery = query(
             collection(db, "orders"),
             where("deliveryPartnerId", "==", currentUser.uid),
-            where("orderStatus", "==", "delivered"),
+            where("status", "==", "delivered"),
             where("completedAt", ">=", weekStart),
             where("completedAt", "<=", weekEnd)
         );
 
         const unsubscribeDeliveries = onSnapshot(weekDeliveriesQuery, (snapshot) => {
-            let totalDeliveryEarnings = 0;
+            let totalWeeklyEarnings = 0;
             let deliveriesTodayCount = 0;
             
             snapshot.forEach(doc => {
-                const orderData = doc.data();
-                const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
-                totalDeliveryEarnings += earning;
+                const orderData = doc.data() as Order;
+                const earning = (orderData.estimatedEarnings ?? 0) + (orderData.tipAmount ?? 0);
+                totalWeeklyEarnings += earning;
                 
                 const completedAtTimestamp = orderData.completedAt as Timestamp;
                 if (completedAtTimestamp) {
@@ -123,8 +109,7 @@ export function EarningsOverview() {
                 }
             });
 
-            // Set base earnings from deliveries, tips will be added by the other listener
-            setCurrentWeekEarnings(totalDeliveryEarnings);
+            setCurrentWeekEarnings(totalWeeklyEarnings);
             setDeliveriesToday(deliveriesTodayCount);
             setIsLoadingDeliveries(false);
             setIsLoadingWeekEarnings(false);

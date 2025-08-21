@@ -36,7 +36,6 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
 
   switch(rawStatus) {
     case 'accepted':
-    case 'accept':
       orderStatus = 'accepted';
       break;
     case 'arrived-at-store':
@@ -96,5 +95,6 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     proofImageURL: data.proofImageURL,
     userId: data.userId,
     accessibleTo: data.accessibleTo || [],
+    tipAmount: data.tipAmount || 0,
   };
 };

@@ -53,7 +53,6 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allDeliveries, setAllDeliveries] = useState<Order[]>([]);
   const [filteredDeliveries, setFilteredDeliveries] = useState<Order[]>([]);
-  const [tips, setTips] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -86,12 +85,6 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
       orderBy("completedAt", "desc")
     );
     
-    const ratingsQuery = query(
-        collection(db, 'deliveryPartnerRatings'),
-        where('deliveryPartnerId', '==', currentUser.uid),
-        where('ratedAt', '>=', thirtyDaysAgo)
-    );
-
     const unsubscribeDeliveries = onSnapshot(
       deliveriesQuery,
       async (snapshot) => {
@@ -111,20 +104,8 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
       }
     );
     
-    const unsubscribeRatings = onSnapshot(ratingsQuery, (snapshot) => {
-        const fetchedTips: Record<string, number> = {};
-        snapshot.forEach(doc => {
-            const rating = doc.data() as DeliveryRating;
-            if (rating.tip && rating.tip > 0) {
-                fetchedTips[rating.orderId] = rating.tip;
-            }
-        });
-        setTips(fetchedTips);
-    });
-
     return () => {
         unsubscribeDeliveries();
-        unsubscribeRatings();
     };
   }, [currentUser]);
 
@@ -265,8 +246,7 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
                 </TableHeader>
                 <TableBody>
                     {filteredDeliveries.map((delivery) => {
-                        const tipAmount = tips[delivery.id] || 0;
-                        const totalEarnings = (delivery.estimatedEarnings || 0) + tipAmount;
+                        const totalEarnings = (delivery.estimatedEarnings || 0) + (delivery.tipAmount || 0);
                         return (
                             <TableRow key={delivery.id}>
                                 <TableCell className="font-medium">
@@ -290,8 +270,8 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
                                         <span className="text-green-600 flex items-center">
                                             <IndianRupee size={14} className="mr-0.5" /> {totalEarnings.toFixed(2)}
                                         </span>
-                                        {tipAmount > 0 && (
-                                            <span className="text-xs text-orange-500">(Tip: ₹{tipAmount.toFixed(2)})</span>
+                                        {delivery.tipAmount && delivery.tipAmount > 0 && (
+                                            <span className="text-xs text-orange-500">(Tip: ₹{delivery.tipAmount.toFixed(2)})</span>
                                         )}
                                     </div>
                                 ) : 'N/A'}

@@ -21,7 +21,6 @@ import { PayoutHistoryTable } from "./PayoutHistoryTable";
 export function MonthlyEarningsHistory() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allDeliveries, setAllDeliveries] = useState<Order[]>([]);
-  const [allRatings, setAllRatings] = useState<DeliveryRating[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
@@ -43,7 +42,7 @@ export function MonthlyEarningsHistory() {
     const deliveriesQuery = query(
         collection(db, "orders"),
         where("deliveryPartnerId", "==", currentUser.uid),
-        where("orderStatus", "==", "delivered"),
+        where("status", "==", "delivered"),
         orderBy("completedAt", "desc")
     );
     const unsubscribeDeliveries = onSnapshot(deliveriesQuery, (snapshot) => {
@@ -52,18 +51,8 @@ export function MonthlyEarningsHistory() {
         setLoading(false);
     });
 
-    const ratingsQuery = query(
-        collection(db, 'deliveryPartnerRatings'),
-        where('deliveryPartnerId', '==', currentUser.uid)
-    );
-    const unsubscribeRatings = onSnapshot(ratingsQuery, (snapshot) => {
-        const ratings = snapshot.docs.map(doc => doc.data() as DeliveryRating);
-        setAllRatings(ratings);
-    });
-
     return () => {
         unsubscribeDeliveries();
-        unsubscribeRatings();
     };
 
   }, [currentUser]);
@@ -77,28 +66,28 @@ export function MonthlyEarningsHistory() {
         d.completedAt?.toDate && isSameDay(d.completedAt.toDate(), selectedDate)
     );
 
-    const transactions: Transaction[] = deliveries.map(d => ({
-        title: `Delivery for #${d.id.substring(0, 6)}`,
-        transactionId: d.id,
-        type: 'Delivery',
-        amount: d.estimatedEarnings || 0,
-    }));
-    
-    const tipsForDay = allRatings.filter(r => 
-        r.ratedAt?.toDate && isSameDay(r.ratedAt.toDate(), selectedDate) && r.tip && r.tip > 0
-    );
-    
-    tipsForDay.forEach(r => {
-        transactions.push({
-            title: `Tip for #${r.orderId.substring(0, 6)}`,
-            transactionId: `${r.orderId}-tip`,
-            type: 'Tip',
-            amount: r.tip || 0,
+    const transactions: Transaction[] = deliveries.flatMap(d => {
+        const txs: Transaction[] = [];
+        txs.push({
+            title: `Delivery for #${d.id.substring(0, 6)}`,
+            transactionId: d.id,
+            type: 'Delivery',
+            amount: d.estimatedEarnings || 0,
         });
-    });
 
+        if (d.tipAmount && d.tipAmount > 0) {
+            txs.push({
+                title: `Tip for #${d.id.substring(0, 6)}`,
+                transactionId: `${d.id}-tip`,
+                type: 'Tip',
+                amount: d.tipAmount,
+            });
+        }
+        return txs;
+    });
+    
     return { deliveriesForSelectedDay: deliveries, transactionsForSelectedDay: transactions };
-  }, [selectedDate, allDeliveries, allRatings]);
+  }, [selectedDate, allDeliveries]);
 
   const daysWithDeliveries = useMemo(() => {
     return allDeliveries.map(d => d.completedAt.toDate());

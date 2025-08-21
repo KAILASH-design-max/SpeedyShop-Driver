@@ -38,6 +38,7 @@ export interface Order {
   proofImageURL?: string; // URL for the proof of delivery image
   accessibleTo?: string[]; // Array of UIDs that can access this order
   deliveryPartnerFeedback?: DeliveryPartnerFeedback;
+  tipAmount?: number;
 }
 
 export interface EarningSummary {

@@ -6,9 +6,9 @@ import { Calendar, PiggyBank, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, Timestamp, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Timestamp, doc, getDocs } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import type { Profile, DeliveryRating } from "@/types";
+import type { Order, Profile, DeliveryRating } from "@/types";
 
 export function EarningsSummaryCard() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -37,8 +37,6 @@ export function EarningsSummaryCard() {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
-        let totalMonthDeliveryEarnings = 0;
-
         // Listener for deliveries this month
         const monthlyDeliveriesQuery = query(
             collection(db, "orders"),
@@ -48,48 +46,21 @@ export function EarningsSummaryCard() {
         );
         
         const unsubscribeDeliveries = onSnapshot(monthlyDeliveriesQuery, (snapshot) => {
-            totalMonthDeliveryEarnings = 0;
+            let totalMonthEarnings = 0;
             snapshot.forEach(doc => {
-                const orderData = doc.data();
-                const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
-                totalMonthDeliveryEarnings += earning;
+                const orderData = doc.data() as Order;
+                const earning = (orderData.estimatedEarnings ?? 0) + (orderData.tipAmount ?? 0);
+                totalMonthEarnings += earning;
             });
-            // Update earnings with the delivery portion
-            setMonthlyEarnings(prev => (prev - (prev - totalMonthDeliveryEarnings))); // More controlled update
+            setMonthlyEarnings(totalMonthEarnings);
+            setIsLoading(false);
         }, (error) => {
             console.error("Error fetching earnings summary:", error);
             setIsLoading(false);
         });
 
-        // Listener for ratings (tips) this month
-        const monthlyRatingsQuery = query(
-            collection(db, "deliveryPartnerRatings"),
-            where("deliveryPartnerId", "==", currentUser.uid)
-        );
-
-        const unsubscribeRatings = onSnapshot(monthlyRatingsQuery, (snapshot) => {
-            let totalMonthTips = 0;
-            snapshot.forEach(doc => {
-                const ratingData = doc.data() as DeliveryRating;
-                if (ratingData.tip && ratingData.tip > 0 && ratingData.ratedAt?.toDate) {
-                    // Filter for the current month on the client
-                    if(ratingData.ratedAt.toDate() >= startOfMonth) {
-                       totalMonthTips += ratingData.tip;
-                    }
-                }
-            });
-             // Combine delivery earnings with tips
-             setMonthlyEarnings(totalMonthDeliveryEarnings + totalMonthTips);
-             setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching ratings for tips:", error);
-            setIsLoading(false);
-        });
-
-
         return () => {
             unsubscribeDeliveries();
-            unsubscribeRatings();
         };
     }, [currentUser]);
 

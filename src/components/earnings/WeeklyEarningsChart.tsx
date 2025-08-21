@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Timestamp, doc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import type { Profile, DeliveryRating } from '@/types';
+import type { Order, Profile, DeliveryRating } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
 
@@ -63,9 +63,14 @@ export function WeeklyEarningsChart() {
         where("completedAt", "<=", weekEnd)
     );
     const unsubscribeDeliveries = onSnapshot(weekDeliveriesQuery, (snapshot) => {
+        // Reset earnings for this user before recalculating
+        weekDays.forEach(day => {
+            dailyEarnings[format(day, 'E')] = 0;
+        });
+
         snapshot.forEach(doc => {
-            const orderData = doc.data();
-            const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
+            const orderData = doc.data() as Order;
+            const earning = (orderData.estimatedEarnings ?? 0) + (orderData.tipAmount ?? 0);
             const completedAtTimestamp = orderData.completedAt as Timestamp;
             if (completedAtTimestamp) {
                 const completedDate = completedAtTimestamp.toDate();
@@ -75,31 +80,7 @@ export function WeeklyEarningsChart() {
                 }
             }
         });
-        updateChartData();
-    });
-
-    // Listener for ratings (tips)
-    const weekRatingsQuery = query(
-        collection(db, 'deliveryPartnerRatings'),
-        where('deliveryPartnerId', '==', currentUser.uid),
-        where('ratedAt', '>=', weekStart),
-        where('ratedAt', '<=', weekEnd)
-    );
-    const unsubscribeRatings = onSnapshot(weekRatingsQuery, (snapshot) => {
-        snapshot.forEach(doc => {
-            const ratingData = doc.data() as DeliveryRating;
-            if (ratingData.tip && ratingData.tip > 0 && ratingData.ratedAt?.toDate) {
-                const ratedDate = ratingData.ratedAt.toDate();
-                const dayKey = format(ratedDate, 'E');
-                if (dailyEarnings.hasOwnProperty(dayKey)) {
-                    dailyEarnings[dayKey] += ratingData.tip;
-                }
-            }
-        });
-        updateChartData();
-    });
-
-    const updateChartData = () => {
+        
         const formattedChartData = Object.entries(dailyEarnings).map(([day, earnings]) => ({
             day,
             earnings,
@@ -107,12 +88,11 @@ export function WeeklyEarningsChart() {
         formattedChartData.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
         setChartData(formattedChartData);
         setIsLoading(false);
-    }
+    });
 
 
     return () => {
         unsubscribeDeliveries();
-        unsubscribeRatings();
     };
   }, [currentUser]);
 

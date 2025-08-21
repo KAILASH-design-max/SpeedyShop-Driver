@@ -32,7 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, Timestamp, getDocs } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import type { Profile, DeliveryRating } from "@/types";
+import type { Order, Profile, DeliveryRating } from "@/types";
 
 const payoutSchema = z.object({
     amount: z.coerce.number().positive("Amount must be greater than 0."),
@@ -78,10 +78,8 @@ export function WalletBalanceCard() {
         setIsLoading(true);
 
         const fetchAllEarnings = async () => {
-            let totalDeliveryEarnings = 0;
-            let totalTips = 0;
+            let totalEarnings = 0;
 
-            // Fetch delivery earnings
             const deliveriesQuery = query(
                 collection(db, "orders"),
                 where("deliveryPartnerId", "==", currentUser.uid),
@@ -89,22 +87,11 @@ export function WalletBalanceCard() {
             );
             const deliveriesSnapshot = await getDocs(deliveriesQuery);
             deliveriesSnapshot.forEach(doc => {
-                const orderData = doc.data();
-                totalDeliveryEarnings += orderData.estimatedEarnings ?? 0;
-            });
-
-            // Fetch tips
-            const ratingsQuery = query(
-                collection(db, "deliveryPartnerRatings"),
-                where("deliveryPartnerId", "==", currentUser.uid)
-            );
-            const ratingsSnapshot = await getDocs(ratingsQuery);
-            ratingsSnapshot.forEach(doc => {
-                const ratingData = doc.data() as DeliveryRating;
-                totalTips += ratingData.tip ?? 0;
+                const orderData = doc.data() as Order;
+                totalEarnings += (orderData.estimatedEarnings ?? 0) + (orderData.tipAmount ?? 0);
             });
             
-            setLifetimeEarnings(totalDeliveryEarnings + totalTips);
+            setLifetimeEarnings(totalEarnings);
             setIsLoading(false);
         };
         
