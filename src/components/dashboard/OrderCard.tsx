@@ -26,8 +26,8 @@ const statusInfo: { [key in Order['orderStatus']]?: { icon: React.ElementType, l
 export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
 
   const handleCustomerChatClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigating to order details
-    e.stopPropagation(); // Stop event bubbling
+    e.preventDefault(); 
+    e.stopPropagation(); 
     onCustomerChat(order);
   }
   
@@ -87,27 +87,26 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
             </div>
         </CardContent>
 
-        <CardFooter className="p-3 mt-auto border-t bg-muted/30">
-            <div className="flex justify-between items-center w-full gap-2">
+        <CardFooter className="p-3 mt-auto border-t bg-muted/30 flex flex-col items-stretch gap-2">
+            {navAction && (
+                <Button asChild size="lg" className="font-bold">
+                    <Link href={navAction.href}>
+                        <Navigation className="mr-2 h-4 w-4" />
+                        {navAction.text}
+                    </Link>
+                </Button>
+            )}
+            <div className="flex justify-between items-center w-full">
                  <Button variant="ghost" size="sm" aria-label="Chat with customer" onClick={handleCustomerChatClick}>
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Chat
                 </Button>
-                {navAction ? (
-                    <Button asChild size="sm">
-                        <Link href={navAction.href}>
-                            <Navigation className="mr-2 h-4 w-4" />
-                            {navAction.text}
-                        </Link>
-                    </Button>
-                ) : (
-                    <Button asChild variant="link" className="text-primary font-semibold text-sm hover:underline p-0 h-auto">
-                        <Link href={`/orders/${order.id}`} className="flex items-center">
-                            View Details
-                            <ChevronRight className="h-4 w-4 ml-1" />
-                        </Link>
-                    </Button>
-                )}
+                <Button asChild variant="link" className="text-primary font-semibold text-sm hover:underline p-0 h-auto">
+                    <Link href={`/orders/${order.id}`} className="flex items-center">
+                        View Details
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                    </Link>
+                </Button>
             </div>
         </CardFooter>
     </Card>
