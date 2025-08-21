@@ -41,6 +41,8 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
       orderStatus = 'out-for-delivery';
   } else if (orderStatus.toLowerCase() === 'arrived-at-store') {
       orderStatus = 'arrived-at-store';
+  } else if (orderStatus.toLowerCase() === 'placed') {
+      orderStatus = 'Placed';
   }
 
 

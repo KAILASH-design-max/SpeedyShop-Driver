@@ -53,7 +53,7 @@ export default function DashboardPage() {
         let availableOrders = await Promise.all(availableOrdersPromises);
 
         // Filter for "Placed" orders on the client
-        availableOrders = availableOrders.filter(order => order.orderStatus === 'Placed');
+        availableOrders = availableOrders.filter(order => order.orderStatus.trim() === 'Placed');
 
         if (availableOrders.length > 0) {
             // Find the first order that hasn't been seen/dismissed in this session
