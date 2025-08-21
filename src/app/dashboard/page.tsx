@@ -37,52 +37,63 @@ export default function DashboardPage() {
     return () => unsubscribeAuth();
   }, []);
 
-  // Unified listener for both new and active orders
+  // Listener for NEW orders available to the driver
+  useEffect(() => {
+    if (!currentUser) {
+        return;
+    }
+    const availableOrdersQuery = query(
+        collection(db, "orders"),
+        where("orderStatus", "==", "Placed"),
+        where("accessibleTo", "array-contains", currentUser.uid)
+    );
+    const unsubscribe = onSnapshot(availableOrdersQuery, async (snapshot) => {
+        const availableOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+        const availableOrders = await Promise.all(availableOrdersPromises);
+
+        if (availableOrders.length > 0) {
+            // Find the first order that hasn't been seen/dismissed in this session
+            const orderToShow = availableOrders.find(o => !seenOrderIds.current.has(o.id));
+            setNewOrder(orderToShow || null);
+        } else {
+            setNewOrder(null);
+        }
+        setIsLoading(false);
+
+    }, (error) => {
+      console.error("Error fetching available orders:", error);
+      toast({ variant: "destructive", title: "Load Failed", description: "Could not check for new orders." });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, toast]);
+
+
+  // Listener for ACTIVE orders assigned to the driver
   useEffect(() => {
     if (!currentUser) {
         setIsLoading(false);
         return;
     }
-
-    setIsLoading(true);
-    // This query is complex and may require a composite index in Firestore.
-    // The query looks for orders where the user is either the assigned partner OR is in the pool of potential partners.
-    const ordersQuery = query(
+    const activeOrdersQuery = query(
       collection(db, "orders"),
-      where("orderStatus", "in", ["Placed", "accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
+      where("deliveryPartnerId", "==", currentUser.uid),
+      where("orderStatus", "in", ["accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
     );
-
-    const unsubscribe = onSnapshot(ordersQuery, async (snapshot) => {
-      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-      let allRelevantOrders = await Promise.all(ordersDataPromises);
-      
-      // Client-side filtering
-      allRelevantOrders = allRelevantOrders.filter(order => 
-        order.deliveryPartnerId === currentUser.uid || (order.accessibleTo && order.accessibleTo.includes(currentUser.uid))
-      );
-
-      const newActiveOrders: Order[] = [];
-      const availableOrders: Order[] = [];
-      
-      for (const order of allRelevantOrders) {
-        if (order.orderStatus === 'Placed' && !seenOrderIds.current.has(order.id)) {
-            availableOrders.push(order);
-        } else if (order.orderStatus !== 'Placed' && order.deliveryPartnerId === currentUser.uid) {
-            newActiveOrders.push(order);
-        }
-      }
-
-      setActiveOrders(newActiveOrders.sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)));
-      setNewOrder(availableOrders.length > 0 ? availableOrders[0] : null);
-      setIsLoading(false);
-
-    }, (error) => {
-      console.error("Error fetching all orders:", error);
-      toast({ variant: "destructive", title: "Load Failed", description: "Could not load orders. You may need to create a composite index in Firestore." });
+     const unsubscribe = onSnapshot(activeOrdersQuery, async (snapshot) => {
+        const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+        const fetchedActiveOrders = await Promise.all(ordersDataPromises);
+        
+        setActiveOrders(fetchedActiveOrders.sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)));
+        setIsLoading(false);
+     }, (error) => {
+      console.error("Error fetching active orders:", error);
+      toast({ variant: "destructive", title: "Load Failed", description: "Could not load your active orders." });
       setIsLoading(false);
     });
 
-    return () => unsubscribe();
+     return () => unsubscribe();
   }, [currentUser, toast]);
 
 
