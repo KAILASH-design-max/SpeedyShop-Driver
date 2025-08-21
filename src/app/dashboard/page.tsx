@@ -42,11 +42,9 @@ export default function DashboardPage() {
     if (!currentUser) {
         return;
     }
-    // This query is more reliable as 'Placed' is a definite status for new orders.
-    // The accessibleTo check can be done on the client for flexibility.
     const availableOrdersQuery = query(
         collection(db, "orders"),
-        where("orderStatus", "==", "Placed")
+        where("status", "==", "Placed")
     );
 
     const unsubscribe = onSnapshot(availableOrdersQuery, async (snapshot) => {
@@ -54,7 +52,6 @@ export default function DashboardPage() {
         let availableOrders = await Promise.all(availableOrdersPromises);
 
         // Client-side filter to ensure driver has access, if the field exists.
-        // This makes the system resilient if accessibleTo is sometimes empty.
         availableOrders = availableOrders.filter(order => 
             !order.accessibleTo || order.accessibleTo.length === 0 || order.accessibleTo.includes(currentUser.uid)
         );
@@ -66,7 +63,6 @@ export default function DashboardPage() {
         } else {
             setNewOrder(null);
         }
-        // Set loading to false here, as we have a definitive state for new orders.
         setIsLoading(false);
 
     }, (error) => {
@@ -82,13 +78,12 @@ export default function DashboardPage() {
   // Listener for ACTIVE orders assigned to the driver
   useEffect(() => {
     if (!currentUser) {
-        // No need to set loading false here, the other listener handles it.
         return;
     }
     const activeOrdersQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "in", ["accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
+      where("status", "in", ["accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
     );
      const unsubscribe = onSnapshot(activeOrdersQuery, async (snapshot) => {
         const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
@@ -115,8 +110,7 @@ export default function DashboardPage() {
     try {
       await updateDoc(orderRef, {
         deliveryPartnerId: currentUser.uid,
-        orderStatus: "accepted",
-        // Crucially, clear the accessibleTo field so it isn't offered to others.
+        status: "accepted",
         accessibleTo: [], 
       });
       
@@ -128,8 +122,6 @@ export default function DashboardPage() {
     } catch (error) {
         console.error("Error accepting order:", error);
         toast({ variant: "destructive", title: "Acceptance Failed", description: "Could not accept the order."});
-        // If the update fails, the listener should eventually correct the state,
-        // but we can remove the ID from seen to allow it to be shown again if needed.
         seenOrderIds.current.delete(orderToAccept.id);
     }
   };
