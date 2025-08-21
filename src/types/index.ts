@@ -145,7 +145,6 @@ export interface Profile {
   updatedAt?: string; // ISO string for last update
 
   // Performance metrics (populated by another system, read-only here)
-  deliveryRatings?: DeliveryRating[]; // This is now deprecated, use the top-level collection
   maintenanceLog?: MaintenanceLogEntry[];
   penalties?: Penalty[];
 }

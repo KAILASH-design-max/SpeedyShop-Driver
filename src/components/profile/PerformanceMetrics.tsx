@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, getDocs, doc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { User } from "firebase/auth";
 
@@ -21,6 +21,7 @@ interface FeedbackItem {
     rating: number;
     comment?: string;
     timestamp: any;
+    avatarFallback: string;
 }
 
 const improvementTips = [
@@ -140,9 +141,9 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   }, [orders, lifetimeTips]);
   
   useEffect(() => {
-    const processFeedback = () => {
+    const processFeedback = async () => {
       setLoadingFeedback(true);
-      const validRatings = deliveryRatings.filter(r => typeof r.rating === 'number') || [];
+      const validRatings = deliveryRatings.filter(r => typeof r.rating === 'number');
       if (validRatings.length === 0) {
         setLoadingFeedback(false);
         setFeedbackList([]);
@@ -152,28 +153,33 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
       const sortedRatings = [...validRatings].sort((a, b) => {
         const aHasComment = !!a.comment;
         const bHasComment = !!b.comment;
-        if (aHasComment !== bHasComment) {
-          return aHasComment ? -1 : 1;
-        }
-        if (!a.ratedAt || !b.ratedAt) return 0;
-        return b.ratedAt.seconds - a.ratedAt.seconds;
+        if (aHasComment !== bHasComment) return aHasComment ? -1 : 1;
+        return (b.ratedAt?.seconds ?? 0) - (a.ratedAt?.seconds ?? 0);
+      }).slice(0, 5);
+
+      const customerIds = [...new Set(sortedRatings.map(r => r.userId))];
+      const customerDocs = await Promise.all(customerIds.map(id => getDoc(doc(db, "users", id))));
+      const customerNames = Object.fromEntries(customerDocs.map(d => [d.id, d.data()?.name || "Customer"]));
+      
+      const feedbackData = sortedRatings.map(rating => {
+          const name = customerNames[rating.userId] || "Customer";
+          return {
+            name: name,
+            rating: rating.rating,
+            comment: rating.comment,
+            timestamp: rating.ratedAt,
+            avatarFallback: name.charAt(0).toUpperCase(),
+          };
       });
-
-      const recentRatings = sortedRatings.slice(0, 3);
-
-      const feedbackData = recentRatings.map(rating => ({
-        name: "A Customer", // Defaulting name to simplify and prevent fetch failures
-        rating: rating.rating,
-        comment: rating.comment,
-        timestamp: rating.ratedAt,
-      }));
 
       setFeedbackList(feedbackData);
       setLoadingFeedback(false);
     };
 
-    processFeedback();
-  }, [deliveryRatings]);
+    if (!loadingRatings) {
+      processFeedback();
+    }
+  }, [deliveryRatings, loadingRatings]);
   
   const renderStars = (rating: number, size: "sm" | "lg" = "sm") => {
     const starArray = [];
@@ -286,11 +292,12 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
                     {feedbackList.map((feedback, index) => (
                         <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-md">
                             <Avatar>
-                                <AvatarFallback className="bg-primary/20 text-primary font-semibold">{feedback.name.charAt(0)}</AvatarFallback>
+                                <AvatarFallback className="bg-primary/20 text-primary font-semibold">{feedback.avatarFallback}</AvatarFallback>
                             </Avatar>
                             <div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
+                                        <p className="font-semibold">{feedback.name}</p>
                                         <div className="flex">{renderStars(feedback.rating)}</div>
                                     </div>
                                 </div>
