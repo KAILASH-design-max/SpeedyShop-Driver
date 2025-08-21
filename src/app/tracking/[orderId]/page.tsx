@@ -7,14 +7,16 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import type { DeliveryLocation } from '@/types';
+import type { DeliveryLocation, Order } from '@/types';
+import { mapFirestoreDocToOrder } from '@/lib/orderUtils';
 
 export default function TrackingPage() {
     const params = useParams();
     const router = useRouter();
     const orderId = typeof params.orderId === 'string' ? params.orderId : '';
 
-    const [location, setLocation] = useState<DeliveryLocation | null>(null);
+    const [order, setOrder] = useState<Order | null>(null);
+    const [liveLocation, setLiveLocation] = useState<DeliveryLocation | null>(null);
     const [loading, setLoading] = useState(true);
     const [mapUrl, setMapUrl] = useState('');
 
@@ -26,33 +28,50 @@ export default function TrackingPage() {
             return;
         }
 
-        const locationRef = doc(db, "deliveryLocations", orderId);
-        const unsubscribe = onSnapshot(locationRef, (docSnap) => {
+        // Fetch the main order details first to get pickup/dropoff locations
+        const orderRef = doc(db, "orders", orderId);
+        const unsubscribeOrder = onSnapshot(orderRef, async (docSnap) => {
             if (docSnap.exists()) {
-                const data = docSnap.data() as DeliveryLocation;
-                setLocation(data);
-                
-                // Correctly use all parts of the location data
-                const origin = `${data.latitude},${data.longitude}`;
-                const destination = data.destinationAddress;
-
-                if (origin && destination && mapsApiKey) {
-                    const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=driving`;
-                    setMapUrl(url);
-                }
-
+                const mappedOrder = await mapFirestoreDocToOrder(docSnap);
+                setOrder(mappedOrder);
             } else {
-                setLocation(null);
-                setMapUrl(''); // Clear map URL if location is not found
+                setOrder(null);
             }
             setLoading(false);
         }, (error) => {
-            console.error("Error fetching live location:", error);
+            console.error("Error fetching order:", error);
             setLoading(false);
         });
 
-        return () => unsubscribe();
-    }, [orderId, mapsApiKey]);
+        // Listen for live location updates
+        const locationRef = doc(db, "deliveryLocations", orderId);
+        const unsubscribeLocation = onSnapshot(locationRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setLiveLocation(docSnap.data() as DeliveryLocation);
+            }
+        });
+
+        return () => {
+            unsubscribeOrder();
+            unsubscribeLocation();
+        };
+    }, [orderId]);
+
+    useEffect(() => {
+        if (order && mapsApiKey) {
+            const origin = order.pickupLocation;
+            const destination = order.dropOffLocation;
+            
+            // The driver's live location will be a waypoint on the route from store to customer
+            const waypoints = liveLocation ? `${liveLocation.latitude},${liveLocation.longitude}` : '';
+
+            const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}&mode=driving`;
+            setMapUrl(url);
+        } else {
+            setMapUrl('');
+        }
+    }, [order, liveLocation, mapsApiKey]);
+
 
     return (
         <div className="h-full w-full bg-background flex flex-col">
@@ -82,7 +101,7 @@ export default function TrackingPage() {
                     </iframe>
                 ) : (
                     <div className="h-full flex items-center justify-center p-4 text-center">
-                        <p className="text-destructive font-semibold">Could not load map. Location data or a valid API key may be unavailable.</p>
+                        <p className="text-destructive font-semibold">Could not load map. Order data or a valid API key may be unavailable.</p>
                     </div>
                 )}
             </div>
