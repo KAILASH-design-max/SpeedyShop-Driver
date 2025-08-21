@@ -52,8 +52,8 @@ export default function DashboardPage() {
         const availableOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
         let availableOrders = await Promise.all(availableOrdersPromises);
 
-        // Filter for "Placed" orders on the client
-        availableOrders = availableOrders.filter(order => order.orderStatus.trim() === 'Placed');
+        // Filter for "Placed" orders on the client, ignoring case and whitespace
+        availableOrders = availableOrders.filter(order => order.orderStatus.trim().toLowerCase() === 'placed');
 
         if (availableOrders.length > 0) {
             // Find the first order that hasn't been seen/dismissed in this session
