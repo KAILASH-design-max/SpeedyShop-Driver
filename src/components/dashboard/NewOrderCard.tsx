@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { updateDoc, doc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 interface NewOrderCardProps {
   order: Order;
@@ -41,6 +43,7 @@ export function NewOrderCard({ order, onDismiss, onAccept }: NewOrderCardProps) 
   const handleAcceptClick = () => {
       onAccept(order);
   };
+  
 
   return (
     <Dialog open={true} onOpenChange={(isOpen) => { if(!isOpen) onDismiss() }}>

@@ -79,34 +79,44 @@ export default function OrderPage() {
 
 
   useEffect(() => {
-    if (orderId) {
-      const orderRef = doc(db, "orders", orderId);
-      const unsubscribe = onSnapshot(orderRef, async (docSnap) => {
-        if (docSnap.exists()) {
-          const mappedOrder = await mapFirestoreDocToOrder(docSnap);
-          setOrder(mappedOrder);
-          // Cache the fetched order details
-          try {
-            localStorage.setItem(`order-cache-${orderId}`, JSON.stringify(mappedOrder));
-          } catch (error) {
-            console.error(`Failed to cache order ${orderId}:`, error);
-          }
+    if (!orderId || !currentUser) {
+        if (!auth.currentUser) setLoading(false);
+        return;
+    };
+      
+    const orderRef = doc(db, "orders", orderId);
+    const unsubscribe = onSnapshot(orderRef, async (docSnap) => {
+    if (docSnap.exists()) {
+        const mappedOrder = await mapFirestoreDocToOrder(docSnap);
+        
+        // Ensure the current user has access to this order
+        const canAccess = mappedOrder.deliveryPartnerId === currentUser.uid || (mappedOrder.accessibleTo || []).includes(currentUser.uid);
+
+        if(canAccess) {
+            setOrder(mappedOrder);
+            // Cache the fetched order details
+            try {
+                localStorage.setItem(`order-cache-${orderId}`, JSON.stringify(mappedOrder));
+            } catch (error) {
+                console.error(`Failed to cache order ${orderId}:`, error);
+            }
         } else {
-          setOrder(null);
-          toast({ variant: "destructive", title: "Error", description: "Order not found." });
+            setOrder(null);
+            toast({ variant: "destructive", title: "Access Denied", description: "You do not have permission to view this order." });
         }
-        setLoading(false);
-      }, (error) => {
-        console.error("Error fetching order details:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not fetch order details. Showing cached data if available." });
-        setLoading(false);
-      });
-      return () => unsubscribe();
     } else {
-      setLoading(false);
-      toast({ variant: "destructive", title: "Error", description: "No order ID provided."});
+        setOrder(null);
+        toast({ variant: "destructive", title: "Error", description: "Order not found." });
     }
-  }, [orderId, toast]);
+    setLoading(false);
+    }, (error) => {
+    console.error("Error fetching order details:", error);
+    toast({ variant: "destructive", title: "Error", description: "Could not fetch order details. Showing cached data if available." });
+    setLoading(false);
+    });
+    return () => unsubscribe();
+    
+  }, [orderId, toast, currentUser]);
   
   // Effect to manage live location tracking based on order status
   useEffect(() => {
@@ -153,13 +163,14 @@ export default function OrderPage() {
   }, [order, throttledLocationUpdate, toast]);
 
   const handleAcceptOrder = async () => {
-    if (order && order.orderStatus === "Placed") {
+    if (order && currentUser) {
         setIsUpdating(true);
         try {
             const orderRef = doc(db, "orders", order.id);
             await updateDoc(orderRef, { 
               orderStatus: "accepted",
-              deliveryPartnerId: currentUser?.uid
+              deliveryPartnerId: currentUser.uid,
+              accessibleTo: [], // Clear access pool once accepted
             });
             toast({
                 title: "Order Accepted!",

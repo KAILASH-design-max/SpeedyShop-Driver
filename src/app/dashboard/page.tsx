@@ -56,13 +56,20 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!currentUser) return;
     
+    // This query securely listens for "Placed" orders that have been made available
+    // to the current driver via the `accessibleTo` field.
     const newOrderQuery = query(
       collection(db, "orders"),
-      where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "==", "accepted")
+      where("orderStatus", "==", "Placed"),
+      where("accessibleTo", "array-contains", currentUser.uid)
     );
     
     const unsubscribeNewOrder = onSnapshot(newOrderQuery, async (snapshot) => {
+        if (snapshot.empty) {
+            setNewOrder(null);
+            return;
+        }
+
       const assignedOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
       const assignedOrders = await Promise.all(assignedOrdersPromises);
       
@@ -127,29 +134,56 @@ export default function DashboardPage() {
 
   const handleOrderAccept = async (orderToAccept: Order) => {
       if (!currentUser) return;
-      setNewOrder(null); // Dismiss the card immediately
+
+      const orderRef = doc(db, "orders", orderToAccept.id);
+      try {
+        await updateDoc(orderRef, {
+          deliveryPartnerId: currentUser.uid,
+          orderStatus: "accepted",
+          accessibleTo: [], // Clear the accessibleTo field after acceptance
+        });
+        
+        setNewOrder(null); // Dismiss the card immediately
+
+        // Optimistically add to active orders list to prevent UI flicker
+        if (!activeOrders.some(o => o.id === orderToAccept.id)) {
+            setActiveOrders(prev => [...prev, { ...orderToAccept, orderStatus: 'accepted' }]);
+        }
       
-      // The order should already be in the active list via the listener,
-      // but if not, this prevents a UI flicker.
-      if (!activeOrders.some(o => o.id === orderToAccept.id)) {
-          setActiveOrders(prev => [...prev, orderToAccept]);
+        toast({
+              title: "Order Accepted!",
+              description: "The order has been added to your active list.",
+              className: "bg-green-500 text-white"
+        });
+      } catch (error) {
+          console.error("Error accepting order:", error);
+          toast({ variant: "destructive", title: "Acceptance Failed", description: "Could not accept the order."});
       }
-      
-      toast({
-            title: "Order Accepted!",
-            description: "The order has been added to your active list.",
-            className: "bg-green-500 text-white"
-      });
   };
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
   };
   
-  const handleNewOrderDismiss = () => {
-    if (newOrder) {
-      // If dismissed, make sure we don't show it again for this session
-      seenOrderIds.current.add(newOrder.id);
+  const handleNewOrderDismiss = async (orderToDismiss: Order) => {
+    if (newOrder && currentUser) {
+      // To dismiss, we remove the current user from the `accessibleTo` array.
+      const orderRef = doc(db, "orders", orderToDismiss.id);
+      try {
+        // This requires reading the doc first, which should be fine as we have access.
+        const currentOrderDoc = await mapFirestoreDocToOrder(await doc(db, "orders", orderToDismiss.id).get());
+        const updatedAccessibleTo = (currentOrderDoc.accessibleTo || []).filter(uid => uid !== currentUser.uid);
+
+        await updateDoc(orderRef, {
+          accessibleTo: updatedAccessibleTo
+        });
+        
+        seenOrderIds.current.add(orderToDismiss.id);
+        setNewOrder(null);
+      } catch (error) {
+        console.error("Error dismissing order:", error);
+        toast({ variant: "destructive", title: "Dismiss Failed", description: "Could not dismiss the order."});
+      }
     }
     setNewOrder(null);
   }
@@ -160,7 +194,7 @@ export default function DashboardPage() {
       {newOrder && (
         <NewOrderCard 
           order={newOrder}
-          onDismiss={handleNewOrderDismiss}
+          onDismiss={() => handleNewOrderDismiss(newOrder)}
           onAccept={handleOrderAccept}
         />
       )}
