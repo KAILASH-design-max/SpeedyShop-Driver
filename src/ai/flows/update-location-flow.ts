@@ -42,12 +42,22 @@ const updateLocationFlow = ai.defineFlow(
   async (input) => {
     try {
         const db = getFirestore();
-        // Use a new collection 'deliveryLocations' and the orderId as the document ID
+        const orderRef = db.collection('orders').doc(input.orderId);
         const locationRef = db.collection('deliveryLocations').doc(input.orderId);
         
+        // Fetch the order document to get the destination address
+        const orderSnap = await orderRef.get();
+        if (!orderSnap.exists) {
+            console.error(`Order with ID ${input.orderId} not found.`);
+            return { success: false };
+        }
+        const orderData = orderSnap.data();
+        const destinationAddress = orderData?.deliveryAddress || null;
+
         await locationRef.set({
             latitude: input.latitude,
             longitude: input.longitude,
+            destinationAddress: destinationAddress, // Store the destination address
             timestamp: Timestamp.now(),
         }, { merge: true });
 
