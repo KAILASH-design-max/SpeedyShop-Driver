@@ -336,19 +336,18 @@ export default function OrderPage() {
                 </Button>
             )}
             
-            {isTrackingActive && (
-              <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                <Link href={`/tracking/${order.id}`}>
-                    <Map className="mr-2 h-5 w-5" /> Track Live on Map
-                </Link>
-              </Button>
-            )}
-
             {order.orderStatus === "picked-up" && (
-              <Button onClick={handleOutOfDelivery} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-5 w-5" />}
-                 Out for Delivery
-              </Button>
+              <>
+                <Button onClick={handleOutOfDelivery} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-5 w-5" />}
+                  Out for Delivery
+                </Button>
+                <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  <Link href={`/tracking/${order.id}`}>
+                      <Map className="mr-2 h-5 w-5" /> Track Live on Map
+                  </Link>
+                </Button>
+              </>
             )}
 
              {order.orderStatus === "out-for-delivery" && (
@@ -356,6 +355,11 @@ export default function OrderPage() {
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
                   <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`}>
                      <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
+                  </Link>
+                </Button>
+                 <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  <Link href={`/tracking/${order.id}`}>
+                      <Map className="mr-2 h-5 w-5" /> Track Live on Map
                   </Link>
                 </Button>
                 <Button onClick={handleArrived} className="w-full bg-purple-500 hover:bg-purple-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
