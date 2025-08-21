@@ -65,6 +65,6 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     noContactDelivery: data.noContactDelivery ?? false,
     proofImageURL: data.proofImageURL,
     userId: data.userId,
-    accessibleTo: [],
+    accessibleTo: data.accessibleTo || [],
   };
 };

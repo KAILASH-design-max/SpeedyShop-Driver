@@ -14,13 +14,14 @@ import Link from "next/link";
 interface NewOrderCardProps {
   order: Order;
   onDismiss: () => void;
+  onAccept: (order: Order) => void;
 }
 
 // Data URI for a simple notification sound (a short, soft beep)
 const notificationSound = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 
-export function NewOrderCard({ order, onDismiss }: NewOrderCardProps) {
+export function NewOrderCard({ order, onDismiss, onAccept }: NewOrderCardProps) {
   const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
@@ -37,16 +38,20 @@ export function NewOrderCard({ order, onDismiss }: NewOrderCardProps) {
   
   const displayItems = order.items.map(item => `${item.quantity}x ${item.name}`).join(", ");
 
+  const handleAcceptClick = () => {
+      onAccept(order);
+  };
+
   return (
     <Dialog open={true} onOpenChange={(isOpen) => { if(!isOpen) onDismiss() }}>
       <DialogContent className="sm:max-w-lg p-0" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader className="p-6 pb-2">
             <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center">
                 <Package className="mr-3 h-8 w-8 text-primary" />
-                 New Delivery Assignment
+                 New Delivery Available
             </DialogTitle>
              <CardDescription className="text-center pt-2">
-                A new order has been assigned to you.
+                Review the details and accept the order.
              </CardDescription>
         </DialogHeader>
         <div className="p-6 pt-0 text-center space-y-4">
@@ -90,11 +95,12 @@ export function NewOrderCard({ order, onDismiss }: NewOrderCardProps) {
 
         </div>
         <CardFooter className="flex flex-col items-center justify-between gap-2 p-4 pt-0 bg-muted/50">
-            <Link href={`/orders/${order.id}`} className="w-full">
-                <Button className="w-full bg-green-500 hover:bg-green-600 text-white h-12 text-base font-bold">
-                  <ThumbsUp className="mr-2 h-5 w-5" /> View Order Details
-                </Button>
-            </Link>
+            <Button onClick={handleAcceptClick} className="w-full bg-green-500 hover:bg-green-600 text-white h-12 text-base font-bold">
+              <ThumbsUp className="mr-2 h-5 w-5" /> Accept Order
+            </Button>
+            <Button onClick={onDismiss} variant="outline" className="w-full">
+              <X className="mr-2 h-4 w-4" /> Decline
+            </Button>
         </CardFooter>
       </DialogContent>
     </Dialog>

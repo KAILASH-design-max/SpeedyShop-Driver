@@ -6,7 +6,7 @@ import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
 import { PackageCheck, Loader2 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
@@ -18,7 +18,7 @@ export default function DashboardPage() {
   
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [loadingActive, setLoadingActive] = useState(true);
-  const [newlyAssignedOrder, setNewlyAssignedOrder] = useState<Order | null>(null);
+  const [newOrder, setNewOrder] = useState<Order | null>(null);
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
@@ -43,10 +43,44 @@ export default function DashboardPage() {
       if (!user) {
         setActiveOrders([]);
         setLoadingActive(false);
+        setNewOrder(null);
       }
     });
     return () => unsubscribeAuth();
   }, []);
+
+  // Listener for NEW unassigned orders available to the current user
+  useEffect(() => {
+    if (!currentUser) {
+        setNewOrder(null);
+        return;
+    };
+
+    const newOrdersQuery = query(
+      collection(db, "orders"),
+      where("orderStatus", "==", "Placed"),
+      where("accessibleTo", "array-contains", currentUser.uid)
+    );
+
+    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0]; // Show the first available order
+            const order = await mapFirestoreDocToOrder(doc);
+            // Only show if it's not already an active order and not the current new order
+            if (!activeOrders.some(o => o.id === order.id) && newOrder?.id !== order.id) {
+               setNewOrder(order);
+            }
+        } else {
+           setNewOrder(null);
+        }
+    }, (error) => {
+        console.error("Error fetching new available orders:", error);
+    });
+    
+    return () => unsubscribeNew();
+
+  }, [currentUser, activeOrders, newOrder]);
+
 
   // Listener for ACTIVE orders assigned to the current user
   useEffect(() => {
@@ -66,22 +100,9 @@ export default function DashboardPage() {
     const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
       const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
       const newOrdersData = await Promise.all(ordersDataPromises);
-      
-      // Check for a new order that wasn't in the previous list
-      const brandNewOrder = newOrdersData.find(order => 
-          !previousOrderIds.current.has(order.id) && order.orderStatus === 'accepted'
-      );
-
-      if (brandNewOrder) {
-          setNewlyAssignedOrder(brandNewOrder);
-      }
-
       setActiveOrders(newOrdersData);
-      
-      // Update the set of previous order IDs
-      previousOrderIds.current = new Set(newOrdersData.map(o => o.id));
-
       setLoadingActive(false);
+
       try {
         localStorage.setItem('activeOrdersCache', JSON.stringify(newOrdersData));
       } catch (error) {
@@ -89,25 +110,50 @@ export default function DashboardPage() {
       }
     }, (error) => {
       console.error("Error fetching active orders:", error);
-      if (error.code === 'permission-denied') {
-          toast({
-              variant: "destructive",
-              title: "Permission Error",
-              description: "You do not have permission to view active orders. Please contact support."
-          });
-      }
       setLoadingActive(false);
     });
 
     return () => unsubscribeActive();
   }, [currentUser, toast]);
+
+  const handleOrderAccept = async (orderToAccept: Order) => {
+      if (!currentUser) return;
+      setNewOrder(null); // Dismiss the card immediately
+
+      // Optimistically add to active orders to prevent flash of "no orders"
+      if (!activeOrders.some(o => o.id === orderToAccept.id)) {
+        setActiveOrders(prev => [...prev, { ...orderToAccept, orderStatus: 'accepted' }]);
+      }
+      
+      const orderRef = doc(db, "orders", orderToAccept.id);
+      
+      try {
+        await updateDoc(orderRef, {
+            deliveryPartnerId: currentUser.uid,
+            orderStatus: "accepted",
+            accessibleTo: [], // Clear accessibility list
+        });
+        
+        toast({
+            title: "Order Accepted!",
+            description: "The order has been added to your active list.",
+            className: "bg-green-500 text-white"
+        });
+
+      } catch (error) {
+          console.error("Error accepting order:", error);
+          toast({ variant: "destructive", title: "Acceptance Failed", description: "Could not accept the order."});
+          // Revert optimistic update
+          setActiveOrders(prev => prev.filter(o => o.id !== orderToAccept.id));
+      }
+  };
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
   };
   
   const handleNewOrderDismiss = () => {
-    setNewlyAssignedOrder(null);
+    setNewOrder(null);
   }
 
   const isLoading = loadingActive;
@@ -115,10 +161,11 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
 
-      {newlyAssignedOrder && (
+      {newOrder && (
         <NewOrderCard 
-          order={newlyAssignedOrder}
+          order={newOrder}
           onDismiss={handleNewOrderDismiss}
+          onAccept={handleOrderAccept}
         />
       )}
 
