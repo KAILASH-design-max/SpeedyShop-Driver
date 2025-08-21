@@ -61,11 +61,15 @@ export default function TrackingPage() {
         if (order && mapsApiKey) {
             const origin = order.pickupLocation;
             const destination = order.dropOffLocation;
-            
-            // The driver's live location will be a waypoint on the route from store to customer
-            const waypoints = liveLocation ? `${liveLocation.latitude},${liveLocation.longitude}` : '';
 
-            const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}&mode=driving`;
+            let url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=driving`;
+
+            // Only add the waypoints parameter if a live location exists.
+            if (liveLocation) {
+                const waypoints = `${liveLocation.latitude},${liveLocation.longitude}`;
+                url += `&waypoints=${encodeURIComponent(waypoints)}`;
+            }
+            
             setMapUrl(url);
         } else {
             setMapUrl('');
