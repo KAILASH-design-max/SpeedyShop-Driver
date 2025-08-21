@@ -142,7 +142,13 @@ export default function DashboardPage() {
   }
   
   const handleOrderAccept = (acceptedOrder: Order) => {
-     setActiveOrders(prevOrders => [acceptedOrder, ...prevOrders]);
+     // Prevent adding duplicates. The real-time listener will also add the order.
+     setActiveOrders(prevOrders => {
+        if (prevOrders.some(o => o.id === acceptedOrder.id)) {
+            return prevOrders;
+        }
+        return [acceptedOrder, ...prevOrders];
+     });
      handleOrderAction(acceptedOrder.id);
   }
 
