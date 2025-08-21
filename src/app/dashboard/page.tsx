@@ -9,7 +9,6 @@ import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, limit } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
 import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
@@ -126,7 +125,7 @@ export default function DashboardPage() {
 
     return () => unsubscribeProfile();
 
-  }, [currentUser, ignoredOrderId, newOrder]);
+  }, [currentUser, ignoredOrderId]);
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
@@ -141,7 +140,6 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <DashboardHeader />
 
       {newOrder && currentUser && (
         <NewOrderCard 
