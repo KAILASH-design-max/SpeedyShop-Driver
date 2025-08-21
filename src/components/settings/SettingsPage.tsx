@@ -126,7 +126,7 @@ export function SettingsPage() {
                 <Label htmlFor="referral-code" className="font-medium">Your Unique Referral Code</Label>
                 <div className="flex gap-2">
                     <input id="referral-code" type="text" value={referralCode} readOnly className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" />
-                    <Button onClick={copyToClipboard} variant="outline" size="icon">
+                    <Button onClick={copyToClipboard} variant="outline" size="icon" disabled={!referralCode}>
                         <Copy className="h-4 w-4" />
                     </Button>
                 </div>
