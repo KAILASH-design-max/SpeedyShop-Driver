@@ -31,7 +31,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   
   // Clean up the status string: trim whitespace, convert to lowercase, and standardize.
   let rawStatus = data.status || data.orderStatus || "Placed";
-  rawStatus = rawStatus.trim().toLowerCase().replace(/\s+/g, ''); // Trim and remove all spaces
+  rawStatus = rawStatus.trim().toLowerCase().replace(/\s+/g, '-');
   if (rawStatus === 'accept') {
     rawStatus = 'accepted';
   }
