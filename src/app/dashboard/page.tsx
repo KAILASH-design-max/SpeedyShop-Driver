@@ -98,31 +98,36 @@ export default function DashboardPage() {
 
   // Listener for NEW unassigned orders
   useEffect(() => {
-    if (availabilityStatus !== 'online') {
+    if (availabilityStatus !== 'online' || !currentUser) {
         if(newOrder) setNewOrder(null);
         return;
     };
     
+    // This query is more robust. It looks for any placed order that is NOT assigned to the current driver.
+    // This avoids issues where deliveryPartnerId might not exist on a document vs. being explicitly null.
     const newOrdersQuery = query(
       collection(db, "orders"),
-      where("deliveryPartnerId", "==", null),
+      where("deliveryPartnerId", "!=", currentUser.uid),
       where("orderStatus", "==", "Placed"),
       limit(1)
     );
 
     const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
-      if (!snapshot.empty) {
-        const orderDoc = snapshot.docs[0];
-        if (orderDoc.id === ignoredOrderId) {
+      const unassignedDocs = snapshot.docs.filter(doc => !doc.data().deliveryPartnerId);
+
+      if (unassignedDocs.length > 0) {
+        const orderDoc = unassignedDocs[0];
+         if (orderDoc.id === ignoredOrderId) {
             return;
         }
-
         const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
         setNewOrder(mappedOrder);
+
       } else {
         setNewOrder(null);
       }
     }, (error) => {
+      // Don't show permission denied errors, as they are expected when rules block reads.
       if (error.code !== 'permission-denied') {
         console.error("Error fetching new orders:", error);
       }
@@ -130,7 +135,7 @@ export default function DashboardPage() {
 
     return () => unsubscribeNew();
 
-  }, [availabilityStatus, ignoredOrderId]);
+  }, [availabilityStatus, currentUser, ignoredOrderId]);
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
@@ -141,7 +146,7 @@ export default function DashboardPage() {
     setNewOrder(null);
   }
   
-  const handleAcceptOrder = (acceptedOrder: Order) => {
+  const handleOrderAccept = (acceptedOrder: Order) => {
      setActiveOrders(prevOrders => [acceptedOrder, ...prevOrders]);
      handleOrderAction(acceptedOrder.id);
   }
@@ -156,7 +161,7 @@ export default function DashboardPage() {
           order={newOrder} 
           currentUserId={currentUser.uid} 
           onOrderAction={handleOrderAction}
-          onOrderAccept={handleAcceptOrder}
+          onOrderAccept={handleOrderAccept}
         />
       )}
 
