@@ -112,25 +112,6 @@ export default function ProfilePage() {
             ...dataWithTimestamp,
             maintenanceLog: arrayUnion(newLogWithTimestamp),
         });
-      } else if (updatedData.newPenaltyAppeal) {
-        const { penaltyId, appealComment } = updatedData.newPenaltyAppeal;
-        const penaltyToUpdate = profile.penalties?.find(p => p.id === penaltyId);
-        
-        if (penaltyToUpdate) {
-            const updatedPenalty = {
-                ...penaltyToUpdate,
-                status: 'Appealed',
-                appealComment: appealComment,
-                appealDate: serverTimestamp(),
-            };
-            // Remove the old penalty and add the updated one
-            await updateDoc(profileRef, {
-                penalties: arrayRemove(penaltyToUpdate)
-            });
-            await updateDoc(profileRef, {
-                penalties: arrayUnion(updatedPenalty)
-            });
-        }
       }
       else {
         await setDoc(profileRef, dataWithTimestamp, { merge: true });

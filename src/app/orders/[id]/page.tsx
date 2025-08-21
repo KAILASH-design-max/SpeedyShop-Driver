@@ -41,7 +41,6 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const locationWatcherId = useRef<number | null>(null);
-  const [isCustomerChatOpen, setIsCustomerChatOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
