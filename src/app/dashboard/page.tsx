@@ -140,7 +140,8 @@ export default function DashboardPage() {
 
   // Listener for NEW unassigned orders
   useEffect(() => {
-    if (availabilityStatus !== 'online' || newOrder) {
+    if (availabilityStatus !== 'online') {
+      if(newOrder) setNewOrder(null); // Clear any stale new order if user goes offline
       return () => {};
     }
 
@@ -154,8 +155,14 @@ export default function DashboardPage() {
     const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
       if (!snapshot.empty) {
         const orderDoc = snapshot.docs[0];
-        const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
-        setNewOrder(mappedOrder);
+        // Ensure we don't re-set the same order
+        if (newOrder?.id !== orderDoc.id) {
+          const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
+          setNewOrder(mappedOrder);
+        }
+      } else {
+        // No new orders found, clear any existing one
+        setNewOrder(null);
       }
     }, (error) => {
       // Don't show toast for permission errors, as they are expected if rules are set up correctly.
@@ -179,7 +186,7 @@ export default function DashboardPage() {
   const isLoading = isAvailabilityLoading || loadingActive;
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
       {newOrder && currentUser && (
         <NewOrderCard 
           order={newOrder} 
@@ -196,41 +203,41 @@ export default function DashboardPage() {
         />
       )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
-          <AvailabilityToggle
+           <AvailabilityToggle
             currentStatus={availabilityStatus}
             onStatusChange={handleAvailabilityChange}
             isLoading={isAvailabilityLoading}
           />
-
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-xl font-semibold mb-2 flex items-center text-primary">
-            <PackageCheck className="mr-2 h-6 w-6" /> Your Active Orders
-          </h2>
-          {isLoading && activeOrders.length === 0 ? (
-            <div className="flex justify-center items-center p-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-2">Loading active orders...</p>
-            </div>
-          ) : activeOrders.length > 0 ? (
-            <div className="space-y-4">
-              {activeOrders.map((order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
-                  onCustomerChat={handleCustomerChatOpen}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground">
-              <p className="font-semibold">You have no active orders.</p>
-              <p className="text-sm mt-1">Go online to see new delivery requests.</p>
-            </div>
-          )}
+            <h2 className="text-xl font-semibold text-primary flex items-center">
+                <PackageCheck className="mr-2 h-6 w-6" />
+                Your Active Orders
+            </h2>
+            {isLoading && activeOrders.length === 0 ? (
+                <div className="flex justify-center items-center p-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-2">Loading active orders...</p>
+                </div>
+            ) : activeOrders.length > 0 ? (
+                <div className="flex flex-col gap-4">
+                {activeOrders.map((order) => (
+                    <OrderCard 
+                    key={order.id} 
+                    order={order} 
+                    onCustomerChat={handleCustomerChatOpen}
+                    />
+                ))}
+                </div>
+            ) : (
+                <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground">
+                <p className="font-semibold">You have no active orders.</p>
+                <p className="text-sm mt-1">Go online to see new delivery requests.</p>
+                </div>
+            )}
         </div>
       </div>
     </div>
