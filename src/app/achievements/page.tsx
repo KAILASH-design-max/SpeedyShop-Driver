@@ -108,7 +108,7 @@ export default function AchievementsPage() {
         peakHourDeliveries,
         weekendDeliveries,
         lateNightDeliveries,
-        overallRating,
+        overallRating: overallRating || 0,
         fiveStarRatingStreak,
       };
 
