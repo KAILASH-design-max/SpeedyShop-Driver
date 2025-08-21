@@ -100,6 +100,10 @@ export default function DashboardPage() {
   const handleOrderAccept = async (orderToAccept: Order) => {
     if (!currentUser) return;
 
+    // Optimistically update the UI to avoid race conditions
+    setNewOrder(null);
+    seenOrderIds.current.add(orderToAccept.id);
+
     const orderRef = doc(db, "orders", orderToAccept.id);
     try {
       await updateDoc(orderRef, {
@@ -108,9 +112,6 @@ export default function DashboardPage() {
         accessibleTo: [], // Clear the accessibleTo field after acceptance
       });
       
-      setNewOrder(null);
-      seenOrderIds.current.add(orderToAccept.id);
-    
       toast({
             title: "Order Accepted!",
             description: "The order has been added to your active list.",
@@ -119,6 +120,8 @@ export default function DashboardPage() {
     } catch (error) {
         console.error("Error accepting order:", error);
         toast({ variant: "destructive", title: "Acceptance Failed", description: "Could not accept the order."});
+        // If the update fails, we may need to handle reversing the UI change,
+        // but the listener should eventually correct the state.
     }
   };
   
@@ -126,25 +129,10 @@ export default function DashboardPage() {
     setCustomerChatOrder(order);
   };
   
-  const handleNewOrderDismiss = async (orderToDismiss: Order) => {
+  const handleNewOrderDismiss = (orderToDismiss: Order) => {
     if (currentUser) {
       seenOrderIds.current.add(orderToDismiss.id);
       setNewOrder(null);
-      
-      const orderRef = doc(db, "orders", orderToDismiss.id);
-      try {
-        const orderDoc = await getDoc(orderRef);
-        if (!orderDoc.exists()) return;
-
-        const currentOrderDoc = await mapFirestoreDocToOrder(orderDoc);
-        const updatedAccessibleTo = (currentOrderDoc.accessibleTo || []).filter(uid => uid !== currentUser.uid);
-
-        await updateDoc(orderRef, {
-          accessibleTo: updatedAccessibleTo
-        });
-      } catch (error) {
-        console.error("Error dismissing order:", error);
-      }
     }
   }
 
