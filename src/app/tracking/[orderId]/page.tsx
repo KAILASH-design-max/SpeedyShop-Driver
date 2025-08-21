@@ -35,7 +35,7 @@ export default function TrackingPage() {
                 const origin = `${data.latitude},${data.longitude}`;
                 const destination = data.destinationAddress;
 
-                if (origin && destination) {
+                if (origin && destination && mapsApiKey) {
                     const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=driving`;
                     setMapUrl(url);
                 }
@@ -79,8 +79,8 @@ export default function TrackingPage() {
                         src={mapUrl}>
                     </iframe>
                 ) : (
-                    <div className="h-full flex items-center justify-center">
-                        <p>Could not load map. Location data may be unavailable.</p>
+                    <div className="h-full flex items-center justify-center p-4 text-center">
+                        <p className="text-destructive font-semibold">Could not load map. Location data or a valid API key may be unavailable.</p>
                     </div>
                 )}
             </div>
