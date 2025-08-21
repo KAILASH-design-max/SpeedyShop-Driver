@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 interface NewOrderCardProps {
   order: Order;
   currentUserId: string;
-  onOrderAction: () => void;
+  onOrderAction: (orderId: string) => void;
 }
 
 // Data URI for a simple notification sound (a short, soft beep)
@@ -67,7 +67,7 @@ export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCa
         description: `Order #${order.id} has been moved to your active orders.`,
         className: "bg-green-500 text-white",
       });
-      onOrderAction();
+      onOrderAction(order.id);
     } catch (error) {
       console.error("Error accepting order:", error);
       toast({
@@ -84,7 +84,7 @@ export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCa
         title: isTimeout ? "Order Timed Out" : "Order Declined",
         description: `You have declined order #${order.id}.`,
     });
-    onOrderAction();
+    onOrderAction(order.id);
   };
   
   const displayItems = order.items.map(item => `${item.quantity}x ${item.name}`).join(", ");

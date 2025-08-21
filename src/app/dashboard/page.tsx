@@ -24,6 +24,7 @@ export default function DashboardPage() {
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [loadingActive, setLoadingActive] = useState(true);
   const [newOrder, setNewOrder] = useState<Order | null>(null);
+  const [ignoredOrderId, setIgnoredOrderId] = useState<string | null>(null);
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
@@ -155,11 +156,13 @@ export default function DashboardPage() {
     const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
       if (!snapshot.empty) {
         const orderDoc = snapshot.docs[0];
-        const currentNewOrderId = newOrder ? newOrder.id : null;
-        if (currentNewOrderId !== orderDoc.id) {
-            const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
-            setNewOrder(mappedOrder);
+        // Do not show the order if it has been ignored in the current session.
+        if (orderDoc.id === ignoredOrderId) {
+            return;
         }
+
+        const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
+        setNewOrder(mappedOrder);
       } else {
         setNewOrder(null);
       }
@@ -171,13 +174,14 @@ export default function DashboardPage() {
 
     return () => unsubscribeNew();
 
-  }, [availabilityStatus]);
+  }, [availabilityStatus, ignoredOrderId]);
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
   };
 
-  const handleOrderAction = () => {
+  const handleOrderAction = (orderId: string) => {
+    setIgnoredOrderId(orderId);
     setNewOrder(null);
   }
 
@@ -189,7 +193,7 @@ export default function DashboardPage() {
         <NewOrderCard 
           order={newOrder} 
           currentUserId={currentUser.uid} 
-          onOrderAction={handleOrderAction}
+          onOrderAction={() => handleOrderAction(newOrder.id)}
         />
       )}
 
