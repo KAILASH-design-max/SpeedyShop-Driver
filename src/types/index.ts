@@ -221,6 +221,7 @@ export interface DriverLocation {
 export interface DeliveryLocation {
     latitude: number;
     longitude: number;
+    destinationAddress: string;
     timestamp: any; // Firestore Timestamp
 }
 

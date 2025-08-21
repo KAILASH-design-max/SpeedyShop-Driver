@@ -8,7 +8,7 @@ import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin } from "lucide-react";
+import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin, Map } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -306,6 +306,7 @@ export default function OrderPage() {
 
   const isOrderActive = ['accepted', 'arrived-at-store', 'picked-up', 'out-for-delivery', 'arrived'].includes(order.orderStatus);
   const isOrderComplete = ['delivered', 'cancelled'].includes(order.orderStatus);
+  const isTrackingActive = ['picked-up', 'out-for-delivery'].includes(order.orderStatus);
 
 
   return (
@@ -333,6 +334,14 @@ export default function OrderPage() {
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
                    Confirm Pickup from Store
                 </Button>
+            )}
+            
+            {isTrackingActive && (
+              <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                <Link href={`/tracking/${order.id}`}>
+                    <Map className="mr-2 h-5 w-5" /> Track Live on Map
+                </Link>
+              </Button>
             )}
 
             {order.orderStatus === "picked-up" && (
@@ -427,5 +436,3 @@ export default function OrderPage() {
     </div>
   );
 }
-
-    
