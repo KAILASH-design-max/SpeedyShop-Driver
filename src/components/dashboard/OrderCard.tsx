@@ -55,61 +55,61 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   const navAction = getNavAction();
 
   return (
-    <Link href={`/orders/${order.id}`} className="block hover:no-underline group">
-        <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group-hover:border-primary">
-            {currentStatus && (
-                <CardHeader className={cn("p-4 flex flex-row items-center justify-between", currentStatus.color.replace('text-','bg-') + '/10')}>
-                    <div className="flex items-center gap-2">
-                        <currentStatus.icon className={cn("h-5 w-5", currentStatus.color)} />
-                        <CardTitle className={cn("text-base font-semibold", currentStatus.color)}>
-                            {currentStatus.label}
-                        </CardTitle>
-                    </div>
-                    <Badge variant={"secondary"} className="capitalize">
-                        #{order.id}
-                    </Badge>
-                </CardHeader>
-            )}
-
-            <CardContent className="p-4 pt-4 text-sm space-y-3 flex-grow">
-                <div className="flex items-start gap-3">
-                    <Store className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div>
-                        <p className="text-xs text-muted-foreground">Pickup</p>
-                        <p className="font-medium" title={order.pickupLocation}>{order.pickupLocation}</p>
-                    </div>
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full hover:border-primary">
+        {currentStatus && (
+            <CardHeader className={cn("p-4 flex flex-row items-center justify-between", currentStatus.color.replace('text-','bg-') + '/10')}>
+                <div className="flex items-center gap-2">
+                    <currentStatus.icon className={cn("h-5 w-5", currentStatus.color)} />
+                    <CardTitle className={cn("text-base font-semibold", currentStatus.color)}>
+                        {currentStatus.label}
+                    </CardTitle>
                 </div>
-                <div className="flex items-start gap-3">
-                    <Home className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div>
-                        <p className="text-xs text-muted-foreground">Drop-off for {order.customerName}</p>
-                        <p className="font-medium" title={order.dropOffLocation}>{order.dropOffLocation}</p>
-                    </div>
-                </div>
-            </CardContent>
+                <Badge variant={"secondary"} className="capitalize">
+                    #{order.id}
+                </Badge>
+            </CardHeader>
+        )}
 
-            <CardFooter className="p-3 mt-auto border-t bg-muted/30">
-                <div className="flex justify-between items-center w-full gap-2">
-                     <Button variant="ghost" size="sm" aria-label="Chat with customer" onClick={handleCustomerChatClick}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Chat
+        <CardContent className="p-4 pt-4 text-sm space-y-3 flex-grow">
+            <div className="flex items-start gap-3">
+                <Store className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                <div>
+                    <p className="text-xs text-muted-foreground">Pickup</p>
+                    <p className="font-medium" title={order.pickupLocation}>{order.pickupLocation}</p>
+                </div>
+            </div>
+            <div className="flex items-start gap-3">
+                <Home className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                <div>
+                    <p className="text-xs text-muted-foreground">Drop-off for {order.customerName}</p>
+                    <p className="font-medium" title={order.dropOffLocation}>{order.dropOffLocation}</p>
+                </div>
+            </div>
+        </CardContent>
+
+        <CardFooter className="p-3 mt-auto border-t bg-muted/30">
+            <div className="flex justify-between items-center w-full gap-2">
+                 <Button variant="ghost" size="sm" aria-label="Chat with customer" onClick={handleCustomerChatClick}>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Chat
+                </Button>
+                {navAction ? (
+                    <Button asChild size="sm">
+                        <Link href={navAction.href}>
+                            <Navigation className="mr-2 h-4 w-4" />
+                            {navAction.text}
+                        </Link>
                     </Button>
-                    {navAction ? (
-                        <Button asChild size="sm" onClick={(e) => e.stopPropagation()}>
-                            <Link href={navAction.href}>
-                                <Navigation className="mr-2 h-4 w-4" />
-                                {navAction.text}
-                            </Link>
-                        </Button>
-                    ) : (
-                         <div className="flex items-center text-primary font-semibold text-sm group-hover:underline">
+                ) : (
+                    <Button asChild variant="link" className="text-primary font-semibold text-sm hover:underline p-0 h-auto">
+                        <Link href={`/orders/${order.id}`} className="flex items-center">
                             View Details
-                            <ChevronRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
-                        </div>
-                    )}
-                </div>
-            </CardFooter>
-        </Card>
-    </Link>
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                        </Link>
+                    </Button>
+                )}
+            </div>
+        </CardFooter>
+    </Card>
   );
 }
