@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin, Map, LayoutDashboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import {
@@ -29,17 +29,26 @@ import { updateLocation } from "@/ai/flows/update-location-flow";
 import { useThrottle } from "@/hooks/use-throttle";
 import { RateAndReport } from "@/components/orders/RateAndReport";
 import Link from 'next/link';
+import { User } from "firebase/auth";
 
 export default function OrderPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const orderId = typeof params.id === 'string' ? params.id : '';
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const locationWatcherId = useRef<number | null>(null);
   const [isCustomerChatOpen, setIsCustomerChatOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
 
   const throttledLocationUpdate = useThrottle(async (position: GeolocationPosition) => {
     if (!order) return;
@@ -142,6 +151,30 @@ export default function OrderPage() {
     return () => stopWatching(); // Cleanup on component unmount or when order status changes
 
   }, [order?.orderStatus, throttledLocationUpdate, toast]);
+
+
+  const handleAcceptOrder = async () => {
+    if (!currentUser) {
+        toast({ variant: "destructive", title: "Error", description: "You must be logged in to accept orders." });
+        return;
+    }
+    if (order && order.orderStatus === "Placed") {
+        setIsUpdating(true);
+        try {
+            const orderRef = doc(db, "orders", order.id);
+            await updateDoc(orderRef, { 
+                status: "accepted",
+                deliveryPartnerId: currentUser.uid,
+            });
+            toast({ title: "Order Accepted!", description: `You can now proceed to the store.`, className: "bg-green-500 text-white" });
+        } catch (error) {
+            console.error("Error accepting order:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not accept order. It might have been taken." });
+        } finally {
+            setIsUpdating(false);
+        }
+    }
+  };
 
 
   const handleArrivedAtStore = async () => {
@@ -315,20 +348,11 @@ export default function OrderPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-            {order.orderStatus === "placed" && (
-                <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Order Not Accepted</AlertTitle>
-                    <AlertDescription>
-                        This order has not been accepted yet. Please go to your dashboard to find and accept new orders.
-                        <Button asChild className="w-full mt-4">
-                           <Link href="/dashboard">
-                                <LayoutDashboard className="mr-2 h-4 w-4" />
-                                Go to Dashboard
-                           </Link>
-                        </Button>
-                    </AlertDescription>
-                </Alert>
+            {order.orderStatus === "Placed" && (
+                 <Button onClick={handleAcceptOrder} className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-5 w-5" />}
+                    Accept Order
+                 </Button>
             )}
 
             {order.orderStatus === "accepted" && (
