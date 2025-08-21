@@ -153,30 +153,6 @@ export default function OrderPage() {
   }, [order?.orderStatus, throttledLocationUpdate, toast]);
 
 
-  const handleAcceptOrder = async () => {
-    if (!currentUser) {
-        toast({ variant: "destructive", title: "Error", description: "You must be logged in to accept orders." });
-        return;
-    }
-    if (order && order.orderStatus === "Placed") {
-        setIsUpdating(true);
-        try {
-            const orderRef = doc(db, "orders", order.id);
-            await updateDoc(orderRef, { 
-                orderStatus: "accepted",
-                deliveryPartnerId: currentUser.uid,
-            });
-            toast({ title: "Order Accepted!", description: `Order #${order.id} has been moved to your active orders.`, className: "bg-green-500 text-white" });
-        } catch (error) {
-            console.error("Error accepting order:", error);
-            toast({ variant: "destructive", title: "Error", description: "Could not accept order. It might have been taken." });
-        } finally {
-            setIsUpdating(false);
-        }
-    }
-  };
-
-
   const handleArrivedAtStore = async () => {
     if (order && order.orderStatus === "accepted") {
       setIsUpdating(true);
@@ -345,16 +321,24 @@ export default function OrderPage() {
   return (
     <div className="space-y-6 pb-6 px-1">
       <OrderDetailsDisplay order={order} />
+      
+      {order.orderStatus === "Placed" && (
+           <Card className="mt-6">
+                <CardContent className="p-6 text-center">
+                    <p className="text-lg font-semibold">This order has not been accepted yet.</p>
+                    <p className="text-muted-foreground mt-1">Please go to the dashboard to accept new orders.</p>
+                    <Button asChild className="mt-4">
+                        <Link href="/dashboard">
+                            <LayoutDashboard className="mr-2 h-4 w-4"/>
+                            Go to Dashboard
+                        </Link>
+                    </Button>
+                </CardContent>
+           </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-            {order.orderStatus === "Placed" && (
-                 <Button onClick={handleAcceptOrder} className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-5 w-5" />}
-                    Accept Order
-                 </Button>
-            )}
-
             {order.orderStatus === "accepted" && (
               <>
                 <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>

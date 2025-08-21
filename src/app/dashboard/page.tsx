@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
-import { LiveChat } from "@/components/dashboard/LiveChat";
 import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
 
 export default function DashboardPage() {
@@ -122,10 +121,11 @@ export default function DashboardPage() {
     }
 
     setLoadingActive(true);
+    // This query is more robust. It gets all orders assigned to the driver that are not in a final state.
     const activeOrdersQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "in", ["accepted", "picked-up", "out-for-delivery", "arrived"])
+      where("orderStatus", "not-in", ["delivered", "cancelled"])
     );
 
     const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
@@ -159,17 +159,17 @@ export default function DashboardPage() {
     }
 
     setLoadingNew(true);
+    // Query for orders that are 'Placed' and have no delivery partner yet.
     const newOrdersQuery = query(
       collection(db, "orders"),
-      where("status", "==", "Placed")
+      where("orderStatus", "==", "Placed"),
+      where("deliveryPartnerId", "==", null)
     );
     
     const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
       const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
       const ordersData = await Promise.all(ordersDataPromises);
-      // Filter out any orders that already have a delivery partner, in case of race conditions
-      const trulyNewOrders = ordersData.filter(order => !order.deliveryPartnerId);
-      setNewOrders(trulyNewOrders);
+      setNewOrders(ordersData);
       setLoadingNew(false);
     }, (error) => {
       // This is an expected error if backend security rules prevent listing all new orders.
