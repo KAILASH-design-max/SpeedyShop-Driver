@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
-import { PackageCheck, Loader2 } from "lucide-react";
+import { PackageCheck, Loader2, PackageSearch } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -230,8 +230,9 @@ export default function DashboardPage() {
             </div>
         ) : (
             <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
-              <p className="font-semibold">You have no active orders.</p>
-              <p className="text-sm mt-1">Go online to see new delivery requests.</p>
+              <PackageSearch className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="font-semibold text-lg">You have no active orders.</p>
+              <p className="text-sm mt-1">Go online to see new delivery requests as they come in.</p>
             </div>
         )}
       </div>
