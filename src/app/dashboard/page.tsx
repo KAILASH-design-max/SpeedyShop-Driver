@@ -42,14 +42,18 @@ export default function DashboardPage() {
     if (!currentUser) {
         return;
     }
+    // Simplified query to avoid needing a composite index. Filtering for "Placed" status happens on the client.
     const availableOrdersQuery = query(
         collection(db, "orders"),
-        where("orderStatus", "==", "Placed"),
         where("accessibleTo", "array-contains", currentUser.uid)
     );
+
     const unsubscribe = onSnapshot(availableOrdersQuery, async (snapshot) => {
         const availableOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-        const availableOrders = await Promise.all(availableOrdersPromises);
+        let availableOrders = await Promise.all(availableOrdersPromises);
+
+        // Filter for "Placed" orders on the client
+        availableOrders = availableOrders.filter(order => order.orderStatus === 'Placed');
 
         if (availableOrders.length > 0) {
             // Find the first order that hasn't been seen/dismissed in this session
@@ -58,6 +62,7 @@ export default function DashboardPage() {
         } else {
             setNewOrder(null);
         }
+        // Set loading to false here as well, in case this listener runs but finds no 'Placed' orders.
         setIsLoading(false);
 
     }, (error) => {
