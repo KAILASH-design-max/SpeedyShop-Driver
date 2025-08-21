@@ -31,20 +31,38 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   
   // Clean up the status string: trim whitespace, convert to lowercase, and standardize.
   let rawStatus = data.orderStatus || data.status || "Placed";
-  rawStatus = rawStatus.trim();
+  rawStatus = rawStatus.trim().toLowerCase();
   
-  let orderStatus = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
-  
-  if (orderStatus === 'Accept') {
-    orderStatus = 'Accepted';
-  } else if (orderStatus.toLowerCase() === 'out-for-delivery') {
-      orderStatus = 'out-for-delivery';
-  } else if (orderStatus.toLowerCase() === 'arrived-at-store') {
-      orderStatus = 'arrived-at-store';
-  } else if (orderStatus.toLowerCase() === 'placed') {
-      orderStatus = 'Placed';
-  }
+  let orderStatus: Order['orderStatus'];
 
+  switch(rawStatus) {
+    case 'accepted':
+    case 'accept':
+      orderStatus = 'accepted';
+      break;
+    case 'arrived-at-store':
+      orderStatus = 'arrived-at-store';
+      break;
+    case 'picked-up':
+      orderStatus = 'picked-up';
+      break;
+    case 'out-for-delivery':
+      orderStatus = 'out-for-delivery';
+      break;
+    case 'arrived':
+      orderStatus = 'arrived';
+      break;
+    case 'delivered':
+      orderStatus = 'delivered';
+      break;
+    case 'cancelled':
+      orderStatus = 'cancelled';
+      break;
+    case 'placed':
+    default:
+      orderStatus = 'Placed';
+      break;
+  }
 
   let pickupLocation = "GrocerMart";
   if (data.storeId) {
@@ -66,7 +84,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     pickupLocation: pickupLocation,
     dropOffLocation: dropOffLocationString,
     items: items,
-    orderStatus: orderStatus as Order['orderStatus'],
+    orderStatus: orderStatus,
     estimatedEarnings: estimatedEarnings,
     deliveryCharge: data.deliveryCharge,
     total: data.totalAmount,
