@@ -38,7 +38,7 @@ import type { User } from "firebase/auth";
 import type { Order, Profile, DeliveryRating } from "@/types";
 import { Loader2, Calendar as CalendarIcon, Package, Link2, XCircle, MessageSquare, IndianRupee } from "lucide-react";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, subDays, startOfToday } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { DateRange } from "react-day-picker";
@@ -76,16 +76,20 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
 
     setLoading(true);
 
+    const thirtyDaysAgo = subDays(startOfToday(), 30);
+
     const deliveriesQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
       where("orderStatus", "in", ["delivered", "cancelled"]),
+      where("completedAt", ">=", thirtyDaysAgo),
       orderBy("completedAt", "desc")
     );
     
     const ratingsQuery = query(
         collection(db, 'deliveryPartnerRatings'),
-        where('deliveryPartnerId', '==', currentUser.uid)
+        where('deliveryPartnerId', '==', currentUser.uid),
+        where('ratedAt', '>=', thirtyDaysAgo)
     );
 
     const unsubscribeDeliveries = onSnapshot(
@@ -182,7 +186,7 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
             <div>
                 <CardTitle className="text-2xl font-bold flex items-center"><Package className="mr-2 h-6 w-6"/>Delivery History</CardTitle>
                 <CardDescription className="mt-1">
-                 View all your past deliveries. Use filters to narrow down the results.
+                 Viewing your deliveries from the last 30 days. Use filters to narrow down the results.
                 </CardDescription>
             </div>
             <div className="flex items-center gap-2">
