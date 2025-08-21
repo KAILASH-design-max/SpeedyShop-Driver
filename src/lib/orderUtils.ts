@@ -34,12 +34,30 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   const estimatedEarnings = data.deliveryCharge ?? 0;
   
   // Map the new status field to orderStatus
-  const orderStatus = data.orderStatus || data.status || "Placed";
+  const orderStatus = data.orderStatus || "Placed";
+
+  // Fetch store details if storeId is present
+  let pickupLocation = "GrocerMart"; // Default fallback
+  if (data.storeId) {
+    try {
+        const storeRef = doc(db, "stores", data.storeId);
+        const storeSnap = await getDoc(storeRef);
+        if (storeSnap.exists()) {
+            const storeData = storeSnap.data();
+            // Use the store's location field, fallback to its name, then to a default
+            pickupLocation = storeData.location || storeData.name || "Unknown Store";
+        }
+    } catch (error) {
+        console.error(`Error fetching store details for order ${docSnap.id}:`, error);
+        // Keep the default pickupLocation if the fetch fails
+    }
+  }
+
 
   return {
     id: docSnap.id,
     customerName: customerName,
-    pickupLocation: "GrocerMart", // Default pickup location
+    pickupLocation: pickupLocation,
     dropOffLocation: dropOffLocationString,
     items: items,
     orderStatus: orderStatus.toLowerCase() as Order['orderStatus'],
