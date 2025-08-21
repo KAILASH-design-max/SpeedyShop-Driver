@@ -142,7 +142,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (availabilityStatus !== 'online') {
       if(newOrder) setNewOrder(null); // Clear any stale new order if user goes offline
-      return () => {};
+      return;
     }
 
     const newOrdersQuery = query(
@@ -155,17 +155,15 @@ export default function DashboardPage() {
     const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
       if (!snapshot.empty) {
         const orderDoc = snapshot.docs[0];
-        // Ensure we don't re-set the same order
-        if (newOrder?.id !== orderDoc.id) {
-          const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
-          setNewOrder(mappedOrder);
+        const currentNewOrderId = newOrder ? newOrder.id : null;
+        if (currentNewOrderId !== orderDoc.id) {
+            const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
+            setNewOrder(mappedOrder);
         }
       } else {
-        // No new orders found, clear any existing one
         setNewOrder(null);
       }
     }, (error) => {
-      // Don't show toast for permission errors, as they are expected if rules are set up correctly.
       if (error.code !== 'permission-denied') {
         console.error("Error fetching new orders:", error);
       }
@@ -203,7 +201,7 @@ export default function DashboardPage() {
         />
       )}
       
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
            <AvailabilityToggle
             currentStatus={availabilityStatus}
