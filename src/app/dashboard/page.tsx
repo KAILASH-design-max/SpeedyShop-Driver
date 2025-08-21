@@ -8,12 +8,13 @@ import type { Order, Profile } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { PackageCheck, Loader2, BellDot } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, limit } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
+import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -22,6 +23,7 @@ export default function DashboardPage() {
   
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [loadingActive, setLoadingActive] = useState(true);
+  const [newOrder, setNewOrder] = useState<Order | null>(null);
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
@@ -112,7 +114,6 @@ export default function DashboardPage() {
     }
 
     setLoadingActive(true);
-    // This query is more robust. It gets all orders assigned to the driver that are not in a final state.
     const activeOrdersQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
@@ -124,7 +125,6 @@ export default function DashboardPage() {
       const ordersData = await Promise.all(ordersDataPromises);
       setActiveOrders(ordersData);
       setLoadingActive(false);
-      // Cache the fetched active orders
       try {
         localStorage.setItem('activeOrdersCache', JSON.stringify(ordersData));
       } catch (error) {
@@ -137,17 +137,57 @@ export default function DashboardPage() {
 
     return () => unsubscribeActive();
   }, [currentUser, toast]);
+
+  // Listener for NEW unassigned orders
+  useEffect(() => {
+    if (availabilityStatus !== 'online' || newOrder) {
+      return () => {};
+    }
+
+    const newOrdersQuery = query(
+      collection(db, "orders"),
+      where("deliveryPartnerId", "==", null),
+      where("orderStatus", "==", "Placed"),
+      limit(1)
+    );
+
+    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
+      if (!snapshot.empty) {
+        const orderDoc = snapshot.docs[0];
+        const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
+        setNewOrder(mappedOrder);
+      }
+    }, (error) => {
+      // Don't show toast for permission errors, as they are expected if rules are set up correctly.
+      if (error.code !== 'permission-denied') {
+        console.error("Error fetching new orders:", error);
+      }
+    });
+
+    return () => unsubscribeNew();
+
+  }, [availabilityStatus, newOrder]);
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
   };
 
+  const handleOrderAction = () => {
+    setNewOrder(null);
+  }
+
   const isLoading = isAvailabilityLoading || loadingActive;
 
   return (
-    <div>
-      <DashboardHeader />
-      
+    <div className="p-6">
+      {newOrder && currentUser && (
+        <NewOrderCard 
+          order={newOrder} 
+          currentUserId={currentUser.uid} 
+          onOrderAction={handleOrderAction}
+        />
+      )}
+
       {customerChatOrder && (
         <CustomerChatDialog
           order={customerChatOrder}
@@ -156,8 +196,8 @@ export default function DashboardPage() {
         />
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-0 pb-6">
-        <div className="md:col-span-1 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 space-y-6">
           <AvailabilityToggle
             currentStatus={availabilityStatus}
             onStatusChange={handleAvailabilityChange}
@@ -166,8 +206,8 @@ export default function DashboardPage() {
 
         </div>
 
-        <div className="md:col-span-2 space-y-6">
-          <h2 className="text-xl font-semibold mb-2 flex items-center text-primary px-6 md:px-0">
+        <div className="lg:col-span-2 space-y-6">
+          <h2 className="text-xl font-semibold mb-2 flex items-center text-primary">
             <PackageCheck className="mr-2 h-6 w-6" /> Your Active Orders
           </h2>
           {isLoading && activeOrders.length === 0 ? (
