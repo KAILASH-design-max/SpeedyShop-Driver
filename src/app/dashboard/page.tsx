@@ -13,7 +13,6 @@ import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
-import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
 import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
 
 export default function DashboardPage() {
@@ -23,12 +22,6 @@ export default function DashboardPage() {
   
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [loadingActive, setLoadingActive] = useState(true);
-
-  const [newOrders, setNewOrders] = useState<Order[]>([]);
-  const [loadingNew, setLoadingNew] = useState(true);
-
-  const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
-  const [supportChatOrderId, setSupportChatOrderId] = useState<string | null>(null);
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
@@ -53,9 +46,7 @@ export default function DashboardPage() {
         setIsAvailabilityLoading(false);
         setAvailabilityStatus(undefined);
         setActiveOrders([]);
-        setNewOrders([]);
         setLoadingActive(false);
-        setLoadingNew(false);
       }
     });
     return () => unsubscribeAuth();
@@ -141,77 +132,22 @@ export default function DashboardPage() {
       }
     }, (error) => {
       console.error("Error fetching active orders:", error);
-       if (error.code !== 'permission-denied') {
-          toast({ variant: "destructive", title: "Fetch Error", description: "Could not load active orders. Showing cached data if available." });
-       }
       setLoadingActive(false);
     });
 
     return () => unsubscribeActive();
   }, [currentUser, toast]);
-
-  // Listener for NEW orders
-  useEffect(() => {
-    if (!currentUser || availabilityStatus !== 'online') {
-      setNewOrders([]);
-      setLoadingNew(false);
-      return () => {};
-    }
-
-    setLoadingNew(true);
-    // Query for orders that are 'Placed' and have no delivery partner yet.
-    const newOrdersQuery = query(
-      collection(db, "orders"),
-      where("orderStatus", "==", "Placed"),
-      where("deliveryPartnerId", "==", null)
-    );
-    
-    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
-      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-      const ordersData = await Promise.all(ordersDataPromises);
-      setNewOrders(ordersData);
-      setLoadingNew(false);
-    }, (error) => {
-      // This is an expected error if backend security rules prevent listing all new orders.
-      if (error.code === 'permission-denied') {
-        console.info("Successfully listening for new orders assigned directly to this driver. (Permission denied for broad query is expected).");
-      } else {
-         console.error("Error fetching new orders:", error);
-         toast({ variant: "destructive", title: "Fetch Error", description: "Could not load new order alerts." });
-      }
-      setNewOrders([]); // Clear new orders on any error
-      setLoadingNew(false);
-    });
-    
-    return () => unsubscribeNew();
-
-  }, [currentUser, availabilityStatus, toast]);
   
-  const handleOrderAction = () => {
-    // This function is called when an order is accepted or rejected from the dialog.
-    // It removes the order from the `newOrders` state to close the dialog.
-    setNewOrders(prev => prev.slice(1));
-  };
-
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
   };
 
-  const isLoading = isAvailabilityLoading || loadingActive || loadingNew;
+  const isLoading = isAvailabilityLoading || loadingActive;
 
   return (
     <div>
       <DashboardHeader />
       
-      {/* New Order Dialog */}
-      {newOrders.length > 0 && currentUser && availabilityStatus === 'online' && (
-        <NewOrderCard
-          order={newOrders[0]}
-          currentUserId={currentUser.uid}
-          onOrderAction={handleOrderAction}
-        />
-      )}
-
       {customerChatOrder && (
         <CustomerChatDialog
           order={customerChatOrder}
