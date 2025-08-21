@@ -29,9 +29,14 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   let customerName = data.name || "Customer";
   const estimatedEarnings = data.deliveryCharge ?? 0;
   
-  // Clean up the status string: trim whitespace and convert to lowercase.
-  const rawStatus = data.status || data.orderStatus || "Placed";
-  const orderStatus = rawStatus.trim().toLowerCase();
+  // Clean up the status string: trim whitespace, convert to lowercase, and standardize.
+  let rawStatus = data.status || data.orderStatus || "Placed";
+  rawStatus = rawStatus.trim().toLowerCase();
+  if (rawStatus === 'accept') {
+    rawStatus = 'accepted';
+  }
+  const orderStatus = rawStatus;
+
 
   let pickupLocation = "GrocerMart";
   if (data.storeId) {
