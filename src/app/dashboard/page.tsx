@@ -36,7 +36,7 @@ export default function DashboardPage() {
         setActiveOrders(JSON.parse(cachedActiveOrders));
       }
     } catch (error) {
-        console.error("Failed to load cached active orders:", error);
+      console.error("Failed to load cached active orders:", error);
     }
   }, []);
 
