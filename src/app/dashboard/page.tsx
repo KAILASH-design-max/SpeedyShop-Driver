@@ -141,7 +141,8 @@ export default function DashboardPage() {
           accessibleTo: [], // Clear the accessibleTo field after acceptance
         });
         
-        setNewOrder(null); // Dismiss the card immediately
+        // The popup will be dismissed automatically by the onSnapshot listener.
+        // No need to call setNewOrder(null) here.
       
         toast({
               title: "Order Accepted!",
