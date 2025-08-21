@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -34,62 +34,63 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => {
-    // Stop any existing streams before starting a new one
-    if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+      setIsCameraActive(false);
     }
+  }, []);
 
-    // Only request camera if needed
-    if (
-        !photo && // no photo taken yet
-        (!order.noContactDelivery || // standard delivery
-        (order.noContactDelivery && !leftAtDoor)) // no-contact but not left-at-door yet
-    ) {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    setHasCameraPermission(true);
-                    setIsCameraActive(true);
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error accessing camera:', error);
-                    setHasCameraPermission(false);
-                    setIsCameraActive(false);
-                });
-        } else {
-            setHasCameraPermission(false);
-            setIsCameraActive(false);
+  const startCamera = useCallback(async () => {
+    stopCamera(); 
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
         }
-    } else {
+        setHasCameraPermission(true);
+        setIsCameraActive(true);
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
         setIsCameraActive(false);
+      }
+    } else {
+      setHasCameraPermission(false);
+      setIsCameraActive(false);
     }
-    
-    // Cleanup function to stop video stream
-    return () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-        }
-    };
-  }, [leftAtDoor, photo, order.noContactDelivery]);
+  }, [stopCamera]);
+  
+  useEffect(() => {
+      // Automatically try to start the camera when the component loads
+      // if no other proof has been provided yet.
+      if (!photo && !signature && !leftAtDoor) {
+         startCamera();
+      }
+
+      return () => {
+          stopCamera();
+      };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       setPhoto(file);
       setSignature(""); // Clear signature
+      setLeftAtDoor(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      setIsCameraActive(false); // Turn off camera if a file is uploaded
+      stopCamera();
     }
   };
 
@@ -107,8 +108,9 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
                 const capturedFile = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
                 setPhoto(capturedFile);
                 setPhotoPreview(canvas.toDataURL('image/jpeg'));
-                setSignature(""); // Clear signature
-                setIsCameraActive(false); // Stop camera feed after capture
+                setSignature("");
+                setLeftAtDoor(false);
+                stopCamera();
             }
         }, 'image/jpeg', 0.95);
     }
@@ -116,9 +118,10 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
   
   const handleSignatureChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setSignature(e.target.value);
-      setPhoto(null); // Clear photo
+      setPhoto(null);
       setPhotoPreview(null);
-      setIsCameraActive(false);
+      setLeftAtDoor(false);
+      stopCamera();
   }
   
   const handleLeftAtDoorChange = (checked: boolean | 'indeterminate') => {
@@ -128,6 +131,10 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
             setSignature("");
             setPhoto(null);
             setPhotoPreview(null);
+            stopCamera();
+        } else {
+            // If unchecked, try to start the camera again
+            startCamera();
         }
       }
   }
@@ -227,6 +234,13 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
       </CardHeader>
       <CardContent className="space-y-6">
         
+        {hasCameraPermission === null && (
+          <div className="flex justify-center items-center h-24">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <p className="ml-2">Accessing camera...</p>
+          </div>
+        )}
+
         {isCameraActive && hasCameraPermission && (
             <div className="space-y-2">
                 <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
@@ -254,25 +268,22 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
             </Alert>
         )}
         
-        {(!isCameraActive || hasCameraPermission === false) && (
-            <>
-            <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
-                    Or
-                    </span>
-                </div>
+        
+        <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
             </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                Or
+                </span>
+            </div>
+        </div>
 
-            <div>
-              <Label htmlFor="photo-upload" className="flex items-center mb-2 font-medium"><UploadCloud className="mr-2 h-5 w-5"/>Upload Photo Proof</Label>
-              <Input id="photo-upload" type="file" accept="image/*" onChange={handlePhotoChange} className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:hover:bg-primary/20 file:border-none file:rounded-md file:px-3 file:py-1.5"/>
-            </div>
-            </>
-        )}
+        <div>
+            <Label htmlFor="photo-upload" className="flex items-center mb-2 font-medium"><UploadCloud className="mr-2 h-5 w-5"/>Upload Photo Proof</Label>
+            <Input id="photo-upload" type="file" accept="image/*" onChange={handlePhotoChange} className="cursor-pointer file:text-primary file:font-semibold file:bg-primary/10 file:hover:bg-primary/20 file:border-none file:rounded-md file:px-3 file:py-1.5"/>
+        </div>
 
 
         {order.noContactDelivery ? (
