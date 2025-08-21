@@ -1,14 +1,16 @@
 
 "use client";
 
-import type { Order } from "@/types";
+import type { Order, Profile } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { User, MapPin, Package, Phone, Info, Check, Store, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DeliveryPartnerInfoCard } from "./DeliveryPartnerInfoCard";
 
 interface OrderDetailsDisplayProps {
   order: Order | null;
+  deliveryPartner?: Profile | null;
 }
 
 const getStatusBadgeClass = (status: Order['status']) => {
@@ -28,7 +30,7 @@ const getStatusBadgeClass = (status: Order['status']) => {
   }
 };
 
-export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
+export function OrderDetailsDisplay({ order, deliveryPartner }: OrderDetailsDisplayProps) {
   if (!order) {
     return <p>Order not found.</p>;
   }
@@ -81,6 +83,10 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
                 </div>
             </div>
         </div>
+
+        {deliveryPartner && (
+            <DeliveryPartnerInfoCard deliveryPartner={deliveryPartner} />
+        )}
         
         {order.deliveryInstructions && (
           <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">

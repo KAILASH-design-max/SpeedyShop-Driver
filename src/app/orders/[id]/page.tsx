@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import type { Order, DeliveryPartnerFeedback } from "@/types";
+import type { Order, DeliveryPartnerFeedback, Profile } from "@/types";
 import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin, Map, LayoutDashboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db, auth } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import {
   AlertDialog,
@@ -38,6 +38,7 @@ export default function OrderPage() {
   const orderId = typeof params.id === 'string' ? params.id : '';
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
+  const [deliveryPartner, setDeliveryPartner] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const locationWatcherId = useRef<number | null>(null);
@@ -93,6 +94,17 @@ export default function OrderPage() {
 
         if(canAccess) {
             setOrder(mappedOrder);
+            
+            if (mappedOrder.deliveryPartnerId) {
+                const partnerRef = doc(db, "users", mappedOrder.deliveryPartnerId);
+                const partnerSnap = await getDoc(partnerRef);
+                if (partnerSnap.exists()) {
+                    setDeliveryPartner(partnerSnap.data() as Profile);
+                }
+            } else {
+                setDeliveryPartner(null);
+            }
+
             // Cache the fetched order details
             try {
                 localStorage.setItem(`order-cache-${orderId}`, JSON.stringify(mappedOrder));
@@ -101,6 +113,7 @@ export default function OrderPage() {
             }
         } else {
             setOrder(null);
+            setDeliveryPartner(null);
             toast({ variant: "destructive", title: "Access Denied", description: "You do not have permission to view this order." });
         }
     } else {
@@ -352,7 +365,7 @@ export default function OrderPage() {
 
   return (
     <div className="space-y-6 pb-6 px-1">
-      <OrderDetailsDisplay order={order} />
+      <OrderDetailsDisplay order={order} deliveryPartner={deliveryPartner} />
       
       {order.status === "Placed" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
