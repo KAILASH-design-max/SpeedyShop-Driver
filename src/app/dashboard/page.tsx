@@ -42,18 +42,22 @@ export default function DashboardPage() {
     if (!currentUser) {
         return;
     }
-    // Simplified query to avoid needing a composite index. Filtering for "Placed" status happens on the client.
+    // This query is more reliable as 'Placed' is a definite status for new orders.
+    // The accessibleTo check can be done on the client for flexibility.
     const availableOrdersQuery = query(
         collection(db, "orders"),
-        where("accessibleTo", "array-contains", currentUser.uid)
+        where("orderStatus", "==", "Placed")
     );
 
     const unsubscribe = onSnapshot(availableOrdersQuery, async (snapshot) => {
         const availableOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
         let availableOrders = await Promise.all(availableOrdersPromises);
 
-        // Filter for "Placed" orders on the client, ignoring case and whitespace
-        availableOrders = availableOrders.filter(order => order.orderStatus.trim().toLowerCase() === 'placed');
+        // Client-side filter to ensure driver has access, if the field exists.
+        // This makes the system resilient if accessibleTo is sometimes empty.
+        availableOrders = availableOrders.filter(order => 
+            !order.accessibleTo || order.accessibleTo.length === 0 || order.accessibleTo.includes(currentUser.uid)
+        );
 
         if (availableOrders.length > 0) {
             // Find the first order that hasn't been seen/dismissed in this session
@@ -62,7 +66,7 @@ export default function DashboardPage() {
         } else {
             setNewOrder(null);
         }
-        // Set loading to false here as well, in case this listener runs but finds no 'Placed' orders.
+        // Set loading to false here, as we have a definitive state for new orders.
         setIsLoading(false);
 
     }, (error) => {
@@ -78,7 +82,7 @@ export default function DashboardPage() {
   // Listener for ACTIVE orders assigned to the driver
   useEffect(() => {
     if (!currentUser) {
-        setIsLoading(false);
+        // No need to set loading false here, the other listener handles it.
         return;
     }
     const activeOrdersQuery = query(
@@ -90,12 +94,10 @@ export default function DashboardPage() {
         const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
         const fetchedActiveOrders = await Promise.all(ordersDataPromises);
         
-        setActiveOrders(fetchedActiveOrders.sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)));
-        setIsLoading(false);
+        setActiveOrders(fetchedActiveOrders.sort((a, b) => (a.completedAt?.seconds || 0) - (b.completedAt?.seconds || 0)));
      }, (error) => {
       console.error("Error fetching active orders:", error);
       toast({ variant: "destructive", title: "Load Failed", description: "Could not load your active orders." });
-      setIsLoading(false);
     });
 
      return () => unsubscribe();
@@ -105,7 +107,7 @@ export default function DashboardPage() {
   const handleOrderAccept = async (orderToAccept: Order) => {
     if (!currentUser) return;
 
-    // Optimistically update the UI to avoid race conditions
+    // Optimistically update the UI to provide immediate feedback
     setNewOrder(null);
     seenOrderIds.current.add(orderToAccept.id);
 
@@ -114,7 +116,8 @@ export default function DashboardPage() {
       await updateDoc(orderRef, {
         deliveryPartnerId: currentUser.uid,
         orderStatus: "accepted",
-        accessibleTo: [], // Clear the accessibleTo field after acceptance
+        // Crucially, clear the accessibleTo field so it isn't offered to others.
+        accessibleTo: [], 
       });
       
       toast({
@@ -125,8 +128,9 @@ export default function DashboardPage() {
     } catch (error) {
         console.error("Error accepting order:", error);
         toast({ variant: "destructive", title: "Acceptance Failed", description: "Could not accept the order."});
-        // If the update fails, we may need to handle reversing the UI change,
-        // but the listener should eventually correct the state.
+        // If the update fails, the listener should eventually correct the state,
+        // but we can remove the ID from seen to allow it to be shown again if needed.
+        seenOrderIds.current.delete(orderToAccept.id);
     }
   };
   
