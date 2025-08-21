@@ -50,85 +50,87 @@ export default function DashboardPage() {
     });
     return () => unsubscribeAuth();
   }, []);
-
-
-  // Dedicated listener for NEWLY ASSIGNED orders to show the popup
+  
+  // UNIFIED LISTENER FOR NEW AND ACTIVE ORDERS
   useEffect(() => {
-    if (!currentUser) return;
-    
-    const newOrderQuery = query(
-      collection(db, "orders"),
-      where("orderStatus", "==", "Placed"),
-      where("accessibleTo", "array-contains", currentUser.uid)
-    );
-    
-    const unsubscribeNewOrder = onSnapshot(newOrderQuery, async (snapshot) => {
-        if (snapshot.empty) {
-            setNewOrder(null);
-            return;
-        }
-
-      const assignedOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-      const assignedOrders = await Promise.all(assignedOrdersPromises);
-      
-      const justAssignedOrder = assignedOrders.find(order => !seenOrderIds.current.has(order.id));
-
-      if (justAssignedOrder) {
-        setNewOrder(justAssignedOrder);
-        seenOrderIds.current.add(justAssignedOrder.id);
+      if (!currentUser) {
+          setLoading(false);
+          setActiveOrders([]);
+          setNewOrder(null);
+          return;
       }
-    }, (error) => {
-        console.error("Error fetching newly assigned orders:", error);
-        if (error.code !== 'permission-denied') {
-          toast({ variant: "destructive", title: "Notification Error", description: "Could not listen for new orders."});
-        }
-    });
-
-    return () => unsubscribeNewOrder();
+  
+      setLoading(true);
+  
+      // This query gets all orders that are either assigned to the driver OR available for them to accept.
+      // NOTE: Firestore does not support logical OR queries on different fields.
+      // We must fetch both and merge them on the client. This is acceptable for a small number of drivers.
+      // For a larger scale app, a backend would manage a dedicated 'jobs' collection for each driver.
+  
+      const activeOrdersQuery = query(
+          collection(db, "orders"),
+          where("deliveryPartnerId", "==", currentUser.uid),
+          where("orderStatus", "in", ["accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
+      );
+  
+      const availableOrdersQuery = query(
+          collection(db, "orders"),
+          where("orderStatus", "==", "Placed"),
+          where("accessibleTo", "array-contains", currentUser.uid)
+      );
+  
+      const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
+          const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+          const newActiveOrders = await Promise.all(ordersDataPromises);
+          
+          setActiveOrders(newActiveOrders);
+          newActiveOrders.forEach(order => seenOrderIds.current.add(order.id));
+          
+          try {
+              localStorage.setItem('activeOrdersCache', JSON.stringify(newActiveOrders));
+          } catch (error) {
+              console.error("Failed to cache active orders:", error);
+          }
+          setLoading(false);
+      }, (error) => {
+          console.error("Error fetching active orders:", error);
+          if (error.code !== 'permission-denied') {
+              toast({ variant: "destructive", title: "Load Failed", description: "Could not load active orders."});
+          }
+          setLoading(false);
+      });
+  
+      const unsubscribeAvailable = onSnapshot(availableOrdersQuery, async (snapshot) => {
+          if (snapshot.empty) {
+              setNewOrder(null);
+              return;
+          }
+          
+          const assignedOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+          const assignedOrders = await Promise.all(assignedOrdersPromises);
+          
+          // Find the first available order that hasn't been seen/dismissed
+          const justAssignedOrder = assignedOrders.find(order => !seenOrderIds.current.has(order.id));
+  
+          if (justAssignedOrder) {
+              setNewOrder(justAssignedOrder);
+          } else {
+              setNewOrder(null);
+          }
+      }, (error) => {
+          console.error("Error fetching newly assigned orders:", error);
+          if (error.code !== 'permission-denied') {
+              toast({ variant: "destructive", title: "Notification Error", description: "Could not listen for new orders."});
+          }
+      });
+  
+      return () => {
+          unsubscribeActive();
+          unsubscribeAvailable();
+      };
+  
   }, [currentUser, toast]);
 
-
-  // Listener for ALL OTHER ACTIVE orders (from accepted to arrived)
-  useEffect(() => {
-    if (!currentUser) {
-      setActiveOrders([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const activeOrdersQuery = query(
-      collection(db, "orders"),
-      where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "in", ["accepted", "arrived-at-store", "picked-up", "out-for-delivery", "arrived"])
-    );
-
-    const unsubscribeActive = onSnapshot(activeOrdersQuery, async (snapshot) => {
-      const ordersDataPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-      const newOrdersData = await Promise.all(ordersDataPromises);
-      
-      // Update the set of seen orders
-      newOrdersData.forEach(order => seenOrderIds.current.add(order.id));
-      
-      setActiveOrders(newOrdersData);
-      setLoading(false);
-
-      try {
-        localStorage.setItem('activeOrdersCache', JSON.stringify(newOrdersData));
-      } catch (error) {
-        console.error("Failed to cache active orders:", error);
-      }
-    }, (error) => {
-      console.error("Error fetching active orders:", error);
-      // Don't show permission denied errors if they happen.
-      if (error.code !== 'permission-denied') {
-        toast({ variant: "destructive", title: "Load Failed", description: "Could not load active orders."});
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribeActive();
-  }, [currentUser, toast]);
 
   const handleOrderAccept = async (orderToAccept: Order) => {
       if (!currentUser) return;
@@ -141,8 +143,10 @@ export default function DashboardPage() {
           accessibleTo: [], // Clear the accessibleTo field after acceptance
         });
         
-        // The popup will be dismissed automatically by the onSnapshot listener.
-        // No need to call setNewOrder(null) here.
+        // Remove the order from the new order state
+        setNewOrder(null);
+        // Add its ID to the seen set to prevent it from reappearing as new
+        seenOrderIds.current.add(orderToAccept.id);
       
         toast({
               title: "Order Accepted!",
@@ -160,8 +164,13 @@ export default function DashboardPage() {
   };
   
   const handleNewOrderDismiss = async (orderToDismiss: Order) => {
-    if (newOrder && currentUser) {
-      // To dismiss, we remove the current user from the `accessibleTo` array.
+    if (currentUser) {
+      // Add to seen list so it doesn't pop up again this session
+      seenOrderIds.current.add(orderToDismiss.id);
+      setNewOrder(null);
+      
+      // Attempt to remove user from accessibleTo list so they don't get it again from the backend.
+      // This is an optimistic update.
       const orderRef = doc(db, "orders", orderToDismiss.id);
       try {
         const orderDoc = await getDoc(orderRef);
@@ -173,15 +182,11 @@ export default function DashboardPage() {
         await updateDoc(orderRef, {
           accessibleTo: updatedAccessibleTo
         });
-        
-        seenOrderIds.current.add(orderToDismiss.id);
-        setNewOrder(null);
       } catch (error) {
         console.error("Error dismissing order:", error);
-        toast({ variant: "destructive", title: "Dismiss Failed", description: "Could not dismiss the order."});
+        // Don't toast here as it's a non-critical background failure
       }
     }
-    setNewOrder(null);
   }
 
   return (
