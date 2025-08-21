@@ -32,6 +32,7 @@ export default function TrackingPage() {
                 const data = docSnap.data() as DeliveryLocation;
                 setLocation(data);
                 
+                // Correctly use all parts of the location data
                 const origin = `${data.latitude},${data.longitude}`;
                 const destination = data.destinationAddress;
 
@@ -42,6 +43,7 @@ export default function TrackingPage() {
 
             } else {
                 setLocation(null);
+                setMapUrl(''); // Clear map URL if location is not found
             }
             setLoading(false);
         }, (error) => {
