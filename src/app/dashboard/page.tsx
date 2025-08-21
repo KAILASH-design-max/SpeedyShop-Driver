@@ -20,6 +20,8 @@ export default function DashboardPage() {
   const [loadingActive, setLoadingActive] = useState(true);
   const [newOrder, setNewOrder] = useState<Order | null>(null);
   const [ignoredOrderId, setIgnoredOrderId] = useState<string | null>(null);
+  const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus']>();
+
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
@@ -48,12 +50,25 @@ export default function DashboardPage() {
     return () => unsubscribeAuth();
   }, []);
 
+  useEffect(() => {
+    if(currentUser) {
+       const profileRef = doc(db, "users", currentUser.uid);
+       const unsubscribe = onSnapshot(profileRef, (docSnap) => {
+           if (docSnap.exists()) {
+               const profileData = docSnap.data() as Profile;
+               setAvailabilityStatus(profileData.availabilityStatus);
+           }
+       });
+       return () => unsubscribe();
+    }
+  }, [currentUser]);
+
   // Listener for ACTIVE orders
   useEffect(() => {
     if (!currentUser) {
       setActiveOrders([]);
       setLoadingActive(false);
-      return () => {};
+      return;
     }
 
     setLoadingActive(true);
@@ -79,53 +94,43 @@ export default function DashboardPage() {
     });
 
     return () => unsubscribeActive();
-  }, [currentUser, toast]);
+  }, [currentUser]);
 
   // Listener for NEW unassigned orders
   useEffect(() => {
-    if (!currentUser) return;
+    if (availabilityStatus !== 'online') {
+        if(newOrder) setNewOrder(null);
+        return;
+    };
     
-    // This logic relies on the availability status from the AuthenticatedLayout now.
-    // For this to work seamlessly, we'd ideally use a global state manager (like Context or Zustand).
-    // For now, we'll assume the status check happens at a higher level and this just listens.
-    // A slight delay might occur if the status isn't propagated instantly.
-    const userDocRef = doc(db, "users", currentUser.uid);
-    const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists() && docSnap.data().availabilityStatus === 'online') {
-            const newOrdersQuery = query(
-              collection(db, "orders"),
-              where("deliveryPartnerId", "==", null),
-              where("orderStatus", "==", "Placed"),
-              limit(1)
-            );
+    const newOrdersQuery = query(
+      collection(db, "orders"),
+      where("deliveryPartnerId", "==", null),
+      where("orderStatus", "==", "Placed"),
+      limit(1)
+    );
 
-            const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
-              if (!snapshot.empty) {
-                const orderDoc = snapshot.docs[0];
-                if (orderDoc.id === ignoredOrderId) {
-                    return;
-                }
-
-                const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
-                setNewOrder(mappedOrder);
-              } else {
-                setNewOrder(null);
-              }
-            }, (error) => {
-              if (error.code !== 'permission-denied') {
-                console.error("Error fetching new orders:", error);
-              }
-            });
-            return () => unsubscribeNew();
-        } else {
-             if(newOrder) setNewOrder(null);
+    const unsubscribeNew = onSnapshot(newOrdersQuery, async (snapshot) => {
+      if (!snapshot.empty) {
+        const orderDoc = snapshot.docs[0];
+        if (orderDoc.id === ignoredOrderId) {
+            return;
         }
+
+        const mappedOrder = await mapFirestoreDocToOrder(orderDoc);
+        setNewOrder(mappedOrder);
+      } else {
+        setNewOrder(null);
+      }
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+        console.error("Error fetching new orders:", error);
+      }
     });
 
+    return () => unsubscribeNew();
 
-    return () => unsubscribeProfile();
-
-  }, [currentUser, ignoredOrderId]);
+  }, [availabilityStatus, ignoredOrderId]);
   
   const handleCustomerChatOpen = (order: Order) => {
     setCustomerChatOrder(order);
@@ -145,9 +150,10 @@ export default function DashboardPage() {
         <NewOrderCard 
           order={newOrder} 
           currentUserId={currentUser.uid} 
-          onOrderAction={() => handleOrderAction(newOrder.id)}
+          onOrderAction={handleOrderAction}
           onOrderAccept={(acceptedOrder) => {
-            setActiveOrders(prevOrders => [acceptedOrder, ...prevOrders]);
+             setActiveOrders(prevOrders => [acceptedOrder, ...prevOrders]);
+             handleOrderAction(acceptedOrder.id);
           }}
         />
       )}

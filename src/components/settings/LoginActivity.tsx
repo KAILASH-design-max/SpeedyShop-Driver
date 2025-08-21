@@ -46,19 +46,29 @@ export function LoginActivity() {
         }
 
         setLoading(true);
+        // Modified query to remove orderBy to prevent index error.
+        // Sorting will be done on the client.
         const sessionsQuery = query(
             collection(db, "sessions"),
             where("userId", "==", currentUser.uid),
-            orderBy("loginTimestamp", "desc"),
-            limit(5)
+            limit(20) // Fetch more to sort accurately
         );
 
         const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
-            const fetchedSessions = snapshot.docs.map(doc => ({
+            let fetchedSessions = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             } as Session));
-            setSessions(fetchedSessions);
+
+            // Sort on the client side
+            fetchedSessions.sort((a, b) => {
+                const timeA = a.loginTimestamp?.seconds || 0;
+                const timeB = b.loginTimestamp?.seconds || 0;
+                return timeB - timeA;
+            });
+
+            // Limit to the most recent 5 after sorting
+            setSessions(fetchedSessions.slice(0, 5));
             setLoading(false);
         }, (error) => {
             console.error("Error fetching sessions:", error);
