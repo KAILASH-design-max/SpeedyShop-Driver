@@ -152,6 +152,28 @@ export default function OrderPage() {
 
   }, [order?.orderStatus, throttledLocationUpdate, toast]);
 
+  const handleAcceptOrder = async () => {
+    if (order && order.orderStatus === "Placed") {
+        setIsUpdating(true);
+        try {
+            const orderRef = doc(db, "orders", order.id);
+            await updateDoc(orderRef, { 
+              orderStatus: "accepted",
+              deliveryPartnerId: currentUser?.uid
+            });
+            toast({
+                title: "Order Accepted!",
+                description: `Order #${order.id} has been moved to your active orders.`,
+                className: "bg-green-500 text-white",
+            });
+        } catch (error) {
+            console.error("Error accepting order:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not accept order." });
+        } finally {
+            setIsUpdating(false);
+        }
+    }
+  };
 
   const handleArrivedAtStore = async () => {
     if (order && order.orderStatus === "accepted") {
@@ -323,18 +345,15 @@ export default function OrderPage() {
       <OrderDetailsDisplay order={order} />
       
       {order.orderStatus === "Placed" && (
-           <Card className="mt-6">
-                <CardContent className="p-6 text-center">
-                    <p className="text-lg font-semibold">This order has not been accepted yet.</p>
-                    <p className="text-muted-foreground mt-1">Please go to the dashboard to accept new orders.</p>
-                    <Button asChild className="mt-4">
-                        <Link href="/dashboard">
-                            <LayoutDashboard className="mr-2 h-4 w-4"/>
-                            Go to Dashboard
-                        </Link>
-                    </Button>
-                </CardContent>
-           </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Button onClick={handleAcceptOrder} className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-5 w-5" />}
+                    Accept Order
+                </Button>
+                <Button variant="outline" className="w-full text-base py-6 font-bold" onClick={() => router.push("/dashboard")}>
+                    Go Back to Dashboard
+                </Button>
+            </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -366,9 +385,9 @@ export default function OrderPage() {
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-5 w-5" />}
                   Out for Delivery
                 </Button>
-                <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
                   <Link href={`/tracking/${order.id}`}>
-                      <Map className="mr-2 h-5 w-5" /> Track Live on Map
+                      <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
                   </Link>
                 </Button>
               </>
@@ -377,13 +396,8 @@ export default function OrderPage() {
              {order.orderStatus === "out-for-delivery" && (
               <>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
-                  <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`}>
-                     <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
-                  </Link>
-                </Button>
-                 <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
                   <Link href={`/tracking/${order.id}`}>
-                      <Map className="mr-2 h-5 w-5" /> Track Live on Map
+                     <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
                   </Link>
                 </Button>
                 <Button onClick={handleArrived} className="w-full bg-purple-500 hover:bg-purple-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
