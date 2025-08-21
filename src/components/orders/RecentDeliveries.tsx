@@ -81,7 +81,7 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
     const deliveriesQuery = query(
       collection(db, "orders"),
       where("deliveryPartnerId", "==", currentUser.uid),
-      where("orderStatus", "in", ["delivered", "cancelled"]),
+      where("status", "in", ["delivered", "cancelled"]),
       where("completedAt", ">=", thirtyDaysAgo),
       orderBy("completedAt", "desc")
     );
@@ -136,7 +136,7 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
     
     // Filter by status first
     if (statusFilter !== 'all') {
-        deliveriesToDisplay = deliveriesToDisplay.filter(d => d.orderStatus === statusFilter);
+        deliveriesToDisplay = deliveriesToDisplay.filter(d => d.status === statusFilter);
     }
     
     // Then filter by date range
@@ -169,7 +169,7 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
     }
   };
 
-  const getStatusBadgeClass = (status: Order['orderStatus']) => {
+  const getStatusBadgeClass = (status: Order['status']) => {
     switch (status) {
       case 'delivered':
         return 'bg-green-100 text-green-800 border-green-200';
@@ -279,13 +279,13 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
                                 <TableCell>
                                 <Badge
                                     variant="outline"
-                                    className={cn("capitalize", getStatusBadgeClass(delivery.orderStatus))}
+                                    className={cn("capitalize", getStatusBadgeClass(delivery.status))}
                                 >
-                                    {delivery.orderStatus}
+                                    {delivery.status}
                                 </Badge>
                                 </TableCell>
                                 <TableCell className="text-right font-semibold">
-                                {delivery.orderStatus === 'delivered' ? (
+                                {delivery.status === 'delivered' ? (
                                     <div className="flex flex-col items-end">
                                         <span className="text-green-600 flex items-center">
                                             <IndianRupee size={14} className="mr-0.5" /> {totalEarnings.toFixed(2)}

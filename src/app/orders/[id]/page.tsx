@@ -119,7 +119,7 @@ export default function OrderPage() {
   
   // Effect to manage live location tracking based on order status
   useEffect(() => {
-    const isOrderActiveForTracking = order?.orderStatus === 'picked-up' || order?.orderStatus === 'out-for-delivery';
+    const isOrderActiveForTracking = order?.status === 'picked-up' || order?.status === 'out-for-delivery';
 
     const startWatching = () => {
       if (locationWatcherId.current !== null || !isOrderActiveForTracking) return;
@@ -167,7 +167,7 @@ export default function OrderPage() {
         try {
             const orderRef = doc(db, "orders", order.id);
             await updateDoc(orderRef, { 
-              orderStatus: "accepted",
+              status: "accepted",
               deliveryPartnerId: currentUser.uid,
               accessibleTo: [], // Clear access pool once accepted
             });
@@ -186,11 +186,11 @@ export default function OrderPage() {
   };
 
   const handleArrivedAtStore = async () => {
-    if (order && order.orderStatus === "accepted") {
+    if (order && order.status === "accepted") {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "arrived-at-store" });
+        await updateDoc(orderRef, { status: "arrived-at-store" });
         toast({ title: "Arrived at Store", description: `You have arrived at the pickup location.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting arrived at store:", error);
@@ -202,11 +202,11 @@ export default function OrderPage() {
   };
 
   const handlePickupConfirmation = async () => {
-    if (order && order.orderStatus === "arrived-at-store") {
+    if (order && order.status === "arrived-at-store") {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "picked-up" });
+        await updateDoc(orderRef, { status: "picked-up" });
         toast({ title: "Pickup Confirmed", description: `Order #${order.id} marked as picked-up.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error confirming pickup:", error);
@@ -218,11 +218,11 @@ export default function OrderPage() {
   };
 
   const handleOutOfDelivery = async () => {
-    if (order && order.orderStatus === "picked-up") {
+    if (order && order.status === "picked-up") {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "out-for-delivery" });
+        await updateDoc(orderRef, { status: "out-for-delivery" });
         toast({ title: "Out for Delivery", description: `Order #${order.id} is now out for delivery.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting out for delivery:", error);
@@ -234,11 +234,11 @@ export default function OrderPage() {
   };
   
   const handleArrived = async () => {
-    if (order && order.orderStatus === "out-for-delivery") {
+    if (order && order.status === "out-for-delivery") {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { orderStatus: "arrived" });
+        await updateDoc(orderRef, { status: "arrived" });
         toast({ title: "Arrived at Location", description: `You have arrived at the customer's location.`, className: "bg-blue-500 text-white" });
       } catch (error) {
         console.error("Error setting arrived:", error);
@@ -256,7 +256,7 @@ export default function OrderPage() {
         const orderRef = doc(db, "orders", order.id);
 
         const updateData: any = {
-          orderStatus: "delivered",
+          status: "delivered",
           completedAt: serverTimestamp(),
         };
 
@@ -285,7 +285,7 @@ export default function OrderPage() {
       const orderRef = doc(db, "orders", order.id);
       await updateDoc(orderRef, {
         deliveryPartnerId: null,
-        orderStatus: "Placed",
+        status: "Placed",
       });
       toast({
         title: "Order Released",
@@ -345,16 +345,16 @@ export default function OrderPage() {
     return <div className="flex justify-center items-center h-full min-h-[calc(100vh-10rem)]"><p>Order not found or an error occurred.</p></div>;
   }
 
-  const isOrderActive = ['accepted', 'arrived-at-store', 'picked-up', 'out-for-delivery', 'arrived'].includes(order.orderStatus);
-  const isOrderComplete = ['delivered', 'cancelled'].includes(order.orderStatus);
-  const isTrackingActive = ['picked-up', 'out-for-delivery'].includes(order.orderStatus);
+  const isOrderActive = ['accepted', 'arrived-at-store', 'picked-up', 'out-for-delivery', 'arrived'].includes(order.status);
+  const isOrderComplete = ['delivered', 'cancelled'].includes(order.status);
+  const isTrackingActive = ['picked-up', 'out-for-delivery'].includes(order.status);
 
 
   return (
     <div className="space-y-6 pb-6 px-1">
       <OrderDetailsDisplay order={order} />
       
-      {order.orderStatus === "Placed" && (
+      {order.status === "Placed" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Button onClick={handleAcceptOrder} className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
                     {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-5 w-5" />}
@@ -368,7 +368,7 @@ export default function OrderPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-            {order.orderStatus === "accepted" && (
+            {order.status === "accepted" && (
               <>
                 <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
                   <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.pickupLocation)}&type=pickup`}>
@@ -382,14 +382,14 @@ export default function OrderPage() {
               </>
             )}
 
-            {order.orderStatus === "arrived-at-store" && (
+            {order.status === "arrived-at-store" && (
                  <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
                    Confirm Pickup from Store
                 </Button>
             )}
             
-            {order.orderStatus === "picked-up" && (
+            {order.status === "picked-up" && (
               <>
                 <Button onClick={handleOutOfDelivery} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-5 w-5" />}
@@ -403,7 +403,7 @@ export default function OrderPage() {
               </>
             )}
 
-             {order.orderStatus === "out-for-delivery" && (
+             {order.status === "out-for-delivery" && (
               <>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
                   <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`}>
@@ -446,12 +446,12 @@ export default function OrderPage() {
             )}
         </div>
 
-        {order.orderStatus === "arrived" && (
+        {order.status === "arrived" && (
           <DeliveryConfirmation order={order} onConfirm={handleDeliveryConfirmed} isUpdating={isUpdating} />
         )}
       </div>
 
-       {order.orderStatus === "cancelled" && (
+       {order.status === "cancelled" && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Order Cancelled</AlertTitle>
@@ -461,7 +461,7 @@ export default function OrderPage() {
         </Alert>
       )}
 
-      {order.orderStatus === "delivered" && (
+      {order.status === "delivered" && (
         <>
             <Card className="mt-6 bg-green-100 border-green-300">
             <CardContent className="p-6 text-center">

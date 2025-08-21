@@ -30,10 +30,9 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   const estimatedEarnings = data.deliveryCharge ?? 0;
   
   // Use the 'status' field from Firestore and standardize it.
-  let rawStatus = data.status || "Placed";
-  rawStatus = rawStatus.trim().toLowerCase();
+  let rawStatus = (data.status || "Placed").trim().toLowerCase();
   
-  let orderStatus: Order['orderStatus'];
+  let orderStatus: Order['status'];
 
   switch(rawStatus) {
     case 'accepted':
@@ -84,7 +83,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     pickupLocation: pickupLocation,
     dropOffLocation: dropOffLocationString,
     items: items,
-    orderStatus: orderStatus,
+    status: orderStatus,
     estimatedEarnings: estimatedEarnings,
     deliveryCharge: data.deliveryCharge,
     total: data.totalAmount,

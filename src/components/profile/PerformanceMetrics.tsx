@@ -130,7 +130,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   
    const performanceStats = useMemo(() => {
     const totalOrders = orders.length;
-    const deliveredOrders = orders.filter(o => o.orderStatus === 'delivered').length;
+    const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
     const completionRate = totalOrders > 0 ? (deliveredOrders / totalOrders) * 100 : 0;
 
     return {

@@ -58,7 +58,7 @@ export default function AchievementsPage() {
       const deliveredOrdersQuery = query(
         collection(db, "orders"),
         where("deliveryPartnerId", "==", currentUser.uid),
-        where("orderStatus", "==", "delivered")
+        where("status", "==", "delivered")
       );
       
       const ratingsQuery = query(

@@ -43,7 +43,7 @@ export function EarningsSummaryCard() {
         const monthlyDeliveriesQuery = query(
             collection(db, "orders"),
             where("deliveryPartnerId", "==", currentUser.uid),
-            where("orderStatus", "==", "delivered"),
+            where("status", "==", "delivered"),
             where("completedAt", ">=", startOfMonth)
         );
         

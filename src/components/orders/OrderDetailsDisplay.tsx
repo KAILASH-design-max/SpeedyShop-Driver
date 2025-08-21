@@ -11,7 +11,7 @@ interface OrderDetailsDisplayProps {
   order: Order | null;
 }
 
-const getStatusBadgeClass = (status: Order['orderStatus']) => {
+const getStatusBadgeClass = (status: Order['status']) => {
   switch (status) {
     case 'accepted':
     case 'arrived-at-store':
@@ -41,6 +41,9 @@ export function OrderDetailsDisplay({ order }: OrderDetailsDisplayProps) {
             <CardTitle className="text-2xl font-bold text-primary">Order #{order.id}</CardTitle>
             <CardDescription className="mt-1">Detailed delivery summary</CardDescription>
           </div>
+           <Badge variant="outline" className={cn("capitalize text-base", getStatusBadgeClass(order.status))}>
+                {order.status}
+           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-6 pt-0">

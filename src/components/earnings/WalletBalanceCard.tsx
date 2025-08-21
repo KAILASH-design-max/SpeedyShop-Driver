@@ -85,7 +85,7 @@ export function WalletBalanceCard() {
             const deliveriesQuery = query(
                 collection(db, "orders"),
                 where("deliveryPartnerId", "==", currentUser.uid),
-                where("orderStatus", "==", "delivered")
+                where("status", "==", "delivered")
             );
             const deliveriesSnapshot = await getDocs(deliveriesQuery);
             deliveriesSnapshot.forEach(doc => {

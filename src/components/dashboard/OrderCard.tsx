@@ -15,7 +15,7 @@ interface OrderCardProps {
   onCustomerChat: (order: Order) => void;
 }
 
-const statusInfo: { [key in Order['orderStatus']]?: { icon: React.ElementType, label: string, color: string } } = {
+const statusInfo: { [key in Order['status']]?: { icon: React.ElementType, label: string, color: string } } = {
     'accepted': { icon: PackageCheck, label: 'Accepted', color: 'text-accent' },
     'arrived-at-store': { icon: Store, label: 'At Store', color: 'text-teal-400' },
     'picked-up': { icon: Truck, label: 'Picked Up', color: 'text-cyan-400' },
@@ -31,10 +31,10 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
     onCustomerChat(order);
   }
   
-  const currentStatus = statusInfo[order.orderStatus];
+  const currentStatus = statusInfo[order.status];
 
   const getNavAction = () => {
-    switch (order.orderStatus) {
+    switch (order.status) {
         case 'accepted':
         case 'arrived-at-store':
             return {

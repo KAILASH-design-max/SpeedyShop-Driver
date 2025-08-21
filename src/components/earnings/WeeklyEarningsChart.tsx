@@ -58,7 +58,7 @@ export function WeeklyEarningsChart() {
     const weekDeliveriesQuery = query(
         collection(db, "orders"),
         where("deliveryPartnerId", "==", currentUser.uid),
-        where("orderStatus", "==", "delivered"),
+        where("status", "==", "delivered"),
         where("completedAt", ">=", weekStart),
         where("completedAt", "<=", weekEnd)
     );
