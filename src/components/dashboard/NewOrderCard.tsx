@@ -59,7 +59,7 @@ export function NewOrderCard({ order, currentUserId, onOrderAction }: NewOrderCa
     try {
       const orderRef = doc(db, "orders", order.id);
       await updateDoc(orderRef, { 
-        status: "accepted",
+        orderStatus: "accepted",
         deliveryPartnerId: currentUserId
       });
       toast({

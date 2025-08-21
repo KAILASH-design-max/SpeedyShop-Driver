@@ -34,7 +34,7 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
   const estimatedEarnings = data.deliveryCharge ?? 0;
   
   // Map the new status field to orderStatus
-  const orderStatus = data.status || "placed";
+  const orderStatus = data.orderStatus || data.status || "Placed";
 
   return {
     id: docSnap.id,
