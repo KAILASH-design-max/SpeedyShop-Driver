@@ -42,7 +42,7 @@ const updateLocationFlow = ai.defineFlow(
   async (input) => {
     try {
         const db = getFirestore();
-        const orderRef = db.collection('orders').doc(input.orderId);
+        const orderRef = doc(db, "orders", input.orderId);
         const locationRef = db.collection('deliveryLocations').doc(input.orderId);
         
         // Fetch the order document to get the destination address
