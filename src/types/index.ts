@@ -136,7 +136,7 @@ export interface Profile {
   availabilityStatus?: 'online' | 'offline' | 'on_break';
   
   // Documents & Financials
-  documents: ProfileDocuments;
+  documents?: ProfileDocuments;
   bankDetails?: BankDetails;
   autoWithdrawalEnabled?: boolean;
   termsAccepted?: boolean;
