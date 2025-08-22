@@ -56,7 +56,7 @@ const baseNavItems = [
   { href: "/earnings", label: "Earnings", icon: IndianRupee },
   { href: "/analytics", label: "Analytics", icon: BarChart },
   { href: "/achievements", label: "Achievements", icon: Trophy },
-  { href: "/community", label: "Announcements", icon: Megaphone },
+  { href: "/community", label: "Community", icon: Users },
   { href: "/chat", label: "Chat", icon: MessagesSquare },
 ];
 
