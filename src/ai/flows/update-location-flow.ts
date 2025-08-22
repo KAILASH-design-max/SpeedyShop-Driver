@@ -47,7 +47,7 @@ const updateLocationFlow = ai.defineFlow(
         
         // Fetch the order document to get the destination address
         const orderSnap = await orderRef.get();
-        if (!orderSnap.exists) {
+        if (!orderSnap.exists()) {
             console.error(`Order with ID ${input.orderId} not found.`);
             return { success: false };
         }
