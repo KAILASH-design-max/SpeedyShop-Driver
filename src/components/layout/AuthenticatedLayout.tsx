@@ -46,9 +46,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Profile } from "@/types";
-import { DeviceStatusMonitor } from "./DeviceStatusMonitor";
-import { NotificationBell } from "./NotificationBell";
 import { AvailabilityToggle } from "../dashboard/AvailabilityToggle";
+import { NotificationBell } from "./NotificationBell";
 
 
 const baseNavItems = [
@@ -285,7 +284,6 @@ export default function AuthenticatedLayout({
         <main className="flex-1 overflow-auto">
             {children}
         </main>
-        <DeviceStatusMonitor />
       </SidebarInset>
     </SidebarProvider>
   );
