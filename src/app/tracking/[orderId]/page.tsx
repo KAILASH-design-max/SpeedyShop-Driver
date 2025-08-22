@@ -71,7 +71,12 @@ export default function TrackingPage() {
             }
             
             setMapUrl(url);
-        } else {
+        } else if (order) {
+            // Fallback for when API key is not available
+             const fallbackUrl = `https://www.google.com/maps/embed/v1/place?q=${encodeURIComponent(order.dropOffLocation)}`;
+             setMapUrl(fallbackUrl);
+        }
+        else {
             setMapUrl('');
         }
     }, [order, liveLocation, mapsApiKey]);
