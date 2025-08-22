@@ -33,6 +33,7 @@ import {
   Settings,
   HelpCircle,
   Megaphone,
+  BarChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -54,6 +55,7 @@ const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/smart-routing", label: "Smart Routing", icon: Route },
   { href: "/earnings", label: "Earnings", icon: IndianRupee },
+  { href: "/analytics", label: "Analytics", icon: BarChart },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/community", label: "Announcements", icon: Megaphone },
   { href: "/chat", label: "Chat", icon: MessagesSquare },
