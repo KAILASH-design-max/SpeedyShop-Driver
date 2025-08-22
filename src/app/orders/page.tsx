@@ -19,10 +19,7 @@ export default function OrdersHistoryPage() {
       </Button>
 
       <Card className="shadow-lg">
-        <CardHeader>
-           {/* The RecentDeliveries component contains its own header now */}
-        </CardHeader>
-        <CardContent className="space-y-8">
+        <CardContent className="p-6">
            <RecentDeliveries />
         </CardContent>
       </Card>
