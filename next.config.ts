@@ -1,5 +1,4 @@
 import type {NextConfig} from 'next';
-import webpack from 'webpack';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -18,14 +17,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  webpack: (config, { isServer }) => {
-    config.plugins.push(
-      new webpack.DefinePlugin({
-        '__FIREBASE_WEBAPP_CONFIG__': JSON.stringify(process.env.FIREBASE_WEBAPP_CONFIG),
-      })
-    );
-    return config;
   },
 };
 

@@ -4,9 +4,17 @@ import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
-// This placeholder will be replaced by the webpack DefinePlugin at build time.
-// Declaring it here prevents TypeScript errors.
-declare const __FIREBASE_WEBAPP_CONFIG__: string;
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCN1zAZsbo6_HDcFNVRvXekmY_JdTF4M3U",
+  authDomain: "ai-app-bb63d.firebaseapp.com",
+  databaseURL: "https://ai-app-bb63d-default-rtdb.firebaseio.com",
+  projectId: "ai-app-bb63d",
+  storageBucket: "ai-app-bb63d.appspot.com",
+  messagingSenderId: "511120628966",
+  appId: "1:511120628966:web:d4a1504e1252f74bcfaf27",
+  measurementId: "G-8QVLZG13R3"
+};
 
 let app: FirebaseApp;
 let auth: Auth;
@@ -14,12 +22,6 @@ let db: Firestore;
 let storage: FirebaseStorage;
 
 if (typeof window !== "undefined" && !getApps().length) {
-    const firebaseConfigString = __FIREBASE_WEBAPP_CONFIG__;
-    if (!firebaseConfigString) {
-        throw new Error("Firebase config not found. Build process may have failed.");
-    }
-    
-    const firebaseConfig = JSON.parse(firebaseConfigString);
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
