@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ConnectionStatusBanner } from '@/components/layout/ConnectionStatusBanner';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
+import { DeviceStatusMonitor } from '@/components/layout/DeviceStatusMonitor';
 
 export const metadata: Metadata = {
   title: 'Velocity Driver',
@@ -31,6 +32,7 @@ export default function RootLayout({
             {children}
             <Toaster />
             <ConnectionStatusBanner />
+            <DeviceStatusMonitor />
         </ThemeProvider>
       </body>
     </html>
