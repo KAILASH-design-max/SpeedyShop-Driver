@@ -1,9 +1,11 @@
+
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
-// This placeholder will be replaced by the webpack DefinePlugin
+// This placeholder will be replaced by the webpack DefinePlugin at build time.
+// Declaring it here prevents TypeScript errors.
 declare const __FIREBASE_WEBAPP_CONFIG__: string;
 
 let app: FirebaseApp;
