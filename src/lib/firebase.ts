@@ -3,15 +3,18 @@ import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
+// This placeholder will be replaced by the webpack DefinePlugin
+declare const __FIREBASE_WEBAPP_CONFIG__: string;
+
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
 if (typeof window !== "undefined" && !getApps().length) {
-    const firebaseConfigString = process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
+    const firebaseConfigString = __FIREBASE_WEBAPP_CONFIG__;
     if (!firebaseConfigString) {
-        throw new Error("Firebase config not found in environment variables. Make sure NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG is set.");
+        throw new Error("Firebase config not found. Build process may have failed.");
     }
     const firebaseConfig = JSON.parse(firebaseConfigString);
     app = initializeApp(firebaseConfig);
@@ -24,6 +27,5 @@ if (typeof window !== "undefined" && !getApps().length) {
     db = getFirestore(app);
     storage = getStorage(app);
 }
-
 
 export { app, auth, db, storage };
