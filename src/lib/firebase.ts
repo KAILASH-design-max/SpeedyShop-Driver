@@ -18,6 +18,7 @@ if (typeof window !== "undefined" && !getApps().length) {
     if (!firebaseConfigString) {
         throw new Error("Firebase config not found. Build process may have failed.");
     }
+    
     const firebaseConfig = JSON.parse(firebaseConfigString);
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
