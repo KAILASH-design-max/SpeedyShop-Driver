@@ -48,7 +48,6 @@ export default function ProfilePage() {
                 name: currentUser.displayName || "",
                 phoneNumber: "",
                 role: "deliveryPartner",
-                vehicleDetails: "",
                 vehicleType: 'bike',
                 vehicleRegistrationNumber: '',
                 verificationStatus: 'pending',
