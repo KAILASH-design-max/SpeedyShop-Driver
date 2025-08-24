@@ -1,9 +1,10 @@
+
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Target, Trophy, Zap, Star, Lock } from "lucide-react";
+import { Target, Trophy, Zap, Star, Lock, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Achievement } from "@/ai/flows/get-achievements-flow";
 
@@ -16,7 +17,9 @@ const iconMap = {
     Trophy,
     Zap,
     Star,
-    Lock
+    Lock,
+    Moon,
+    Sun,
 }
 
 const getStatusBadgeClass = (status: string) => {
