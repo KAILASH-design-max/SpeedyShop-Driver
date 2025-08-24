@@ -91,7 +91,7 @@ export function RouteOptimizer() {
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center text-2xl font-bold text-primary"><RouteIcon className="mr-2 h-7 w-7"/>Smart Route Optimizer</CardTitle>
-          <CardDescription className="hidden md:block">Enter details to get the fastest and most efficient delivery route.</CardDescription>
+          <CardDescription className="hidden md:block">Enter your current location and all your delivery stops to get the fastest route. This is perfect for stacked orders.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -101,9 +101,9 @@ export function RouteOptimizer() {
                 name="currentLocation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center"><MapPin className="mr-2 h-4 w-4 text-muted-foreground"/>Current Location (Lat, Long or Address)</FormLabel>
+                    <FormLabel className="flex items-center"><MapPin className="mr-2 h-4 w-4 text-muted-foreground"/>Your Starting Location</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 12.9716,77.5946 or 1 Main St, Anytown" {...field} />
+                      <Input placeholder="e.g., 12.9716,77.5946 or your current address" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -111,71 +111,76 @@ export function RouteOptimizer() {
               />
 
               <div>
-                <FormLabel className="flex items-center mb-2"><MapPin className="mr-2 h-4 w-4 text-muted-foreground"/>Destination Addresses</FormLabel>
-                {fields.map((field, index) => (
-                  <FormField
-                    control={form.control}
-                    key={field.id}
-                    name={`destinationAddresses.${index}.address`}
-                    render={({ field: itemField }) => (
-                      <FormItem className="flex items-center gap-2 mb-2">
-                        <FormControl>
-                          <Input placeholder={`Destination ${index + 1}`} {...itemField} />
-                        </FormControl>
-                        {fields.length > 1 && (
-                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Remove destination">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                <FormLabel className="flex items-center mb-2"><MapPin className="mr-2 h-4 w-4 text-muted-foreground"/>Delivery Stops</FormLabel>
+                <div className="space-y-2">
+                    {fields.map((field, index) => (
+                      <FormField
+                        control={form.control}
+                        key={field.id}
+                        name={`destinationAddresses.${index}.address`}
+                        render={({ field: itemField }) => (
+                          <FormItem className="flex items-center gap-2">
+                            <FormControl>
+                              <Input placeholder={`Stop #${index + 1}`} {...itemField} />
+                            </FormControl>
+                            {fields.length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Remove destination">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            )}
+                            <FormMessage />
+                          </FormItem>
                         )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
+                      />
+                    ))}
+                </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => append({ address: "" })}
-                  className="mt-2"
+                  className="mt-3"
                 >
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Destination
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Another Stop
                 </Button>
               </div>
 
-              <FormField
-                control={form.control}
-                name="trafficConditions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center"><RouteIcon className="mr-2 h-4 w-4 text-muted-foreground"/>Traffic Conditions (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="e.g., Heavy traffic on Main St due to event" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="weatherConditions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center"><Info className="mr-2 h-4 w-4 text-muted-foreground"/>Weather Conditions (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="e.g., Light rain, roads might be slippery" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="trafficConditions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center"><RouteIcon className="mr-2 h-4 w-4 text-muted-foreground"/>Traffic Info (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Heavy traffic on MG Road" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="weatherConditions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center"><Info className="mr-2 h-4 w-4 text-muted-foreground"/>Weather Info (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Light rain" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Button type="submit" disabled={isLoading} size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                 {isLoading ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 ) : (
                   <RouteIcon className="mr-2 h-5 w-5" />
                 )}
-                Optimize Route
+                Get Optimized Route
               </Button>
             </form>
           </Form>
@@ -185,21 +190,21 @@ export function RouteOptimizer() {
       {optimizedRoute && (
         <Card className="shadow-lg mt-6 bg-green-50 border-green-200">
           <CardHeader>
-            <CardTitle className="flex items-center text-xl text-green-700"><ListOrdered className="mr-2 h-6 w-6"/>Optimized Route Plan</CardTitle>
+            <CardTitle className="flex items-center text-xl text-green-700"><ListOrdered className="mr-2 h-6 w-6"/>Your Optimized Route Plan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-green-800">
             <div>
-              <h4 className="font-semibold flex items-center"><RouteIcon className="mr-2 h-5 w-5"/>Delivery Order:</h4>
-              <ol className="list-decimal list-inside ml-4 space-y-1">
+              <h4 className="font-semibold flex items-center text-base"><RouteIcon className="mr-2 h-5 w-5"/>Recommended Stop Order:</h4>
+              <ol className="list-decimal list-inside ml-4 mt-2 space-y-1 font-medium">
                 {optimizedRoute.optimizedRoute.map((stop, index) => (
                   <li key={index}>{stop}</li>
                 ))}
               </ol>
             </div>
-            <p className="flex items-center"><Clock className="mr-2 h-5 w-5"/><strong>Estimated Time:</strong> {optimizedRoute.estimatedTime}</p>
-            <p className="flex items-center"><Info className="mr-2 h-5 w-5"/><strong>Summary:</strong> {optimizedRoute.routeSummary}</p>
-            <Button onClick={handleStartNavigation} className="w-full bg-green-600 hover:bg-green-700 text-white mt-4">
-                <Navigation className="mr-2 h-5 w-5" /> Start Navigation for Optimized Route
+            <p className="flex items-center font-medium"><Clock className="mr-2 h-5 w-5"/><strong>Estimated Time:</strong><span className="ml-2">{optimizedRoute.estimatedTime}</span></p>
+            <p className="flex items-start font-medium"><Info className="mr-2 h-5 w-5 flex-shrink-0 mt-0.5"/><strong>Summary:</strong><span className="ml-2 font-normal">{optimizedRoute.routeSummary}</span></p>
+            <Button onClick={handleStartNavigation} className="w-full bg-green-600 hover:bg-green-700 text-white mt-4 text-base font-bold h-12">
+                <Navigation className="mr-2 h-5 w-5" /> Start Navigation
             </Button>
           </CardContent>
         </Card>

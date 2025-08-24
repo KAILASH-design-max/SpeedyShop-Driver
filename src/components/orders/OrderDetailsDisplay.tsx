@@ -64,7 +64,7 @@ export function OrderDetailsDisplay({ order, deliveryPartner }: OrderDetailsDisp
                 <div className="space-y-1 text-sm">
                     <p><span className="font-medium text-muted-foreground">Name:</span> {order.customerName}</p>
                     {order.customerContact && (
-                        <p>
+                        <p className="flex items-center gap-1">
                             <span className="font-medium text-muted-foreground">Contact:</span> 
                             <a href={`tel:${order.customerContact}`} className="text-primary hover:underline flex items-center gap-1">
                                 <Phone className="h-4 w-4" /> {order.customerContact}
