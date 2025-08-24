@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { User, Phone, Car, Save, Loader2, Banknote, Bike, Edit } from "lucide-react";
+import { User, Phone, Car, Save, Loader2, Banknote, Bike, Edit, MapPin } from "lucide-react";
 import type { Profile } from "@/types";
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,6 +25,8 @@ const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   phoneNumber: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
   
+  preferredZone: z.string().optional(),
+
   vehicleType: z.enum(["bike", "scooter", "car"]),
   vehicleRegistrationNumber: z.string().min(2, { message: "Vehicle registration number is required." }),
   drivingLicenseNumber: z.string().optional(),
@@ -55,6 +57,7 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
     form.reset({
       name: profile.name || "",
       phoneNumber: profile.phoneNumber || "",
+      preferredZone: profile.preferredZone || "",
       vehicleType: profile.vehicleType || "bike",
       vehicleRegistrationNumber: profile.vehicleRegistrationNumber || "",
       drivingLicenseNumber: profile.drivingLicenseNumber || "",
@@ -108,6 +111,19 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
                     <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/>Phone Number</FormLabel>
                     <FormControl>
                       <Input type="tel" {...field} disabled={isSaving}/>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="preferredZone" 
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel className="flex items-center"><MapPin className="mr-2 h-4 w-4 text-muted-foreground"/>Preferred Delivery Zone (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Koramangala, Indiranagar" {...field} disabled={isSaving}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -228,4 +244,3 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
     </Dialog>
   );
 }
-

@@ -129,6 +129,7 @@ export interface Profile {
   vehicleType: 'bike' | 'scooter' | 'car';
   vehicleRegistrationNumber: string;
   drivingLicenseNumber?: string;
+  preferredZone?: string;
 
   // Profile status and details
   profilePictureUrl?: string;
