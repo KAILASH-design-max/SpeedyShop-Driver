@@ -75,6 +75,20 @@ export function EarningsOverview() {
             } else {
                  setOverallRating(0);
             }
+
+            const weeklyTips = ratings.reduce((acc, rating) => {
+                if (rating.tip && rating.ratedAt?.toDate) {
+                    const ratedDate = rating.ratedAt.toDate();
+                    if (ratedDate >= weekStart && ratedDate <= weekEnd) {
+                        return acc + rating.tip;
+                    }
+                }
+                return acc;
+            }, 0) || 0;
+            
+            // This relies on delivery earnings being calculated first
+            setCurrentWeekEarnings(prev => prev + weeklyTips);
+
             setIsLoadingRatings(false);
         }, (error) => {
              console.error("Error fetching ratings:", error);
@@ -92,13 +106,13 @@ export function EarningsOverview() {
         );
 
         const unsubscribeDeliveries = onSnapshot(weekDeliveriesQuery, (snapshot) => {
-            let totalWeeklyEarnings = 0;
+            let totalDeliveryEarnings = 0;
             let deliveriesTodayCount = 0;
             
             snapshot.forEach(doc => {
-                const orderData = doc.data() as Order;
-                const earning = (orderData.estimatedEarnings ?? 0) + (orderData.tipAmount ?? 0);
-                totalWeeklyEarnings += earning;
+                const orderData = doc.data();
+                const earning = orderData.estimatedEarnings ?? orderData.deliveryCharge ?? 0;
+                totalDeliveryEarnings += earning;
                 
                 const completedAtTimestamp = orderData.completedAt as Timestamp;
                 if (completedAtTimestamp) {
@@ -109,7 +123,8 @@ export function EarningsOverview() {
                 }
             });
 
-            setCurrentWeekEarnings(totalWeeklyEarnings);
+            // Set base earnings from deliveries, tips will be added by the other listener
+            setCurrentWeekEarnings(totalDeliveryEarnings);
             setDeliveriesToday(deliveriesTodayCount);
             setIsLoadingDeliveries(false);
             setIsLoadingWeekEarnings(false);
@@ -163,7 +178,7 @@ export function EarningsOverview() {
     
     return (
         <div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
                 {allStats.map((stat) => (
                     <Link href={stat.href} key={stat.title} className="block hover:no-underline">
                         <Card className="shadow-sm hover:shadow-md transition-shadow h-full">
