@@ -163,7 +163,7 @@ export function EarningsOverview() {
     
     return (
         <div>
-            <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {allStats.map((stat) => (
                     <Link href={stat.href} key={stat.title} className="block hover:no-underline">
                         <Card className="shadow-sm hover:shadow-md transition-shadow h-full">

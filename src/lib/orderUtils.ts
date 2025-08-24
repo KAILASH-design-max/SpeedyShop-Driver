@@ -1,4 +1,5 @@
 
+
 import { doc, getDoc, DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Order, OrderItem } from '@/types';
@@ -96,5 +97,6 @@ export const mapFirestoreDocToOrder = async (docSnap: DocumentData): Promise<Ord
     userId: data.userId,
     accessibleTo: data.accessibleTo || [],
     tipAmount: data.tipAmount || 0,
+    deliveryPartnerFeedback: data.deliveryPartnerFeedback,
   };
 };

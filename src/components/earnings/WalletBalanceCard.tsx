@@ -131,7 +131,7 @@ export function WalletBalanceCard() {
                 <CardHeader>
                     <CardTitle className="flex items-center text-xl font-bold">
                         <PiggyBank className="mr-3 h-6 w-6 text-primary" />
-                        Total Lifetime Earnings
+                        Lifetime Earnings
                     </CardTitle>
                      <CardDescription>Includes all deliveries and tips.</CardDescription>
                 </CardHeader>
