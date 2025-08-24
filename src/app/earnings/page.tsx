@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldX } from 'lucide-react';
 import { EarningsSummaryCard } from "@/components/earnings/EarningsSummaryCard";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
-import { EarningsOverview } from '@/components/earnings/EarningsOverview';
+import { EarningsOverview } from '@/app/earnings/EarningsOverview';
 import { WalletBalanceCard } from '@/components/earnings/WalletBalanceCard';
 import { EarningsForecast } from '@/components/dashboard/EarningsForecast';
 
