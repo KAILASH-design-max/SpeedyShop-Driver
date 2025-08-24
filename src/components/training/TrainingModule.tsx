@@ -31,7 +31,7 @@ const trainingModules = [
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video
     content: [
       "Accepting and rejecting new orders from the dashboard.",
-      "Using the availability toggle to go online, offline, or take a break.",
+      "Using the availability toggle to go online or offline.",
       "Navigating to the order details page.",
       "Finding your earnings and performance metrics.",
     ],
@@ -56,7 +56,7 @@ const trainingModules = [
     content: [
       "Handling packages with care to avoid damage.",
       "Communicating effectively with customers.",
-      "Confirming delivery with photo proof.",
+      "Confirming delivery with photo proof for no-contact orders.",
       "Understanding the ratings and feedback system.",
     ],
   },
@@ -141,22 +141,24 @@ export function TrainingModule() {
         <CardContent>
           <Accordion type="single" collapsible className="w-full space-y-4">
             {trainingModules.map((module, index) => (
-              <Card key={index} className="overflow-hidden">
+              <Card key={index} className="overflow-hidden shadow-sm">
                 <AccordionItem value={`item-${index}`} className="border-none">
-                  <AccordionTrigger className="p-4 hover:no-underline bg-muted/50">
-                    <div className="flex items-center gap-4">
-                      <module.icon className="h-6 w-6 text-primary" />
+                  <AccordionTrigger className="p-4 hover:no-underline bg-muted/50 data-[state=open]:bg-primary/10">
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="p-3 bg-background rounded-full">
+                        <module.icon className="h-6 w-6 text-primary" />
+                      </div>
                       <div>
-                        <p className="font-semibold text-lg text-left">{module.title}</p>
-                        <p className="text-sm text-muted-foreground text-left">{module.description}</p>
+                        <p className="font-semibold text-lg text-foreground">{module.title}</p>
+                        <p className="text-sm text-muted-foreground">{module.description}</p>
                       </div>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="p-4">
+                  <AccordionContent className="p-6">
                     <div className="grid md:grid-cols-2 gap-6 items-start">
                         <div>
-                            <p className="font-semibold mb-2">Key Topics:</p>
-                            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                            <p className="font-semibold mb-3 text-base">Key Topics:</p>
+                            <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                             {module.content.map((item, i) => (
                                 <li key={i}>{item}</li>
                             ))}
@@ -164,7 +166,7 @@ export function TrainingModule() {
                         </div>
                         <div className="aspect-video">
                             <iframe
-                            className="w-full h-full rounded-lg"
+                            className="w-full h-full rounded-lg shadow-md"
                             src={module.videoUrl}
                             title="Training Video"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -189,25 +191,29 @@ export function TrainingModule() {
         </CardHeader>
         <CardContent className="space-y-6">
           {quizQuestions.map((q, index) => (
-            <div key={index} className="p-4 border rounded-lg">
+            <div key={index} className="p-4 border rounded-lg bg-muted/20">
               <p className="font-semibold mb-3">{index + 1}. {q.question}</p>
               <RadioGroup
                 onValueChange={(value) => handleAnswerChange(index, value)}
                 value={answers[index]}
+                className="space-y-2"
               >
                 {q.options.map((option, i) => (
                   <div key={i} className="flex items-center space-x-2">
                     <RadioGroupItem value={option} id={`q${index}-option${i}`} />
-                    <Label htmlFor={`q${index}-option${i}`}>{option}</Label>
+                    <Label htmlFor={`q${index}-option${i}`} className="font-normal cursor-pointer">{option}</Label>
                   </div>
                 ))}
               </RadioGroup>
               {showResults && (
-                <div className="mt-3">
+                <div className="mt-4 p-3 rounded-md text-sm" style={{
+                    backgroundColor: answers[index] === q.correctAnswer ? 'hsl(var(--accent))' : 'hsl(var(--destructive))',
+                    color: answers[index] === q.correctAnswer ? 'hsl(var(--accent-foreground))' : 'hsl(var(--destructive-foreground))'
+                }}>
                   {answers[index] === q.correctAnswer ? (
-                     <p className="text-sm flex items-center text-green-600"><CheckCircle className="mr-2 h-4 w-4"/> Correct!</p>
+                     <p className="flex items-center"><CheckCircle className="mr-2 h-4 w-4"/> Correct!</p>
                   ) : (
-                     <p className="text-sm flex items-center text-red-600"><XCircle className="mr-2 h-4 w-4"/> Incorrect. The right answer is: "{q.correctAnswer}"</p>
+                     <p className="flex items-center"><XCircle className="mr-2 h-4 w-4"/> Incorrect. The right answer is: "{q.correctAnswer}"</p>
                   )}
                 </div>
               )}
@@ -216,15 +222,15 @@ export function TrainingModule() {
         </CardContent>
         <CardFooter className="flex-col items-stretch gap-4">
            {showResults && (
-              <Alert variant={score === quizQuestions.length ? "default" : "destructive"} className={score === quizQuestions.length ? "bg-green-50 border-green-200" : ""}>
+              <Alert variant={score === quizQuestions.length ? "default" : "destructive"} className={score === quizQuestions.length ? "bg-green-50 border-green-200 text-green-800" : ""}>
                 <AlertTitle className="font-bold">Quiz Result</AlertTitle>
                 <AlertDescription>
                   You scored {score} out of {quizQuestions.length}.
-                  {score < quizQuestions.length && " Please review the material and retake the quiz."}
+                  {score < quizQuestions.length ? " Please review the material and retake the quiz." : " Great job! You have passed the quiz."}
                 </AlertDescription>
               </Alert>
            )}
-          <Button onClick={handleSubmitQuiz} className="w-full">
+          <Button onClick={handleSubmitQuiz} className="w-full text-base py-6">
             Submit Quiz
           </Button>
         </CardFooter>
