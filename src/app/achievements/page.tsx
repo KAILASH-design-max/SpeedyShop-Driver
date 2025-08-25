@@ -3,18 +3,18 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Trophy } from "lucide-react";
 import { AchievementsList } from "@/components/achievements/AchievementsList";
 import { useState, useEffect } from "react";
 import type { User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, Timestamp, doc, getDoc, orderBy } from "firebase/firestore";
 import type { Order, Profile, DeliveryRating } from "@/types";
 import { getAchievements, Achievement } from "@/ai/flows/get-achievements-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { startOfWeek, startOfDay, endOfDay, previousSaturday, previousSunday } from 'date-fns';
+import { startOfWeek, startOfDay, endOfDay, previousSaturday, previousSunday, subDays } from 'date-fns';
 
 export default function AchievementsPage() {
   const router = useRouter();
