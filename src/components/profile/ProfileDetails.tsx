@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Edit, User, FileText, Banknote, ShieldCheck, Download, MapPin, Bike } from "lucide-react";
+import { Edit, User, FileText, Banknote, ShieldCheck, Download, MapPin, Bike, Crown, Star } from "lucide-react";
 import type { Profile } from "@/types";
 import { cn } from "@/lib/utils";
 import { ProfileForm } from "./ProfileForm";
@@ -28,7 +28,7 @@ const getVerificationBadgeVariant = (status?: string) => {
 }
 
 const getStatusBadgeClass = (isVerified?: boolean) => {
-    return isVerified ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+    return isVerified ? "bg-green-100 text-green-800 border-green-200" : "bg-yellow-100 text-yellow-800 border-yellow-200";
 }
 
 export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
@@ -45,15 +45,26 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
     const bankAccountNumberCensored = profile.bankDetails?.accountNumber ? `********${profile.bankDetails.accountNumber.slice(-4)}` : 'N/A';
     const addressString = profile.address ? `${profile.address.street}, ${profile.address.city}` : '456 Delivery Ave, Bangalore';
 
+    // Placeholder for gamification level
+    const level = "Gold"; 
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-center gap-6">
-                <Avatar className="h-24 w-24 border-4 border-primary">
-                    <AvatarImage src={profile.profilePictureUrl || undefined} alt={profile.name} data-ai-hint="person face" />
-                    <AvatarFallback>{profile.name?.substring(0,2).toUpperCase() || "JD"}</AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                    <Avatar className="h-24 w-24 border-4 border-primary">
+                        <AvatarImage src={profile.profilePictureUrl || undefined} alt={profile.name} data-ai-hint="person face" />
+                        <AvatarFallback>{profile.name?.substring(0,2).toUpperCase() || "JD"}</AvatarFallback>
+                    </Avatar>
+                     <div className="absolute -bottom-2 -right-2 flex items-center justify-center p-1 bg-yellow-400 border-2 border-background rounded-full">
+                        <Crown className="h-5 w-5 text-white" />
+                    </div>
+                </div>
                 <div className="flex-grow text-center sm:text-left">
-                    <h1 className="text-3xl font-bold text-primary">{profile.name}</h1>
+                    <div className="flex items-center gap-3 justify-center sm:justify-start">
+                        <h1 className="text-3xl font-bold text-primary">{profile.name}</h1>
+                        <Badge className="text-base bg-yellow-400 text-white hover:bg-yellow-500">{level} Tier</Badge>
+                    </div>
                     <p className="text-muted-foreground">{profile.email}</p>
                 </div>
                 <ProfileForm profile={profile} onUpdate={onUpdate}>

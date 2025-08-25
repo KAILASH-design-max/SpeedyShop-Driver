@@ -8,22 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { IndianRupee, Loader2, Trophy } from "lucide-react";
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, Timestamp } from 'firestore';
 import type { Order, Profile } from '@/types';
 import { startOfWeek, endOfWeek } from 'date-fns';
+import { cn } from "@/lib/utils";
 
 interface LeaderboardEntry {
   uid: string;
@@ -110,10 +102,20 @@ export function TopEarnersLeaderboard() {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : leaderboard.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {leaderboard.map((entry, index) => (
-              <div key={entry.uid} className="flex items-center gap-4">
-                <Badge variant="secondary" className="font-bold text-lg">{index + 1}</Badge>
+              <div key={entry.uid} className={cn(
+                  "flex items-center gap-4 p-3 rounded-lg",
+                  index === 0 && "bg-yellow-100 border border-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/20"
+              )}>
+                <div className={cn(
+                    "font-bold text-lg w-6 text-center",
+                     index === 0 && "text-yellow-600 dark:text-yellow-400",
+                     index === 1 && "text-gray-500 dark:text-gray-400",
+                     index === 2 && "text-orange-700 dark:text-orange-500",
+                )}>
+                    {index + 1}
+                </div>
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={entry.profilePictureUrl} alt={entry.name} />
                   <AvatarFallback>{entry.name.substring(0, 1).toUpperCase()}</AvatarFallback>

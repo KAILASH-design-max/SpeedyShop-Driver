@@ -35,15 +35,15 @@ export function AchievementsList({ achievements }: AchievementsListProps) {
     return (
         <div>
             <div>
-              <h1 className="text-3xl font-bold text-primary">Your Achievements</h1>
-              <p className="text-muted-foreground mt-1">Track challenges to earn extra rewards and badges.</p>
+              <h1 className="text-3xl font-bold text-primary">Daily Challenges & Achievements</h1>
+              <p className="text-muted-foreground mt-1">Complete challenges to earn extra rewards and badges.</p>
             </div>
             
             <div className="mt-6 space-y-4">
                 {achievements.map((item, index) => {
                     const Icon = iconMap[item.icon] || Target;
                     return (
-                        <Card key={index} className={cn("shadow-md hover:shadow-lg transition-shadow", item.status === 'Locked' && "bg-muted/50")}>
+                        <Card key={index} className={cn("shadow-md hover:shadow-lg transition-shadow", item.status === 'Locked' && "bg-muted/50", item.status === 'Completed' && "bg-green-50 border-green-200")}>
                             <CardContent className="p-4 flex items-start gap-4">
                                 <div className={cn("p-3 rounded-full mt-1 shrink-0", item.status === 'Completed' ? "bg-green-100" : "bg-primary/10")}>
                                 <Icon className={cn("h-6 w-6", item.status === 'Completed' ? "text-green-600" : "text-primary")} />
@@ -61,7 +61,7 @@ export function AchievementsList({ achievements }: AchievementsListProps) {
                                         <>
                                             <div className="flex justify-between text-xs text-muted-foreground mb-1">
                                                 <span>Progress: {item.progress} / {item.target}</span>
-                                                <span>Reward: <span className="font-semibold text-green-600">{item.reward}</span></span>
+                                                <span>Reward: <span className="font-semibold text-accent">{item.reward}</span></span>
                                             </div>
                                             <Progress value={(item.progress / item.target) * 100} className="h-2" />
                                         </>
