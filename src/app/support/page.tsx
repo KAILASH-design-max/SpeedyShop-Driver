@@ -1,4 +1,6 @@
 
+"use client";
+
 import { Faq } from "@/components/support/Faq";
 import { EmergencySupport } from "@/components/support/EmergencySupport";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,15 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 
 
 export default function SupportPage() {
+  const { toast } = useToast();
 
   const handleRequestGear = () => {
     // In a real app, this could open a form or send a request to a backend.
     // For now, we'll just show a confirmation toast.
-    // const { toast } = useToast();
-    // toast({
-    //   title: "Request Sent",
-    //   description: "Your request for new gear has been submitted to the operations team.",
-    // });
+    toast({
+      title: "Request Sent",
+      description: "Your request for new gear has been submitted to the operations team.",
+    });
   };
 
   return (
