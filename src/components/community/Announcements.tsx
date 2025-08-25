@@ -54,7 +54,7 @@ export function Announcements() {
     ensureChannelExists();
 
     setIsLoading(true);
-    const messagesQuery = query(collection(db, `announcements/${ANNOUNCEMENT_CHANNEL_ID}/messages`), orderBy("timestamp", "asc"));
+    const messagesQuery = query(collection(db, `announcements/${ANNOUNCEMENT_CHANNEL_ID}/messages`), orderBy("timestamp", "desc"), limit(5));
 
     const unsubscribe = onSnapshot(messagesQuery, snapshot => {
       const messagesData = snapshot.docs.map(doc => ({
@@ -72,65 +72,58 @@ export function Announcements() {
     return () => unsubscribe();
   }, [toast]);
 
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-        const scrollViewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
-        if (scrollViewport) {
-          scrollViewport.scrollTop = scrollViewport.scrollHeight;
-        }
-    }
-  }, [messages]);
 
   const formatMessageTimestamp = (timestamp: any) => {
     if (!timestamp || !timestamp.seconds) return "";
     const date = new Date(timestamp.seconds * 1000);
-    return format(date, 'MMM d, yyyy, p');
+    return format(date, 'MMM d, p');
   }
 
   return (
     <Card className="h-full flex flex-col shadow-xl">
-        <CardHeader className="border-b">
-            <CardTitle className="flex items-center text-2xl font-bold text-primary">
-                <Megaphone className="mr-3 h-6 w-6"/>
-                Community & Announcements
+        <CardHeader>
+            <CardTitle className="flex items-center">
+                <Megaphone className="mr-2 h-5 w-5 text-primary"/>
+                Announcements
             </CardTitle>
-            <CardDescription className="hidden md:block">
-                Updates, tips, and important information from the Velocity team.
+            <CardDescription>
+                Updates from the Velocity team.
             </CardDescription>
         </CardHeader>
-        <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
+        <CardContent className="flex-grow p-4">
         {isLoading ? (
             <div className="flex justify-center items-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         ) : messages.length === 0 ? (
              <div className="flex justify-center items-center h-full text-muted-foreground">
-                <p>No announcements yet. Check back later!</p>
+                <p>No announcements yet.</p>
             </div>
         ) : (
-            messages.map((msg) => (
-                <div key={msg.id} className="flex mb-4 items-start gap-3">
-                    <Avatar>
-                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
-                            {(msg.senderName || "A").substring(0,1)}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div
-                        className={cn(
-                            "max-w-[85%] p-3 rounded-xl text-sm bg-muted rounded-bl-none"
-                        )}
-                    >
-                        <p className="font-semibold text-primary">{msg.senderName || "Admin"}</p>
-                        <p className="mt-1">{msg.message}</p>
-                        <p className="text-xs mt-2 text-muted-foreground text-left">
-                            {formatMessageTimestamp(msg.timestamp)}
-                        </p>
+             <div className="space-y-4">
+                {messages.map((msg) => (
+                    <div key={msg.id} className="flex items-start gap-3">
+                        <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                                {(msg.senderName || "A").substring(0,1)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div
+                            className="text-sm flex-grow"
+                        >
+                            <div className="flex justify-between items-baseline">
+                                <p className="font-semibold text-primary">{msg.senderName || "Admin"}</p>
+                                <p className="text-xs text-muted-foreground text-right">
+                                    {formatMessageTimestamp(msg.timestamp)}
+                                </p>
+                            </div>
+                            <p className="mt-0.5">{msg.message}</p>
+                        </div>
                     </div>
-                </div>
-            ))
+                ))}
+             </div>
         )}
-        </ScrollArea>
-        {/* No footer or input needed as this is a read-only view */}
+        </CardContent>
     </Card>
   );
 }
