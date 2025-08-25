@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, GeoPoint, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, GeoPoint, Timestamp, doc, getDoc } from 'firebase-admin/firestore';
 
 const UpdateLocationInputSchema = z.object({
   orderId: z.string().describe("The ID of the order being tracked."),
@@ -46,7 +46,7 @@ const updateLocationFlow = ai.defineFlow(
         const locationRef = db.collection('deliveryLocations').doc(input.orderId);
         
         // Fetch the order document to get the destination address
-        const orderSnap = await orderRef.get();
+        const orderSnap = await getDoc(orderRef);
         if (!orderSnap.exists()) {
             console.error(`Order with ID ${input.orderId} not found.`);
             return { success: false };
@@ -70,3 +70,4 @@ const updateLocationFlow = ai.defineFlow(
     }
   }
 );
+
