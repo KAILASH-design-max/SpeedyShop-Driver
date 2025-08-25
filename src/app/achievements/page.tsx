@@ -50,11 +50,7 @@ export default function AchievementsPage() {
       const todayStart = startOfDay(now);
       const todayEnd = endOfDay(now);
       const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-      const lastWeekendStart = previousSaturday(now);
-      const lastWeekendEnd = previousSunday(now);
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-
+      
       const deliveredOrdersQuery = query(
         collection(db, "orders"),
         where("deliveryPartnerId", "==", currentUser.uid),
@@ -63,7 +59,8 @@ export default function AchievementsPage() {
       
       const ratingsQuery = query(
         collection(db, "deliveryPartnerRatings"),
-        where("deliveryPartnerId", "==", currentUser.uid)
+        where("deliveryPartnerId", "==", currentUser.uid),
+        orderBy("ratedAt", "desc")
       );
 
       const [ordersSnapshot, ratingsSnapshot] = await Promise.all([
@@ -85,15 +82,24 @@ export default function AchievementsPage() {
         }
         return false;
       }).length;
-      const weekendDeliveries = allOrders.filter(o => o.completedAt?.toDate() >= lastWeekendStart && o.completedAt?.toDate() <= lastWeekendEnd).length;
-      const lateNightDeliveries = allOrders.filter(o => o.completedAt?.toDate() >= monthStart && o.completedAt?.toDate().getHours() >= 22).length;
-
+      
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lateNightDeliveries = allOrders.filter(o => {
+        const completedDate = o.completedAt?.toDate();
+        return completedDate && completedDate >= monthStart && completedDate.getHours() >= 22;
+      }).length;
+      
+      const lastWeekendStart = previousSaturday(subDays(now, 7));
+      const lastWeekendEnd = previousSunday(subDays(now, 7));
+      const weekendDeliveries = allOrders.filter(o => {
+        const completedDate = o.completedAt?.toDate();
+        return completedDate && completedDate >= lastWeekendStart && completedDate <= lastWeekendEnd;
+      }).length;
+      
       const overallRating = ratings.length > 0 ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length) : 0;
       
       let fiveStarRatingStreak = 0;
-      // Sort ratings from most recent to oldest to calculate the current streak.
-      const sortedRatings = ratings.sort((a,b) => b.ratedAt.seconds - a.ratedAt.seconds);
-      for (const rating of sortedRatings) {
+      for (const rating of ratings) {
           if (rating.rating === 5) {
               fiveStarRatingStreak++;
           } else {
@@ -149,6 +155,16 @@ export default function AchievementsPage() {
           </AlertDescription>
         </Alert>
        )
+    }
+
+    if (achievements.length === 0 && !loading) {
+      return (
+        <Card className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
+          <Trophy className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <p className="font-semibold text-lg">No Challenges Available</p>
+          <p className="text-sm mt-1">Complete some deliveries to unlock your first set of achievements!</p>
+        </Card>
+      );
     }
 
     return <AchievementsList achievements={achievements} />;

@@ -25,7 +25,7 @@ export type GetAchievementsInput = z.infer<typeof GetAchievementsInputSchema>;
 
 const AchievementSchema = z.object({
   title: z.string().describe('The catchy title of the achievement.'),
-  description: z.string().describe('A brief description of what the driver needs to do.'),
+  description: z.string().describe('A brief description of what the driver needs to do to complete the achievement.'),
   reward: z.string().describe('The reward for completing the achievement (e.g., "₹100 Bonus", "Profile Badge").'),
   progress: z.number().describe('The driver\'s current progress towards the target.'),
   target: z.number().describe('The target value to complete the achievement.'),
@@ -51,30 +51,61 @@ const prompt = ai.definePrompt({
   name: 'getAchievementsPrompt',
   input: {schema: GetAchievementsInputSchema},
   output: {schema: GetAchievementsOutputSchema},
-  prompt: `You are an AI assistant that generates a personalized list of achievements for a delivery driver based on their performance data.
+  prompt: `You are an AI assistant that generates a personalized list of achievements for a delivery driver based on their performance data. Create a list of 5-6 engaging challenges.
 
   Driver Performance Data:
-  - Total Deliveries: {{{totalDeliveries}}}
-  - Deliveries Today: {{{deliveriesToday}}}
-  - Peak Hour Deliveries (this week, 5-9 PM): {{{peakHourDeliveries}}}
-  - Weekend Deliveries (last weekend): {{{weekendDeliveries}}}
-  - Late Night Deliveries (this month, after 10 PM): {{{lateNightDeliveries}}}
-  - Overall Rating: {{{overallRating}}}/5
-  - 5-Star Rating Streak: {{{fiveStarRatingStreak}}}
+  - Total Deliveries (All-Time): {{{totalDeliveries}}}
+  - Deliveries Completed Today: {{{deliveriesToday}}}
+  - Peak Hour Deliveries (This Week, 5-9 PM): {{{peakHourDeliveries}}}
+  - Weekend Deliveries (Last Weekend): {{{weekendDeliveries}}}
+  - Late Night Deliveries (This Month, after 10 PM): {{{lateNightDeliveries}}}
+  - Overall Rating (out of 5): {{{overallRating}}}
+  - Current 5-Star Rating Streak: {{{fiveStarRatingStreak}}}
 
-  Generate a list of 5-6 relevant achievements. The achievements should be a mix of short-term and long-term goals, and should feel like dynamic bonuses.
-  - Base the 'progress' and 'status' of each achievement on the provided performance data.
+  Your Task:
+  Generate a list of 5-6 relevant achievements. The achievements should feel like dynamic bonuses and challenges.
+  - Base the 'progress' and 'status' of each achievement on the provided performance data. An achievement is 'Completed' if progress >= target.
   - If a driver has made no progress on a difficult achievement, mark it as 'Locked'.
   - Ensure the 'icon' matches the achievement's theme. Use 'Target' for delivery count goals, 'Trophy' for major milestones, 'Zap' for time-based goals like peak hours, 'Star' for rating goals, 'Moon' for late-night goals, 'Sun' for weekend goals, and 'Lock' for locked achievements.
+  - Make the rewards compelling (e.g., ₹50 Bonus, ₹100 Bonus).
 
-  Here are some example achievements to adapt. Create a varied and engaging list.
-
-  - "Complete 10 Deliveries Today": Target: 10, Progress: {{{deliveriesToday}}}
-  - "5-Star Rating Streak": Target: 5, Progress: {{{fiveStarRatingStreak}}}
-  - "Peak Hour Power": Target: 5 (for the week), Progress: {{{peakHourDeliveries}}}, Reward: "₹50 Bonus"
-  - "Weekend Warrior": Target: 25 (for the weekend), Progress: {{{weekendDeliveries}}}, Reward: "₹200 Bonus"
-  - "Night Owl": Target: 10 (for the month), Progress: {{{lateNightDeliveries}}}. Mark as Locked if progress is 0. Reward: "₹150 Bonus"
-  - "Delivery Pro": Target: 100 total deliveries, Progress: {{{totalDeliveries}}}
+  Example Achievements to Adapt (Create a varied and engaging list based on these ideas):
+  1.  "Daily Dasher":
+      - Description: "Complete 10 deliveries today."
+      - Progress: {{{deliveriesToday}}}
+      - Target: 10
+      - Reward: "₹50 Bonus"
+      - Icon: Target
+  2.  "Five-Star Finisher":
+      - Description: "Maintain a streak of 5 five-star ratings."
+      - Progress: {{{fiveStarRatingStreak}}}
+      - Target: 5
+      - Reward: "Gold Star Badge"
+      - Icon: Star
+  3.  "Peak Hour Power":
+      - Description: "Complete 15 deliveries during peak hours this week."
+      - Progress: {{{peakHourDeliveries}}}
+      - Target: 15
+      - Reward: "₹150 Bonus"
+      - Icon: Zap
+  4.  "Weekend Warrior":
+      - Description: "Complete 25 deliveries over the weekend."
+      - Progress: {{{weekendDeliveries}}}
+      - Target: 25
+      - Reward: "₹200 Bonus"
+      - Icon: Sun
+  5.  "Night Owl Ninja":
+      - Description: "Complete 10 late-night deliveries this month."
+      - Progress: {{{lateNightDeliveries}}}
+      - Target: 10
+      - Reward: "₹150 Bonus"
+      - Icon: Moon (or Lock if progress is 0)
+  6.  "Delivery Pro":
+      - Description: "Reach a milestone of 100 total deliveries."
+      - Progress: {{{totalDeliveries}}}
+      - Target: 100
+      - Reward: "Pro Badge"
+      - Icon: Trophy
 
   Return a list of achievements in the specified JSON format.
   `,

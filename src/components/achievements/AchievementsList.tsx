@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Target, Trophy, Zap, Star, Lock, Moon, Sun } from "lucide-react";
@@ -33,20 +33,26 @@ const getStatusBadgeClass = (status: string) => {
 
 export function AchievementsList({ achievements }: AchievementsListProps) {
     return (
-        <div>
-            <div>
-              <h1 className="text-3xl font-bold text-primary">Daily Challenges & Achievements</h1>
-              <p className="text-muted-foreground mt-1">Complete challenges to earn extra rewards and badges.</p>
-            </div>
+        <Card className="shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-3xl font-bold text-primary flex items-center">
+                  <Trophy className="mr-3 h-8 w-8"/>
+                  Daily Challenges & Achievements
+              </CardTitle>
+              <CardDescription>Complete challenges to earn extra rewards and badges.</CardDescription>
+            </CardHeader>
             
-            <div className="mt-6 space-y-4">
+            <CardContent className="space-y-4">
                 {achievements.map((item, index) => {
                     const Icon = iconMap[item.icon] || Target;
+                    const isCompleted = item.status === 'Completed';
+                    const progressValue = isCompleted ? 100 : (item.progress / item.target) * 100;
+
                     return (
-                        <Card key={index} className={cn("shadow-md hover:shadow-lg transition-shadow", item.status === 'Locked' && "bg-muted/50", item.status === 'Completed' && "bg-green-50 border-green-200")}>
+                        <Card key={index} className={cn("shadow-md hover:shadow-lg transition-shadow", item.status === 'Locked' && "bg-muted/50", isCompleted && "bg-green-50 border-green-200")}>
                             <CardContent className="p-4 flex items-start gap-4">
-                                <div className={cn("p-3 rounded-full mt-1 shrink-0", item.status === 'Completed' ? "bg-green-100" : "bg-primary/10")}>
-                                <Icon className={cn("h-6 w-6", item.status === 'Completed' ? "text-green-600" : "text-primary")} />
+                                <div className={cn("p-3 rounded-full mt-1 shrink-0", isCompleted ? "bg-green-100" : "bg-primary/10")}>
+                                <Icon className={cn("h-6 w-6", isCompleted ? "text-green-600" : "text-primary")} />
                                 </div>
                                 <div className="flex-grow w-full">
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -63,7 +69,7 @@ export function AchievementsList({ achievements }: AchievementsListProps) {
                                                 <span>Progress: {item.progress} / {item.target}</span>
                                                 <span>Reward: <span className="font-semibold text-accent">{item.reward}</span></span>
                                             </div>
-                                            <Progress value={(item.progress / item.target) * 100} className="h-2" />
+                                            <Progress value={progressValue} className={cn("h-2", isCompleted && "[&>div]:bg-green-500")} />
                                         </>
                                         )}
                                         {item.status === 'Locked' && (
@@ -75,7 +81,7 @@ export function AchievementsList({ achievements }: AchievementsListProps) {
                         </Card>
                     )
                 })}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }
