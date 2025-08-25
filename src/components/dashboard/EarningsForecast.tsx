@@ -40,7 +40,7 @@ export function EarningsForecast() {
         const pastDeliveriesQuery = query(
             collection(db, "orders"),
             where("deliveryPartnerId", "==", currentUser.uid),
-            where("orderStatus", "==", "delivered"),
+            where("status", "==", "delivered"),
             where("completedAt", ">=", oneMonthAgo)
         );
 
@@ -55,7 +55,7 @@ export function EarningsForecast() {
 
             snapshot.forEach(doc => {
                 const order = doc.data() as Order;
-                totalEarnings += order.estimatedEarnings || 0;
+                totalEarnings += (order.estimatedEarnings || 0) + (order.tipAmount || 0);
                 const completedDate = (order.completedAt as Timestamp)?.toDate();
                 if (completedDate) {
                     const dayKey = format(completedDate, 'yyyy-MM-dd');
