@@ -14,7 +14,7 @@ import { getAchievements, Achievement } from "@/ai/flows/get-achievements-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { startOfWeek, startOfDay, endOfDay, previousSaturday, previousSunday, subDays, getDay, addDays } from 'date-fns';
+import { startOfWeek, startOfDay, endOfDay, getDay, subDays } from 'date-fns';
 
 export default function AchievementsPage() {
   const router = useRouter();
@@ -89,16 +89,22 @@ export default function AchievementsPage() {
         return completedDate && completedDate >= monthStart && completedDate.getHours() >= 22;
       }).length;
       
-      // Correctly calculate the most recent weekend
-      const dayOfWeek = getDay(now); // Sunday is 0, Saturday is 6
-      const mostRecentSaturday = subDays(now, dayOfWeek + 1);
-      const mostRecentSunday = subDays(now, dayOfWeek);
-      const lastWeekendStart = startOfDay(mostRecentSaturday);
-      const lastWeekendEnd = endOfDay(mostRecentSunday);
-
+      const dayOfWeek = getDay(now); // 0 = Sunday, 6 = Saturday
+      const daysSinceSunday = dayOfWeek;
+      const lastSunday = subDays(now, daysSinceSunday);
+      const lastSaturday = subDays(lastSunday, 1);
+      
       const weekendDeliveries = allOrders.filter(o => {
         const completedDate = o.completedAt?.toDate();
-        return completedDate && completedDate >= lastWeekendStart && completedDate <= lastWeekendEnd;
+        if (!completedDate) return false;
+        
+        const completedDay = getDay(completedDate);
+        const isSaturday = completedDay === 6;
+        const isSunday = completedDay === 0;
+
+        // Check if the delivery was on the most recent Saturday or Sunday
+        return (isSaturday && completedDate >= startOfDay(lastSaturday) && completedDate <= endOfDay(lastSaturday)) || 
+               (isSunday && completedDate >= startOfDay(lastSunday) && completedDate <= endOfDay(lastSunday));
       }).length;
       
       const overallRating = ratings.length > 0 ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length) : 0;
