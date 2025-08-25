@@ -14,7 +14,7 @@ import { getAchievements, Achievement } from "@/ai/flows/get-achievements-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { startOfWeek, startOfDay, endOfDay, previousSaturday, previousSunday, subDays } from 'date-fns';
+import { startOfWeek, startOfDay, endOfDay, previousSaturday, previousSunday, subDays, getDay, addDays } from 'date-fns';
 
 export default function AchievementsPage() {
   const router = useRouter();
@@ -89,8 +89,13 @@ export default function AchievementsPage() {
         return completedDate && completedDate >= monthStart && completedDate.getHours() >= 22;
       }).length;
       
-      const lastWeekendStart = previousSaturday(subDays(now, 7));
-      const lastWeekendEnd = previousSunday(subDays(now, 7));
+      // Correctly calculate the most recent weekend
+      const dayOfWeek = getDay(now); // Sunday is 0, Saturday is 6
+      const mostRecentSaturday = subDays(now, dayOfWeek + 1);
+      const mostRecentSunday = subDays(now, dayOfWeek);
+      const lastWeekendStart = startOfDay(mostRecentSaturday);
+      const lastWeekendEnd = endOfDay(mostRecentSunday);
+
       const weekendDeliveries = allOrders.filter(o => {
         const completedDate = o.completedAt?.toDate();
         return completedDate && completedDate >= lastWeekendStart && completedDate <= lastWeekendEnd;
