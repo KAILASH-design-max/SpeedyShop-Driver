@@ -384,7 +384,7 @@ export default function OrderPage() {
             {order.status === "accepted" && (
               <>
                 <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                  <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.pickupLocation)}&type=pickup`}>
+                  <Link href={`/navigate/${order.id}?type=pickup`}>
                      <Store className="mr-2 h-5 w-5" /> Navigate to Store
                   </Link>
                 </Button>
@@ -409,7 +409,7 @@ export default function OrderPage() {
                   Out for Delivery
                 </Button>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
-                  <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`}>
+                  <Link href={`/navigate/${order.id}?type=dropoff`}>
                       <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
                   </Link>
                 </Button>
@@ -419,7 +419,7 @@ export default function OrderPage() {
              {order.status === "out-for-delivery" && (
               <>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
-                  <Link href={`/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`}>
+                  <Link href={`/navigate/${order.id}?type=dropoff`}>
                      <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
                   </Link>
                 </Button>

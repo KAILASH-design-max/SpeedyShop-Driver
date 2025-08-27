@@ -20,7 +20,7 @@ const statusInfo: { [key in Order['status']]?: { icon: React.ElementType, label:
         icon: PackageCheck, 
         label: 'Accepted', 
         color: 'text-accent',
-        action: { href: (orderId, dest) => `/orders/${orderId}`, text: "Go to Store", icon: Store }
+        action: { href: (orderId, dest) => `/navigate/${orderId}?type=pickup`, text: "Navigate to Store", icon: Store }
     },
     'arrived-at-store': { 
         icon: Store, 
@@ -32,13 +32,13 @@ const statusInfo: { [key in Order['status']]?: { icon: React.ElementType, label:
         icon: Truck, 
         label: 'Picked Up', 
         color: 'text-cyan-400',
-        action: { href: (orderId, dest) => `/navigate/${orderId}?destination=${encodeURIComponent(dest)}&type=dropoff`, text: "Navigate to Customer", icon: Navigation }
+        action: { href: (orderId, dest) => `/navigate/${orderId}?type=dropoff`, text: "Navigate to Customer", icon: Navigation }
     },
     'out-for-delivery': { 
         icon: Truck, 
         label: 'Out for Delivery', 
         color: 'text-purple-400',
-        action: { href: (orderId, dest) => `/navigate/${orderId}?destination=${encodeURIComponent(dest)}&type=dropoff`, text: "Navigate to Customer", icon: Navigation }
+        action: { href: (orderId, dest) => `/navigate/${orderId}?type=dropoff`, text: "Navigate to Customer", icon: Navigation }
     },
      'arrived': { 
         icon: MapPin, 
