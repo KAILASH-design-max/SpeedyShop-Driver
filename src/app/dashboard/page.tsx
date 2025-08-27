@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
-import { PackageCheck, Loader2, PackageSearch, PackagePlus } from "lucide-react";
+import { PackageCheck, Loader2, PackageSearch, PackagePlus, CheckCircle } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -13,6 +13,7 @@ import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
 import { AvailableOrderCard } from "@/components/dashboard/AvailableOrderCard";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);

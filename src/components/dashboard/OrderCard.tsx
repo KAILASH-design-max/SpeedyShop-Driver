@@ -20,13 +20,13 @@ const statusInfo: { [key in Order['status']]?: { icon: React.ElementType, label:
         icon: PackageCheck, 
         label: 'Accepted', 
         color: 'text-accent',
-        action: { href: (orderId, dest) => `/navigate/${orderId}?destination=${encodeURIComponent(dest)}&type=pickup`, text: "Navigate to Store", icon: Store }
+        action: { href: (orderId, dest) => `/orders/${orderId}`, text: "Go to Store", icon: Store }
     },
     'arrived-at-store': { 
         icon: Store, 
         label: 'At Store', 
         color: 'text-teal-400',
-        action: null // Action is on details page
+        action: { href: (orderId, dest) => `/orders/${orderId}`, text: "Confirm Pickup", icon: PackageCheck }
     },
     'picked-up': { 
         icon: Truck, 
@@ -44,7 +44,7 @@ const statusInfo: { [key in Order['status']]?: { icon: React.ElementType, label:
         icon: MapPin, 
         label: 'Arrived at Drop-off', 
         color: 'text-indigo-400',
-        action: null // Action is on details page
+        action: { href: (orderId, dest) => `/orders/${orderId}`, text: "Confirm Delivery", icon: CheckCircle }
     },
 }
 
@@ -73,7 +73,7 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-card/80 border-border/50 hover:border-primary/50">
         {currentStatus && (
-            <CardHeader className={cn("p-4 flex flex-row items-center justify-between", `bg-${currentStatus.color.replace('text-','').replace('-400','').replace('-500','')}-500/10 border-b border-${currentStatus.color.replace('text-','').replace('-400','').replace('-500','')}-500/20`)}>
+            <CardHeader className={cn("p-4 flex flex-row items-center justify-between", `bg-${currentStatus.color.replace('text-','').replace('-400','').replace('-500','').replace('-accent','orange')}-500/10 border-b border-${currentStatus.color.replace('text-','').replace('-400','').replace('-500','').replace('-accent','orange')}-500/20`)}>
                 <div className="flex items-center gap-2">
                     <currentStatus.icon className={cn("h-5 w-5", currentStatus.color)} />
                     <CardTitle className={cn("text-base font-semibold", currentStatus.color)}>
@@ -81,7 +81,7 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
                     </CardTitle>
                 </div>
                 <Badge variant={"secondary"} className="capitalize bg-muted/50 border-border/50 text-muted-foreground">
-                    #{order.id}
+                    #{order.id.substring(0,6)}
                 </Badge>
             </CardHeader>
         )}
