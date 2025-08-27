@@ -56,6 +56,7 @@ export default function ProfilePage() {
                     driverLicense: undefined,
                     vehicleRegistration: undefined,
                     proofOfInsurance: undefined,
+                    pan: undefined,
                 },
                 bankDetails: {
                   accountHolderName: "",
