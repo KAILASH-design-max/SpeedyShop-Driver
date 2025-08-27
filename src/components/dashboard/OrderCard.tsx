@@ -15,12 +15,37 @@ interface OrderCardProps {
   onCustomerChat: (order: Order) => void;
 }
 
-const statusInfo: { [key in Order['status']]?: { icon: React.ElementType, label: string, color: string } } = {
-    'accepted': { icon: PackageCheck, label: 'Accepted', color: 'text-accent' },
-    'arrived-at-store': { icon: Store, label: 'At Store', color: 'text-teal-400' },
-    'picked-up': { icon: Truck, label: 'Picked Up', color: 'text-cyan-400' },
-    'out-for-delivery': { icon: Truck, label: 'Out for Delivery', color: 'text-purple-400' },
-    'arrived': { icon: MapPin, label: 'Arrived at Drop-off', color: 'text-indigo-400' },
+const statusInfo: { [key in Order['status']]?: { icon: React.ElementType, label: string, color: string, action: { href: (orderId: string, dest: string) => string; text: string, icon: React.ElementType } | null } } = {
+    'accepted': { 
+        icon: PackageCheck, 
+        label: 'Accepted', 
+        color: 'text-accent',
+        action: { href: (orderId, dest) => `/navigate/${orderId}?destination=${encodeURIComponent(dest)}&type=pickup`, text: "Navigate to Store", icon: Store }
+    },
+    'arrived-at-store': { 
+        icon: Store, 
+        label: 'At Store', 
+        color: 'text-teal-400',
+        action: null // Action is on details page
+    },
+    'picked-up': { 
+        icon: Truck, 
+        label: 'Picked Up', 
+        color: 'text-cyan-400',
+        action: { href: (orderId, dest) => `/navigate/${orderId}?destination=${encodeURIComponent(dest)}&type=dropoff`, text: "Navigate to Customer", icon: Navigation }
+    },
+    'out-for-delivery': { 
+        icon: Truck, 
+        label: 'Out for Delivery', 
+        color: 'text-purple-400',
+        action: { href: (orderId, dest) => `/navigate/${orderId}?destination=${encodeURIComponent(dest)}&type=dropoff`, text: "Navigate to Customer", icon: Navigation }
+    },
+     'arrived': { 
+        icon: MapPin, 
+        label: 'Arrived at Drop-off', 
+        color: 'text-indigo-400',
+        action: null // Action is on details page
+    },
 }
 
 export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
@@ -32,24 +57,15 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   }
   
   const currentStatus = statusInfo[order.status];
-
+  
   const getNavAction = () => {
-    switch (order.status) {
-        case 'accepted':
-        case 'arrived-at-store':
-            return {
-                href: `/navigate/${order.id}?destination=${encodeURIComponent(order.pickupLocation)}&type=pickup`,
-                text: "Navigate to Store"
-            };
-        case 'picked-up':
-        case 'out-for-delivery':
-             return {
-                href: `/navigate/${order.id}?destination=${encodeURIComponent(order.dropOffLocation)}&type=dropoff`,
-                text: "Navigate to Customer"
-            };
-        default:
-            return null;
-    }
+      if (!currentStatus || !currentStatus.action) return null;
+      const destination = order.status === 'accepted' ? order.pickupLocation : order.dropOffLocation;
+      return {
+          href: currentStatus.action.href(order.id, destination),
+          text: currentStatus.action.text,
+          Icon: currentStatus.action.icon,
+      }
   }
 
   const navAction = getNavAction();
@@ -57,10 +73,10 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-card/80 border-border/50 hover:border-primary/50">
         {currentStatus && (
-            <CardHeader className={cn("p-4 flex flex-row items-center justify-between", "bg-accent/10 border-b border-accent/20")}>
+            <CardHeader className={cn("p-4 flex flex-row items-center justify-between", `bg-${currentStatus.color.replace('text-','').replace('-400','').replace('-500','')}-500/10 border-b border-${currentStatus.color.replace('text-','').replace('-400','').replace('-500','')}-500/20`)}>
                 <div className="flex items-center gap-2">
-                    <currentStatus.icon className={cn("h-5 w-5", "text-accent")} />
-                    <CardTitle className={cn("text-base font-semibold", "text-accent")}>
+                    <currentStatus.icon className={cn("h-5 w-5", currentStatus.color)} />
+                    <CardTitle className={cn("text-base font-semibold", currentStatus.color)}>
                         {currentStatus.label}
                     </CardTitle>
                 </div>
@@ -91,7 +107,7 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
             {navAction && (
                 <Button asChild size="lg" className="font-bold bg-accent hover:bg-accent/90 text-accent-foreground">
                     <Link href={navAction.href}>
-                        <Navigation className="mr-2 h-4 w-4" />
+                        <navAction.Icon className="mr-2 h-4 w-4" />
                         {navAction.text}
                     </Link>
                 </Button>
