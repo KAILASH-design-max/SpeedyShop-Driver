@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, User, FileText, MessageSquare, Store, Home, Truck, ChevronRight, PackageCheck, Navigation } from "lucide-react";
+import { MapPin, Package, User, FileText, MessageSquare, Store, Home, Truck, ChevronRight, PackageCheck, Navigation, CheckCircle } from "lucide-react";
 import type { Order } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -99,6 +99,7 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
                 <div>
                     <p className="text-xs text-muted-foreground">Drop-off for {order.customerName}</p>
                     <p className="font-medium" title={order.dropOffLocation}>{order.dropOffLocation}</p>
+
                 </div>
             </div>
         </CardContent>
