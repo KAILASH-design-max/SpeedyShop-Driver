@@ -167,7 +167,7 @@ export default function DashboardPage() {
             <PackageCheck className="mr-2 h-6 w-6" />
             Your Active Orders
         </h2>
-        {isLoading ? (
+        {isLoading && activeOrders.length === 0 ? (
             <div className="flex justify-center items-center p-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>

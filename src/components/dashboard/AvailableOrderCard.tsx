@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { IndianRupee, MapPin, ThumbsUp, Truck } from "lucide-react";
 import type { Order } from "@/types";
 import { useState } from "react";
+import Link from 'next/link';
 
 interface AvailableOrderCardProps {
   order: Order;
@@ -54,7 +55,7 @@ export function AvailableOrderCard({ order, onAccept }: AvailableOrderCardProps)
           </div>
         </div>
       </CardContent>
-      <CardFooter className="p-3 mt-auto bg-muted/20">
+      <CardFooter className="p-3 mt-auto bg-muted/20 border-t flex items-center gap-2">
         <Button 
           onClick={handleAcceptClick} 
           className="w-full bg-green-500 hover:bg-green-600 text-white font-bold"
@@ -62,6 +63,9 @@ export function AvailableOrderCard({ order, onAccept }: AvailableOrderCardProps)
         >
           <ThumbsUp className="mr-2 h-4 w-4" />
           {isAccepting ? "Accepting..." : "Accept"}
+        </Button>
+        <Button asChild variant="outline" size="sm">
+            <Link href={`/orders/${order.id}`}>Details</Link>
         </Button>
       </CardFooter>
     </Card>
