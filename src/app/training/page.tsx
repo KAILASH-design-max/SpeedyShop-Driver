@@ -1,4 +1,3 @@
-
 import { TrainingModule } from "@/components/training/TrainingModule";
 
 export default function TrainingPage() {
