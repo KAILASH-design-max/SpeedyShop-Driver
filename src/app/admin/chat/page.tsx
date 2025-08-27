@@ -1,3 +1,4 @@
+
 import { AdminChatHub } from "@/components/admin/AdminChatHub";
 
 export default function AdminChatPage() {
