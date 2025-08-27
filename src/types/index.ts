@@ -66,7 +66,6 @@ export type ProfileDocuments = {
   driverLicense?: DocumentMetadata;
   vehicleRegistration?: DocumentMetadata;
   proofOfInsurance?: DocumentMetadata;
-  aadhaar?: DocumentMetadata;
   pan?: DocumentMetadata;
 }
 
