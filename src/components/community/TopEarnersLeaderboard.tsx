@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { IndianRupee, Loader2, Trophy } from "lucide-react";
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, getDocs, Timestamp } from 'firestore';
+import { collection, query, where, onSnapshot, getDocs, Timestamp } from 'firebase/firestore';
 import type { Order, Profile } from '@/types';
 import { startOfWeek, endOfWeek } from 'date-fns';
 import { cn } from "@/lib/utils";
