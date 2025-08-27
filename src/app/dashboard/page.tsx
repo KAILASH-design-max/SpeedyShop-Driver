@@ -4,33 +4,33 @@
 import { useEffect, useState, useRef } from "react";
 import { OrderCard } from "@/components/dashboard/OrderCard";
 import type { Order, Profile } from "@/types";
-import { PackageCheck, Loader2, PackageSearch } from "lucide-react";
+import { PackageCheck, Loader2, PackageSearch, PackagePlus } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
-import { NewOrderCard } from "@/components/dashboard/NewOrderCard";
+import { AvailableOrderCard } from "@/components/dashboard/AvailableOrderCard";
+import { Separator } from "@/components/ui/separator";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
-  const [newOrder, setNewOrder] = useState<Order | null>(null);
+  const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   
   const { toast } = useToast();
-  const seenOrderIds = useRef(new Set<string>());
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
       if (!user) {
         setActiveOrders([]);
-        setNewOrder(null);
+        setAvailableOrders([]);
         setIsLoading(false);
       }
     });
@@ -48,21 +48,15 @@ export default function DashboardPage() {
     );
 
     const unsubscribe = onSnapshot(availableOrdersQuery, async (snapshot) => {
-        const availableOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
-        let availableOrders = await Promise.all(availableOrdersPromises);
+        const fetchedAvailableOrdersPromises = snapshot.docs.map(doc => mapFirestoreDocToOrder(doc));
+        let fetchedAvailableOrders = await Promise.all(fetchedAvailableOrdersPromises);
 
         // Client-side filter to ensure driver has access, if the field exists.
-        availableOrders = availableOrders.filter(order => 
+        fetchedAvailableOrders = fetchedAvailableOrders.filter(order => 
             !order.accessibleTo || order.accessibleTo.length === 0 || order.accessibleTo.includes(currentUser.uid)
         );
 
-        if (availableOrders.length > 0) {
-            // Find the first order that hasn't been seen/dismissed in this session
-            const orderToShow = availableOrders.find(o => !seenOrderIds.current.has(o.id));
-            setNewOrder(orderToShow || null);
-        } else {
-            setNewOrder(null);
-        }
+        setAvailableOrders(fetchedAvailableOrders);
         setIsLoading(false);
 
     }, (error) => {
@@ -102,10 +96,6 @@ export default function DashboardPage() {
   const handleOrderAccept = async (orderToAccept: Order) => {
     if (!currentUser) return;
 
-    // Optimistically update the UI to provide immediate feedback
-    setNewOrder(null);
-    seenOrderIds.current.add(orderToAccept.id);
-
     const orderRef = doc(db, "orders", orderToAccept.id);
     try {
       await updateDoc(orderRef, {
@@ -122,7 +112,6 @@ export default function DashboardPage() {
     } catch (error) {
         console.error("Error accepting order:", error);
         toast({ variant: "destructive", title: "Acceptance Failed", description: "Could not accept the order."});
-        seenOrderIds.current.delete(orderToAccept.id);
     }
   };
   
@@ -130,24 +119,8 @@ export default function DashboardPage() {
     setCustomerChatOrder(order);
   };
   
-  const handleNewOrderDismiss = (orderToDismiss: Order) => {
-    if (currentUser) {
-      seenOrderIds.current.add(orderToDismiss.id);
-      setNewOrder(null);
-    }
-  }
-
-
   return (
     <div className="p-6 space-y-6">
-
-      {newOrder && (
-        <NewOrderCard 
-          order={newOrder}
-          onDismiss={() => handleNewOrderDismiss(newOrder)}
-          onAccept={handleOrderAccept}
-        />
-      )}
 
       {customerChatOrder && (
         <CustomerChatDialog
@@ -156,24 +129,54 @@ export default function DashboardPage() {
           onOpenChange={(isOpen) => !isOpen && setCustomerChatOrder(null)}
         />
       )}
+
+      {/* Available Orders Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-primary flex items-center">
+            <PackagePlus className="mr-2 h-6 w-6" />
+            Available Orders
+        </h2>
+         {isLoading ? (
+            <div className="flex justify-center items-center p-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+         ) : availableOrders.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableOrders.map((order) => (
+                <AvailableOrderCard 
+                  key={order.id} 
+                  order={order} 
+                  onAccept={handleOrderAccept}
+                />
+              ))}
+            </div>
+         ) : (
+            <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
+                <p className="font-semibold text-lg">No new orders available right now.</p>
+                <p className="text-sm mt-1">Check back soon!</p>
+            </div>
+         )}
+      </div>
+
+      <Separator />
       
-      <div className="space-y-6">
+      {/* Active Orders Section */}
+      <div className="space-y-4">
         <h2 className="text-xl font-semibold text-primary flex items-center">
             <PackageCheck className="mr-2 h-6 w-6" />
-            Active Orders
+            Your Active Orders
         </h2>
         {isLoading ? (
             <div className="flex justify-center items-center p-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2">Loading orders...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         ) : activeOrders.length > 0 ? (
-            <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeOrders.map((order) => (
                 <OrderCard 
-                key={order.id} 
-                order={order} 
-                onCustomerChat={handleCustomerChatOpen}
+                  key={order.id} 
+                  order={order} 
+                  onCustomerChat={handleCustomerChatOpen}
                 />
             ))}
             </div>
@@ -181,7 +184,7 @@ export default function DashboardPage() {
             <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
               <PackageSearch className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="font-semibold text-lg">You have no active orders.</p>
-              <p className="text-sm mt-1">Go online to see new delivery requests as they come in.</p>
+              <p className="text-sm mt-1">Accept an order from the 'Available Orders' section to get started.</p>
             </div>
         )}
       </div>
