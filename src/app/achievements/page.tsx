@@ -7,14 +7,15 @@ import { ArrowLeft, Loader2, AlertTriangle, Trophy } from "lucide-react";
 import { AchievementsList } from "@/components/achievements/AchievementsList";
 import { useState, useEffect } from "react";
 import type { User } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { collection, query, where, getDocs, Timestamp, doc, getDoc, orderBy } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, collection, query, where, getDocs, Timestamp, doc, getDoc, orderBy } from "firebase/firestore";
 import type { Order, Profile, DeliveryRating } from "@/types";
 import { getAchievements, Achievement } from "@/ai/flows/get-achievements-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { startOfWeek, startOfDay, endOfDay, getDay, subDays } from 'date-fns';
+import { app } from "@/lib/firebase";
 
 export default function AchievementsPage() {
   const router = useRouter();
@@ -23,13 +24,15 @@ export default function AchievementsPage() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
     });
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   useEffect(() => {
     if (currentUser) {
