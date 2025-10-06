@@ -240,12 +240,7 @@ export default function AuthenticatedLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6 md:hidden">
-            <div className="flex items-center gap-4">
-                <Link href="/dashboard" className="flex items-center gap-2">
-                    <Truck className="h-7 w-7 text-primary" />
-                </Link>
-            </div>
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-end border-b bg-background px-4 md:px-6 md:hidden">
             <div className="flex items-center gap-4">
                 <ActiveTimeTracker />
                 <NotificationBell />
