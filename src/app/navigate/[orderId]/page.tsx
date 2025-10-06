@@ -58,11 +58,16 @@ export default function NavigatePage() {
                 setCurrentLocation(`${latitude},${longitude}`);
             },
             (error) => {
+                toast({
+                  variant: "destructive",
+                  title: "Location Error",
+                  description: "Could not get current location. Please enable location services in your browser.",
+                });
                 console.error("Error getting current location:", error);
                 // Fallback or show error message
             }
         );
-    }, []);
+    }, [toast]);
 
     useEffect(() => {
         if (order && mapsApiKey && currentLocation) {
