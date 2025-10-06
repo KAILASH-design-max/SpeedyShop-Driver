@@ -242,7 +242,7 @@ export default function AuthenticatedLayout({
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
-            <SidebarTrigger className="md:hidden" />
+            
             <div className="md:hidden">
               <ActiveTimeTracker />
             </div>
