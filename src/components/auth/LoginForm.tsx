@@ -28,14 +28,23 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
-const ScooterIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12.5 9.5H15.5C16.8807 9.5 18 10.6193 18 12V14.5H21.5L20 17.5H4.5L3 14.5H6.5V12C6.5 10.6193 7.61929 9.5 9 9.5H10.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M7 14.5H17.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M10.5 9.5V7.5C10.5 6.17588 9.32412 5.5 8 5.5C6.67588 5.5 5.5 6.17588 5.5 7.5V9.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="6.5" cy="17.5" r="2" stroke="#4A4A4A" strokeWidth="1.5"/>
-        <circle cx="17.5" cy="17.5" r="2" stroke="#4A4A4A" strokeWidth="1.5"/>
-        <path d="M15 9.5L13.5 7.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+const TruckIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        >
+        <path d="M5 18H3c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h10v11" />
+        <path d="M14 9h4l4 4v4h-8v-11" />
+        <circle cx="7.5" cy="18.5" r="2.5" />
+        <circle cx="17.5" cy="18.5" r="2.5" />
     </svg>
 );
 
@@ -85,8 +94,8 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-sm z-10">
       <div className="flex flex-col items-center text-center mb-8">
-        <ScooterIcon className="h-20 w-20 mb-2" data-ai-hint="scooter delivery" />
-        <h1 className="text-3xl font-bold text-gray-800">Deliverzler</h1>
+        <TruckIcon className="h-20 w-20 mb-2 text-primary" data-ai-hint="delivery truck" />
+        <h1 className="text-3xl font-bold text-gray-800">SpeedyDelivery</h1>
       </div>
       
       <div className="text-left mb-6">
