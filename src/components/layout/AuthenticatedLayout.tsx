@@ -34,6 +34,7 @@ import {
   HelpCircle,
   Megaphone,
   BarChart,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -61,9 +62,14 @@ const baseNavItems = [
 ];
 
 const bottomNavItems = [
-  { href: "/settings", label: "Settings", icon: Settings },
   { href: "/support", label: "Help & Info", icon: HelpCircle },
 ];
+
+const mobileNavItems = [
+    { href: "/profile", label: "My Profile", icon: UserIcon },
+    { href: "/dashboard", label: "Home", icon: Home },
+    { href: "/settings", label: "Settings", icon: Settings },
+]
 
 
 function MobileNav() {
@@ -252,6 +258,22 @@ export default function AuthenticatedLayout({
                       </SidebarMenuButton>
                   </Link>
               </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/settings" passHref>
+                      <SidebarMenuButton
+                          className={cn(
+                          pathname === "/settings"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          )}
+                          isActive={pathname === "/settings"}
+                           tooltip={{ children: "Settings", className: "group-data-[collapsible=icon]:block hidden" }}
+                      >
+                          <Settings className="h-5 w-5" />
+                          <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                      </SidebarMenuButton>
+                  </Link>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                   <SidebarMenuButton
                       onClick={handleLogout}
@@ -266,7 +288,7 @@ export default function AuthenticatedLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 md:hidden">
             <div className="flex items-center gap-4">
                 <MobileNav />
                  <AvailabilityToggle
@@ -278,12 +300,31 @@ export default function AuthenticatedLayout({
             <div className="flex items-center gap-4">
                 <ActiveTimeTracker />
                 <NotificationBell />
-                <ThemeToggle />
             </div>
         </header>
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto pb-20 md:pb-0">
             {children}
         </main>
+        {/* Mobile Bottom Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 z-10 border-t bg-background/95 backdrop-blur-sm md:hidden">
+          <div className="grid h-16 grid-cols-3">
+            {mobileNavItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 text-sm font-medium",
+                  pathname === item.href
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                )}
+              >
+                <item.icon className="h-6 w-6" />
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        </nav>
       </SidebarInset>
     </SidebarProvider>
   );

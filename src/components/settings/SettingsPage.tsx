@@ -2,32 +2,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
-  Bell,
-  Users,
-  Copy,
-  ShieldCheck,
-  Siren,
-  Info,
-  ChevronRight,
-  ShieldQuestion,
-  Smartphone,
-  Lock,
+  Settings,
+  Moon,
+  Languages,
+  LogOut,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase";
-import { LoginActivity } from "./LoginActivity";
-import { Input } from "@/components/ui/input";
+import { auth, db } from "@/lib/firebase";
 import type { User } from "firebase/auth";
-
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { useTheme } from "next-themes";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { doc, onSnapshot } from "firebase/firestore";
+import type { Profile } from "@/types";
+import { endSession } from "@/lib/sessionManager";
 
 export function SettingsPage() {
     const { toast } = useToast();
+    const router = useRouter();
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const { theme, setTheme } = useTheme();
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -35,105 +35,90 @@ export function SettingsPage() {
         });
         return () => unsubscribe();
     }, []);
-    
-    const referralCode = currentUser ? `VELOCITY-${currentUser.uid.substring(0, 8).toUpperCase()}` : '';
 
-    const copyToClipboard = () => {
-        if (!referralCode) return;
-        navigator.clipboard.writeText(referralCode);
-        toast({
-            title: "Copied to Clipboard!",
-            description: "Your referral code has been copied.",
+    useEffect(() => {
+      if (currentUser) {
+        const profileRef = doc(db, "users", currentUser.uid);
+        const unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setProfile(docSnap.data() as Profile);
+          }
         });
+        return () => unsubscribeProfile();
+      }
+    }, [currentUser]);
+
+    const handleLogout = async () => {
+        try {
+          await endSession();
+          await signOut(auth);
+          toast({ title: "Logged Out", description: "You have been successfully logged out." });
+          router.push("/");
+        } catch (error) {
+          console.error("Logout error:", error);
+          toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
+        }
+      };
+      
+    const handleThemeChange = (checked: boolean) => {
+        setTheme(checked ? 'dark' : 'light');
     };
 
   return (
-    <div>
-        <div>
-            <h1 className="text-3xl font-bold text-primary">Settings</h1>
-            <p className="text-muted-foreground mt-1 hidden md:block">Manage your app preferences and account security.</p>
+    <div className="space-y-6">
+        <header className="flex items-center gap-3">
+            <Settings className="h-7 w-7 text-foreground" />
+            <h1 className="text-2xl font-bold">Settings</h1>
+        </header>
+
+        {profile && (
+            <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                    <AvatarImage src={profile.profilePictureUrl} alt={profile.name} />
+                    <AvatarFallback>{profile.name?.substring(0, 2).toUpperCase() || 'P'}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <p className="text-xl font-bold">{profile.name}</p>
+                    <p className="text-muted-foreground">{profile.email}</p>
+                </div>
+            </div>
+        )}
+        
+        <Separator />
+
+        <div className="space-y-2">
+            <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
+                <div className="flex items-center gap-3">
+                    <Settings className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">App Settings</span>
+                </div>
+            </div>
+             <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
+                <div className="flex items-center gap-3">
+                    <Moon className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Theme</span>
+                </div>
+                <Switch 
+                    checked={theme === 'dark'}
+                    onCheckedChange={handleThemeChange}
+                    aria-label="Toggle dark mode"
+                />
+            </div>
+             <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
+                <div className="flex items-center gap-3">
+                    <Languages className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Language</span>
+                </div>
+                <span className="text-muted-foreground">English</span>
+            </div>
         </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mt-6">
-        <div className="space-y-6">
-            <Card className="shadow-lg">
-                <CardHeader>
-                <CardTitle className="flex items-center"><Bell className="mr-2 h-5 w-5" /> Notifications</CardTitle>
-                <CardDescription>
-                    Choose what alerts you want to receive.
-                </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                    <Label htmlFor="new-orders" className="font-medium">
-                    New Orders
-                    </Label>
-                    <Switch id="new-orders" defaultChecked />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                    <Label htmlFor="announcements" className="font-medium">
-                    Announcements & Incentives
-                    </Label>
-                    <Switch id="announcements" defaultChecked />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                    <Label htmlFor="shift-reminders" className="font-medium">
-                    Shift Reminders
-                    </Label>
-                    <Switch id="shift-reminders" />
-                </div>
-                </CardContent>
-            </Card>
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle className="flex items-center"><Users className="mr-2 h-5 w-5" /> Referral Program</CardTitle>
-                    <CardDescription>
-                        Invite other drivers and earn rewards when they sign up.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="rounded-lg border p-4 space-y-2">
-                        <Label htmlFor="referral-code" className="font-medium">Your Unique Referral Code</Label>
-                        <div className="flex gap-2">
-                            <input id="referral-code" type="text" value={referralCode} readOnly className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" />
-                            <Button onClick={copyToClipboard} variant="outline" size="icon" disabled={!referralCode}>
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+        <Separator />
 
-             <Card className="shadow-lg">
-                <CardHeader>
-                <CardTitle className="flex items-center"><ShieldCheck className="mr-2 h-5 w-5" /> Legal & Information</CardTitle>
-                <CardDescription>
-                    View terms of service, privacy policy, and app information.
-                </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" className="flex-1"><Siren className="mr-2 h-4 w-4"/>Terms of Service</Button>
-                    <Button variant="outline" className="flex-1"><ShieldCheck className="mr-2 h-4 w-4" />Privacy Policy</Button>
-                    <Button variant="outline" className="flex-1"><Info className="mr-2 h-4 w-4" />App Version: 1.0.0</Button>
-                </CardContent>
-            </Card>
-        </div>
-        <div className="space-y-6">
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle className="flex items-center"><Lock className="mr-2 h-5 w-5" /> Account Security</CardTitle>
-                    <CardDescription>Manage your password and session history.</CardDescription>
-                </CardHeader>
-                 <CardContent className="space-y-2">
-                    <Button variant="outline" className="w-full justify-between">
-                        Change Password
-                        <ChevronRight className="h-4 w-4"/>
-                    </Button>
-                </CardContent>
-            </Card>
-             <LoginActivity />
-        </div>
-      </div>
+        <Button variant="outline" className="w-full justify-center h-12 text-base text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive" onClick={handleLogout}>
+            <LogOut className="mr-2 h-5 w-5" />
+            Log out
+        </Button>
     </div>
   );
 }
