@@ -244,9 +244,6 @@ export default function AuthenticatedLayout({
             <div className="flex items-center gap-4">
                 <Link href="/dashboard" className="flex items-center gap-2">
                     <Truck className="h-7 w-7 text-primary" />
-                    <h1 className="text-xl font-bold text-primary">
-                    Velocity
-                    </h1>
                 </Link>
             </div>
             <div className="flex items-center gap-4">
