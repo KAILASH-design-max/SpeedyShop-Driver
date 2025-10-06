@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserPlus, Mail, KeyRound, Car, Bike, User, Truck } from "lucide-react";
+import { UserPlus, Mail, KeyRound, Car, Bike, User, Truck, ShoppingBag } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -116,8 +116,11 @@ export function SignupForm() {
   return (
     <div className="w-full max-w-sm z-10">
        <div className="flex flex-col items-center text-center mb-8">
-        <Truck className="h-20 w-20 mb-2 text-primary" data-ai-hint="delivery truck"/>
-        <h1 className="text-3xl font-bold text-gray-800">SpeedyDelivery</h1>
+        <div className="flex items-center gap-4">
+            <Truck className="h-16 w-16 text-primary" data-ai-hint="delivery truck" />
+            <ShoppingBag className="h-16 w-16 text-primary" data-ai-hint="shopping bag" />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-800 mt-4">SpeedyDelivery</h1>
       </div>
       
       <div className="text-left mb-6">
