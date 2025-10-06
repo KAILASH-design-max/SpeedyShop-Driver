@@ -18,9 +18,10 @@ import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import type { Profile } from "@/types";
 import { endSession } from "@/lib/sessionManager";
+import { AvailabilityToggle } from "../dashboard/AvailabilityToggle";
 
 export function SettingsPage() {
     const { toast } = useToast();
@@ -28,6 +29,8 @@ export function SettingsPage() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const { theme, setTheme } = useTheme();
+    const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus'] | undefined>(undefined);
+    const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(true);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -40,13 +43,47 @@ export function SettingsPage() {
       if (currentUser) {
         const profileRef = doc(db, "users", currentUser.uid);
         const unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
-          if (docSnap.exists()) {
-            setProfile(docSnap.data() as Profile);
-          }
+            setIsAvailabilityLoading(true);
+            if (docSnap.exists()) {
+                const profileData = docSnap.data() as Profile;
+                setProfile(profileData);
+                if (profileData.availabilityStatus === undefined) {
+                    updateDoc(profileRef, { availabilityStatus: 'offline' });
+                    setAvailabilityStatus('offline');
+                } else {
+                    setAvailabilityStatus(profileData.availabilityStatus);
+                }
+            } else {
+                setProfile(null);
+                setAvailabilityStatus('offline');
+            }
+            setIsAvailabilityLoading(false);
         });
         return () => unsubscribeProfile();
+      } else {
+        setIsAvailabilityLoading(false);
+        setAvailabilityStatus(undefined);
       }
     }, [currentUser]);
+
+    const handleAvailabilityChange = async (newStatus: Required<Profile['availabilityStatus']>) => {
+        if (!currentUser) {
+          toast({ variant: "destructive", title: "Error", description: "Not logged in." });
+          return;
+        }
+        setIsAvailabilityLoading(true);
+        try {
+          const userDocRef = doc(db, "users", currentUser.uid);
+          await updateDoc(userDocRef, { availabilityStatus: newStatus });
+          setAvailabilityStatus(newStatus);
+          toast({ title: "Status Updated", description: `You are now ${newStatus}.`, className: newStatus === 'online' ? "bg-green-500 text-white" : "" });
+        } catch (error) {
+          console.error("Error updating availability status:", error);
+          toast({ variant: "destructive", title: "Update Failed", description: "Could not update status." });
+        } finally {
+          setIsAvailabilityLoading(false);
+        }
+    };
 
     const handleLogout = async () => {
         try {
@@ -87,6 +124,13 @@ export function SettingsPage() {
         <Separator />
 
         <div className="space-y-2">
+            <div className="flex items-center justify-between rounded-lg p-3">
+                <AvailabilityToggle
+                    currentStatus={availabilityStatus}
+                    onStatusChange={handleAvailabilityChange}
+                    isLoading={isAvailabilityLoading}
+                />
+            </div>
             <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
                 <div className="flex items-center gap-3">
                     <Settings className="h-5 w-5 text-muted-foreground" />

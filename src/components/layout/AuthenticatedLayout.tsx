@@ -81,16 +81,12 @@ export default function AuthenticatedLayout({
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus'] | undefined>(undefined);
-  const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(true);
-
+  
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
         setCurrentUser(user);
         if(!user) {
             setProfile(null);
-            setIsAvailabilityLoading(false);
-            setAvailabilityStatus(undefined);
             router.push('/');
         }
     });
@@ -101,30 +97,16 @@ export default function AuthenticatedLayout({
       if (currentUser) {
           const profileRef = doc(db, "users", currentUser.uid);
           const unsubscribe = onSnapshot(profileRef, (docSnap) => {
-              setIsAvailabilityLoading(true);
               if (docSnap.exists()) {
                   const profileData = docSnap.data() as Profile;
                   setProfile(profileData);
-                  if (profileData.availabilityStatus === undefined) {
-                      updateDoc(profileRef, { availabilityStatus: 'offline' });
-                      setAvailabilityStatus('offline');
-                  } else {
-                      setAvailabilityStatus(profileData.availabilityStatus);
-                  }
               } else {
                   setProfile(null);
-                  setAvailabilityStatus('offline');
               }
-              setIsAvailabilityLoading(false);
           }, (error) => {
-               console.error("Error fetching user profile for availability:", error);
-               setAvailabilityStatus('offline');
-               setIsAvailabilityLoading(false);
+               console.error("Error fetching user profile:", error);
           });
           return () => unsubscribe();
-      } else {
-          setIsAvailabilityLoading(false);
-          setAvailabilityStatus(undefined);
       }
   }, [currentUser]);
 
@@ -141,24 +123,6 @@ export default function AuthenticatedLayout({
     };
   }, []);
   
-  const handleAvailabilityChange = async (newStatus: Required<Profile['availabilityStatus']>) => {
-    if (!currentUser) {
-      toast({ variant: "destructive", title: "Error", description: "Not logged in." });
-      return;
-    }
-    setIsAvailabilityLoading(true);
-    try {
-      const userDocRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userDocRef, { availabilityStatus: newStatus });
-      setAvailabilityStatus(newStatus);
-      toast({ title: "Status Updated", description: `You are now ${newStatus}.`, className: newStatus === 'online' ? "bg-green-500 text-white" : "" });
-    } catch (error) {
-      console.error("Error updating availability status:", error);
-      toast({ variant: "destructive", title: "Update Failed", description: "Could not update status." });
-    } finally {
-      setIsAvailabilityLoading(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -278,11 +242,12 @@ export default function AuthenticatedLayout({
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6 md:hidden">
             <div className="flex items-center gap-4">
-                 <AvailabilityToggle
-                    currentStatus={availabilityStatus}
-                    onStatusChange={handleAvailabilityChange}
-                    isLoading={isAvailabilityLoading}
-                />
+                <Link href="/dashboard" className="flex items-center gap-2">
+                    <Truck className="h-7 w-7 text-primary" />
+                    <h1 className="text-xl font-bold text-primary">
+                    Velocity
+                    </h1>
+                </Link>
             </div>
             <div className="flex items-center gap-4">
                 <ActiveTimeTracker />
@@ -316,5 +281,3 @@ export default function AuthenticatedLayout({
     </SidebarProvider>
   );
 }
-
-    
