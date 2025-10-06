@@ -3,13 +3,39 @@
 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { ArrowLeft, Navigation, Loader2, Truck } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import type { Order } from '@/types';
 import { mapFirestoreDocToOrder } from '@/lib/orderUtils';
 import { useToast } from '@/hooks/use-toast';
+
+// Haversine formula to calculate distance between two points in meters
+const getDistance = (from: { lat: number, lon: number }, to: { lat: number, lon: number }) => {
+    const R = 6371e3; // metres
+    const φ1 = from.lat * Math.PI / 180;
+    const φ2 = to.lat * Math.PI / 180;
+    const Δφ = (to.lat - from.lat) * Math.PI / 180;
+    const Δλ = (to.lon - from.lon) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+};
+
+const parseCoordinates = (locationString: string): { lat: number, lon: number } | null => {
+    // This is a simple parser. A real app would use a geocoding service.
+    const parts = locationString.split(',').map(s => parseFloat(s.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        return { lat: parts[0], lon: parts[1] };
+    }
+    return null;
+}
+
 
 export default function NavigatePage() {
     const params = useParams();
@@ -25,7 +51,9 @@ export default function NavigatePage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [mapUrl, setMapUrl] = useState('');
     const [currentLocation, setCurrentLocation] = useState<string>('');
-    
+    const [distance, setDistance] = useState<number | null>(null);
+
+    // Fetch Order Data
     useEffect(() => {
         if (!orderId) {
             setLoading(false);
@@ -49,30 +77,55 @@ export default function NavigatePage() {
         return () => unsubscribe();
     }, [orderId]);
     
-    // Get current location
+    // Watcher for live location updates
     useEffect(() => {
+        let watcherId: number;
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
+            watcherId = navigator.geolocation.watchPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
                     setCurrentLocation(`${latitude},${longitude}`);
                 },
                 (error) => {
+                    console.error("Error watching position:", error);
                     toast({
                       variant: "destructive",
                       title: "Location Error",
-                      description: "Could not get current location. Please enable location services in your browser.",
+                      description: "Could not get live location updates.",
                     });
-                }
+                },
+                { enableHighAccuracy: true }
             );
         }
+        return () => {
+            if (watcherId) {
+                navigator.geolocation.clearWatch(watcherId);
+            }
+        };
     }, [toast]);
 
+    // Calculate distance whenever currentLocation or order changes
+    useEffect(() => {
+        if (currentLocation && order) {
+            const driverCoords = parseCoordinates(currentLocation);
+            const destinationLocation = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
+            const destinationCoords = parseCoordinates(destinationLocation);
 
+            if (driverCoords && destinationCoords) {
+                const dist = getDistance(driverCoords, destinationCoords);
+                setDistance(dist);
+            } else {
+                // If we can't parse coordinates, we can't show the button based on distance.
+                // We'll set a high distance to hide it, but a better solution might be needed for production.
+                setDistance(9999);
+            }
+        }
+    }, [currentLocation, order, type]);
+
+    // Update Map URL
     useEffect(() => {
         if (order && currentLocation) {
             const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
-            // The API key is now managed via environment variables for security.
             const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
             const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&mode=driving`;
             setMapUrl(url);
@@ -107,7 +160,6 @@ export default function NavigatePage() {
                 const orderRef = doc(db, "orders", order.id);
                 await updateDoc(orderRef, { status: 'arrived-at-store' });
                 toast({ title: "Arrived at Store", description: "You have arrived at the store.", className: "bg-blue-500 text-white" });
-                // No redirect, just update status. The listener will update the UI.
             } catch (error) {
                 console.error("Error setting arrived-at-store:", error);
                 toast({ variant: "destructive", title: "Error", description: "Could not update status." });
@@ -124,7 +176,6 @@ export default function NavigatePage() {
                 const orderRef = doc(db, "orders", order.id);
                 await updateDoc(orderRef, { status: 'picked-up' });
                 toast({ title: "Pickup Confirmed", description: "Order has been marked as picked up.", className: "bg-green-500 text-white" });
-                 // No redirect, just update status. The listener will update the UI.
             } catch (error) {
                 console.error("Error setting picked-up:", error);
                 toast({ variant: "destructive", title: "Error", description: "Could not update status." });
@@ -150,12 +201,14 @@ export default function NavigatePage() {
           }
         }
     };
-
+    
     const renderBottomButton = () => {
-        if (!order) return null;
+        if (!order || distance === null) return null;
+
+        const showButton = distance <= 20;
 
         if (type === 'pickup') {
-            if (order.status === 'accepted') {
+            if (order.status === 'accepted' && showButton) {
                 return (
                     <Button onClick={handleArrivedAtStore} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
                         {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -182,7 +235,7 @@ export default function NavigatePage() {
         }
 
         if (type === 'dropoff') {
-             if (order.status === 'out-for-delivery') {
+             if (order.status === 'out-for-delivery' && showButton) {
                 return (
                     <Button onClick={handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
                         {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -192,7 +245,7 @@ export default function NavigatePage() {
             }
         }
         
-        return null; // Don't show button for other statuses
+        return null; // Don't show button for other statuses or if not close enough
     };
 
 
@@ -230,3 +283,5 @@ export default function NavigatePage() {
         </div>
     );
 }
+
+    
