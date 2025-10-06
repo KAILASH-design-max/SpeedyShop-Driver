@@ -26,7 +26,7 @@ export default function NavigatePage() {
     const [mapUrl, setMapUrl] = useState('');
     const [currentLocation, setCurrentLocation] = useState<string>('');
 
-    const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const mapsApiKey = "AlzaSyAXbTZqB9WBQI0qmz8wCmUK82V7RfcKoko";
 
     useEffect(() => {
         if (!orderId) {
@@ -63,7 +63,6 @@ export default function NavigatePage() {
                   title: "Location Error",
                   description: "Could not get current location. Please enable location services in your browser.",
                 });
-                // Fallback or show error message
             }
         );
     }, [toast]);
