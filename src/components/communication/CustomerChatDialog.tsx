@@ -179,8 +179,8 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="p-0 border-none w-[90vw] sm:max-w-md md:max-w-lg rounded-lg overflow-hidden">
-        <div className="flex flex-col h-[80vh] max-h-[600px]">
+      <DialogContent className="p-0 border-0 w-full h-full max-w-full sm:max-w-md sm:h-[80vh] sm:max-h-[700px] sm:rounded-lg overflow-hidden">
+        <div className="flex flex-col h-full">
           <DialogHeader className="p-4 border-b bg-background">
             <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12 border-2 border-primary">
