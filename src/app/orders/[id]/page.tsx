@@ -381,14 +381,6 @@ export default function OrderPage() {
               </>
             )}
 
-            {isTrackingActive && (
-              <Button asChild variant="secondary" className="w-full">
-                <Link href={`/tracking/${order.id}`} target="_blank">
-                  <Map className="mr-2 h-4 w-4" /> Live Tracking Link (for Support)
-                </Link>
-              </Button>
-            )}
-
             <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete} onClick={() => router.push(`/chat?orderId=${order.id}`)}>
               <MessageSquare className="mr-2 h-5 w-5" /> Contact Support
             </Button>
@@ -502,5 +494,7 @@ export default function OrderPage() {
     
 
 
+
+    
 
     
