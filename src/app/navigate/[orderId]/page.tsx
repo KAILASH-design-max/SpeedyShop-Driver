@@ -5,12 +5,17 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { ArrowLeft, Navigation, Loader2, Truck, Phone, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Navigation, Loader2, Truck, Phone, MessageSquare, Clock, Route } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import type { Order } from '@/types';
 import { mapFirestoreDocToOrder } from '@/lib/orderUtils';
 import { useToast } from '@/hooks/use-toast';
+
+interface RouteDetails {
+    distance: string;
+    duration: string;
+}
 
 export default function NavigatePage() {
     const params = useParams();
@@ -24,8 +29,10 @@ export default function NavigatePage() {
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
-    const [mapUrl, setMapUrl] = useState('');
-    const [currentLocation, setCurrentLocation] = useState<string>('');
+    const [map, setMap] = useState<google.maps.Map | null>(null);
+    const mapRef = useRef<HTMLDivElement>(null);
+    const [currentLocation, setCurrentLocation] = useState<{ lat: number, lng: number } | null>(null);
+    const [routeDetails, setRouteDetails] = useState<RouteDetails | null>(null);
 
     // Fetch Order Data
     useEffect(() => {
@@ -58,7 +65,7 @@ export default function NavigatePage() {
             watcherId = navigator.geolocation.watchPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    setCurrentLocation(`${latitude},${longitude}`);
+                    setCurrentLocation({ lat: latitude, lng: longitude });
                 },
                 (error) => {
                     // This can happen if the user denies location permissions.
@@ -73,16 +80,60 @@ export default function NavigatePage() {
             }
         };
     }, []);
-
-    // Update Map URL with Traffic Layer
+    
+    // Initialize and update the map
     useEffect(() => {
-        if (order && currentLocation) {
-            const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
-            const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-            const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&mode=driving&maptype=roadmap&layer=traffic`;
-            setMapUrl(url);
+        const initMap = async () => {
+            const { Map } = await google.maps.importLibrary("maps") as google.maps.MapsLibrary;
+            const mapInstance = new Map(mapRef.current!, {
+                center: { lat: 12.9716, lng: 77.5946 }, // Default center, will be updated
+                zoom: 12,
+                disableDefaultUI: true,
+            });
+            setMap(mapInstance);
+        };
+        if (mapRef.current && !map) {
+            initMap();
         }
-    }, [order, currentLocation, type]);
+    }, [map]);
+
+    // Update map with route when data is available
+    useEffect(() => {
+        if (map && order && currentLocation) {
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                suppressMarkers: true,
+                polylineOptions: {
+                    strokeColor: '#29ABE2',
+                    strokeWeight: 6,
+                    strokeOpacity: 0.8,
+                }
+            });
+
+            const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
+
+            directionsService.route({
+                origin: currentLocation,
+                destination: destination,
+                travelMode: google.maps.TravelMode.DRIVING,
+            }, (response, status) => {
+                if (status === 'OK' && response) {
+                    directionsRenderer.setDirections(response);
+                     const route = response.routes[0].legs[0];
+                    if (route && route.distance && route.duration) {
+                        setRouteDetails({
+                            distance: route.distance.text,
+                            duration: route.duration.text
+                        });
+                    }
+                } else {
+                    console.error('Directions request failed due to ' + status);
+                }
+            });
+        }
+    }, [map, order, currentLocation, type]);
+
 
     const handleConfirmArrival = async () => {
         if (!order) return;
@@ -222,32 +273,37 @@ export default function NavigatePage() {
                     <Navigation className="h-5 w-5"/>
                 </Button>
             </div>
-            <div className="flex-grow relative mt-20">
-                 {(loading || !mapUrl) ? (
+            
+            <div className="flex-grow relative mt-[73px]">
+                {(loading || !map) ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-background">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         <p className="ml-2">Loading Map...</p>
                     </div>
                 ) : (
-                    <iframe
-                        width="100%"
-                        height="100%"
-                        className="absolute inset-0"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                        allowFullScreen
-                        src={mapUrl}>
-                    </iframe>
+                    <>
+                        <div ref={mapRef} className="w-full h-full" />
+                        {routeDetails && (
+                             <div className="absolute top-0 left-0 right-0 p-4">
+                                <div className="bg-background/90 backdrop-blur-sm rounded-lg p-3 shadow-lg flex justify-around items-center">
+                                    <div className="text-center">
+                                        <p className="text-xs text-muted-foreground">ETA</p>
+                                        <p className="font-bold text-primary text-lg flex items-center gap-1"><Clock size={16}/> {routeDetails.duration}</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-xs text-muted-foreground">Distance</p>
+                                        <p className="font-bold text-primary text-lg flex items-center gap-1"><Route size={16}/> {routeDetails.distance}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
-            <div className="p-4 bg-background z-10 absolute bottom-0 left-0 right-0">
+            
+            <div className="p-4 bg-background z-10">
                 {renderBottomButton()}
             </div>
         </div>
     );
 }
-
-    
-
-    
-
