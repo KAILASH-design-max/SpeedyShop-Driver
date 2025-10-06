@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/layout/ThemeProvider';
 import { DeviceStatusMonitor } from '@/components/layout/DeviceStatusMonitor';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { SplashScreen } from '@/components/layout/SplashScreen';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Velocity Driver',
@@ -39,6 +40,10 @@ export default function RootLayout({
               <DeviceStatusMonitor />
           </ThemeProvider>
         </LanguageProvider>
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,drawing,geometry`}
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   );
