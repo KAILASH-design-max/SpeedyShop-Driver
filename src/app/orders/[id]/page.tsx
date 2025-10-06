@@ -430,10 +430,24 @@ export default function OrderPage() {
         </div>
 
         {order.status === "arrived-at-store" && (
-            <div className="space-y-4">
-                 <Button onClick={() => {}} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
-                  Confirm Pickup from Store
+             <div className="space-y-4">
+                <Button onClick={() => {
+                    if (order) {
+                        setIsUpdating(true);
+                        const orderRef = doc(db, "orders", order.id);
+                        updateDoc(orderRef, { status: "picked-up" })
+                            .then(() => {
+                                toast({ title: "Pickup Confirmed", description: "Order marked as picked up.", className: "bg-green-500 text-white" });
+                            })
+                            .catch(err => {
+                                toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+                                console.error(err);
+                            })
+                            .finally(() => setIsUpdating(false));
+                    }
+                }} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
+                    Confirm Pickup
                 </Button>
             </div>
         )}
@@ -482,3 +496,4 @@ export default function OrderPage() {
 }
 
     
+

@@ -3,13 +3,14 @@
 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ArrowLeft, Navigation, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import type { Order } from '@/types';
 import { mapFirestoreDocToOrder } from '@/lib/orderUtils';
 import { useToast } from '@/hooks/use-toast';
+import { getDistance } from 'geolib';
 
 export default function NavigatePage() {
     const params = useParams();
@@ -25,6 +26,9 @@ export default function NavigatePage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [mapUrl, setMapUrl] = useState('');
     const [currentLocation, setCurrentLocation] = useState<string>('');
+    const [destinationCoords, setDestinationCoords] = useState<{latitude: number, longitude: number} | null>(null);
+    const [isNearDestination, setIsNearDestination] = useState(false);
+    const locationWatcherId = useRef<number | null>(null);
 
     const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -51,21 +55,65 @@ export default function NavigatePage() {
         return () => unsubscribe();
     }, [orderId]);
     
+    // Geocode destination address
     useEffect(() => {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                setCurrentLocation(`${latitude},${longitude}`);
-            },
-            (error) => {
-                toast({
-                  variant: "destructive",
-                  title: "Location Error",
-                  description: "Could not get current location. Please enable location services in your browser.",
+        if (order && mapsApiKey) {
+            const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
+            fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(destination)}&key=${mapsApiKey}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'OK' && data.results[0]) {
+                        const { lat, lng } = data.results[0].geometry.location;
+                        setDestinationCoords({ latitude: lat, longitude: lng });
+                    }
                 });
+        }
+    }, [order, type, mapsApiKey]);
+
+    // Watch current location and check distance
+    useEffect(() => {
+        const handlePositionUpdate = (position: GeolocationPosition) => {
+            const { latitude, longitude } = position.coords;
+            setCurrentLocation(`${latitude},${longitude}`);
+
+            if (destinationCoords) {
+                const distance = getDistance(
+                    { latitude, longitude },
+                    destinationCoords
+                );
+                // Show button if within 20 meters
+                if (distance < 20) {
+                    setIsNearDestination(true);
+                } else {
+                    setIsNearDestination(false);
+                }
             }
-        );
-    }, [toast]);
+        };
+        
+        const handleError = (error: GeolocationPositionError) => {
+            toast({
+              variant: "destructive",
+              title: "Location Error",
+              description: "Could not get current location. Please enable location services in your browser.",
+            });
+        };
+
+        if (navigator.geolocation) {
+             locationWatcherId.current = navigator.geolocation.watchPosition(handlePositionUpdate, handleError, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            });
+        }
+       
+
+        return () => {
+             if (locationWatcherId.current !== null) {
+                navigator.geolocation.clearWatch(locationWatcherId.current);
+            }
+        };
+    }, [toast, destinationCoords]);
+
 
     useEffect(() => {
         if (order && mapsApiKey && currentLocation) {
@@ -78,15 +126,24 @@ export default function NavigatePage() {
     const handleConfirmArrival = async () => {
         if (!order) return;
 
-        const targetStatus = type === 'pickup' ? 'arrived-at-store' : 'arrived';
-        const successMessage = type === 'pickup' 
-            ? "Arrived at Store" 
-            : "Arrived at Location";
-        const successDescription = type === 'pickup' 
-            ? `You have arrived at the store.` 
-            : `You have arrived at the customer's location.`;
+        let targetStatus: Order['status'];
+        let successMessage: string;
+        let successDescription: string;
+        let canUpdate = false;
 
-        if (order.status === 'accepted' && type === 'pickup') {
+        if (type === 'pickup') {
+            targetStatus = 'picked-up';
+            successMessage = "Pickup Confirmed";
+            successDescription = "Order has been marked as picked up.";
+            canUpdate = order.status === 'arrived-at-store';
+        } else {
+            targetStatus = 'arrived';
+            successMessage = "Arrived at Location";
+            successDescription = "You have arrived at the customer's location.";
+            canUpdate = order.status === 'out-for-delivery';
+        }
+
+        if (canUpdate) {
             setIsUpdating(true);
             try {
                 const orderRef = doc(db, "orders", order.id);
@@ -99,15 +156,19 @@ export default function NavigatePage() {
             } finally {
                 setIsUpdating(false);
             }
-        } else if (order.status === 'out-for-delivery' && type === 'dropoff') {
+        }
+    };
+    
+    const handleArrivedAtStore = async () => {
+        if (order && order.status === 'accepted') {
             setIsUpdating(true);
             try {
                 const orderRef = doc(db, "orders", order.id);
-                await updateDoc(orderRef, { status: targetStatus });
-                toast({ title: successMessage, description: successDescription, className: "bg-blue-500 text-white" });
-                 router.push(`/orders/${order.id}`);
+                await updateDoc(orderRef, { status: 'arrived-at-store' });
+                toast({ title: "Arrived at Store", description: "You have arrived at the store.", className: "bg-blue-500 text-white" });
+                // No redirect, just update status
             } catch (error) {
-                console.error(`Error setting ${targetStatus}:`, error);
+                console.error("Error setting arrived-at-store:", error);
                 toast({ variant: "destructive", title: "Error", description: "Could not update status." });
             } finally {
                 setIsUpdating(false);
@@ -144,12 +205,15 @@ export default function NavigatePage() {
                     </iframe>
                 )}
             </div>
-             <div className="p-4 bg-background z-10 absolute bottom-0 left-0 right-0">
-                 <Button onClick={handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Confirm
-                </Button>
-            </div>
+             {isNearDestination && (
+                <div className="p-4 bg-background z-10 absolute bottom-0 left-0 right-0">
+                    <Button onClick={type === 'pickup' ? handleArrivedAtStore : handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {type === 'pickup' ? "Confirm Arrival at Store" : "Confirm Arrival"}
+                    </Button>
+                </div>
+             )}
         </div>
     );
 }
+
