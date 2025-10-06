@@ -14,11 +14,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, LogIn } from "lucide-react";
-import { auth } from "@/lib/firebase"; // Import Firebase auth
+import { Mail, KeyRound } from "lucide-react";
+import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -28,6 +27,18 @@ const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
+
+const ScooterIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.5 9.5H15.5C16.8807 9.5 18 10.6193 18 12V14.5H21.5L20 17.5H4.5L3 14.5H6.5V12C6.5 10.6193 7.61929 9.5 9 9.5H10.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M7 14.5H17.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M10.5 9.5V7.5C10.5 6.17588 9.32412 5.5 8 5.5C6.67588 5.5 5.5 6.17588 5.5 7.5V9.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="6.5" cy="17.5" r="2" stroke="#4A4A4A" strokeWidth="1.5"/>
+        <circle cx="17.5" cy="17.5" r="2" stroke="#4A4A4A" strokeWidth="1.5"/>
+        <path d="M15 9.5L13.5 7.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
 
 export function LoginForm() {
   const router = useRouter();
@@ -72,55 +83,60 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md shadow-xl">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 p-3 bg-secondary rounded-full inline-block">
-          <LogIn className="h-10 w-10 text-primary" />
-        </div>
-        <CardTitle className="text-3xl font-bold text-primary">Welcome Back!</CardTitle>
-        <CardDescription>Log in to continue to Velocity Driver.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center"><Mail className="mr-2 h-4 w-4 text-muted-foreground" />Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="you@example.com" {...field} disabled={isLoading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center"><Lock className="mr-2 h-4 w-4 text-muted-foreground" />Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-              {isLoading ? "Logging in..." : <><LogIn className="mr-2 h-5 w-5" /> Log In</>}
-            </Button>
-          </form>
-        </Form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+    <div className="w-full max-w-sm z-10">
+      <div className="flex flex-col items-center text-center mb-8">
+        <ScooterIcon className="h-20 w-20 mb-2" data-ai-hint="scooter delivery" />
+        <h1 className="text-3xl font-bold text-gray-800">Deliverzler</h1>
+      </div>
+      
+      <div className="text-left mb-6">
+        <h2 className="text-3xl font-bold text-primary">Welcome 👋</h2>
+        <p className="text-muted-foreground">Sign in to your account</p>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input placeholder="Email" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white"/>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input type="password" placeholder="Password" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full h-12 rounded-lg text-lg font-bold mt-4" disabled={isLoading}>
+            {isLoading ? "Signing In..." : "SIGN IN"}
+          </Button>
+        </form>
+      </Form>
+      <p className="mt-8 text-center text-sm text-muted-foreground">
+        Don&apos;t have an account?{" "}
+        <Link href="/auth/signup" className="font-semibold text-primary hover:underline">
+          Sign up
+        </Link>
+      </p>
+    </div>
   );
 }

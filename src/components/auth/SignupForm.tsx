@@ -15,10 +15,9 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserPlus, Mail, Lock, Car, FileText, Bike } from "lucide-react";
+import { UserPlus, Mail, KeyRound, Car, Bike, User } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -38,6 +37,17 @@ const formSchema = z.object({
     errorMap: () => ({ message: "You must accept the terms and conditions to continue." }),
   }),
 });
+
+const ScooterIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.5 9.5H15.5C16.8807 9.5 18 10.6193 18 12V14.5H21.5L20 17.5H4.5L3 14.5H6.5V12C6.5 10.6193 7.61929 9.5 9 9.5H10.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M7 14.5H17.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M10.5 9.5V7.5C10.5 6.17588 9.32412 5.5 8 5.5C6.67588 5.5 5.5 6.17588 5.5 7.5V9.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="6.5" cy="17.5" r="2" stroke="#4A4A4A" strokeWidth="1.5"/>
+        <circle cx="17.5" cy="17.5" r="2" stroke="#4A4A4A" strokeWidth="1.5"/>
+        <path d="M15 9.5L13.5 7.5" stroke="#4A4A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
 
 export function SignupForm() {
   const router = useRouter();
@@ -115,138 +125,136 @@ export function SignupForm() {
   }
 
   return (
-    <Card className="w-full max-w-lg shadow-xl">
-      <CardHeader className="text-center">
-         <div className="mx-auto mb-4 p-3 bg-secondary rounded-full inline-block">
-          <UserPlus className="h-10 w-10 text-primary" />
-        </div>
-        <CardTitle className="text-3xl font-bold text-primary">Join Velocity Driver</CardTitle>
-        <CardDescription>Sign up to start delivering and earning.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center"><UserPlus className="mr-2 h-4 w-4 text-muted-foreground"/>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} disabled={isLoading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center"><Mail className="mr-2 h-4 w-4 text-muted-foreground"/>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="you@example.com" {...field} disabled={isLoading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center"><Lock className="mr-2 h-4 w-4 text-muted-foreground"/>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="vehicleType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center"><Bike className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Type</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your vehicle type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="bike">Bike</SelectItem>
-                      <SelectItem value="scooter">Scooter</SelectItem>
-                      <SelectItem value="car">Car</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="vehicleRegistrationNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>Vehicle Registration No.</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., MH01AB1234" {...field} disabled={isLoading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormItem>
-              <FormLabel className="flex items-center"><FileText className="mr-2 h-4 w-4 text-muted-foreground"/>Upload Documents</FormLabel>
-              <FormDescription>
-                Document uploads will be handled on your profile page after signup.
-              </FormDescription>
-            </FormItem>
-            <FormField
-              control={form.control}
-              name="termsAccepted"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      I agree to the{" "}
-                      <Link href="/terms" target="_blank" className="font-medium text-primary hover:underline">
-                        Terms & Conditions
-                      </Link>{" "}
-                      and{" "}
-                       <Link href="/terms" target="_blank" className="font-medium text-primary hover:underline">
-                        Privacy Policy
-                      </Link>
-                      .
-                    </FormLabel>
-                    <FormMessage />
+    <div className="w-full max-w-sm z-10">
+       <div className="flex flex-col items-center text-center mb-8">
+        <ScooterIcon className="h-20 w-20 mb-2" />
+        <h1 className="text-3xl font-bold text-gray-800">Deliverzler</h1>
+      </div>
+      
+      <div className="text-left mb-6">
+        <h2 className="text-3xl font-bold text-primary">Create Account ✍️</h2>
+        <p className="text-muted-foreground">Sign up to start your journey</p>
+      </div>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input placeholder="Full Name" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white"/>
                   </div>
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-             {isLoading ? "Signing up..." : <><UserPlus className="mr-2 h-5 w-5" /> Sign Up</>}
-            </Button>
-          </form>
-        </Form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/" className="font-medium text-primary hover:underline">
-            Log in
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input placeholder="Email" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white"/>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input type="password" placeholder="Password" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="vehicleType"
+            render={({ field }) => (
+              <FormItem>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                  <FormControl>
+                    <SelectTrigger className="pl-10 h-12 rounded-lg bg-white">
+                      <Bike className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <SelectValue placeholder="Select your vehicle type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="bike">Bike</SelectItem>
+                    <SelectItem value="scooter">Scooter</SelectItem>
+                    <SelectItem value="car">Car</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="vehicleRegistrationNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <Car className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input placeholder="Vehicle Registration No." {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white"/>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="termsAccepted"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md pt-2">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="font-normal text-muted-foreground">
+                    I agree to the{" "}
+                    <Link href="/terms" target="_blank" className="font-semibold text-primary hover:underline">
+                      Terms & Conditions
+                    </Link>
+                  </FormLabel>
+                  <FormMessage />
+                </div>
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full h-12 rounded-lg text-lg font-bold mt-4" disabled={isLoading}>
+           {isLoading ? "Creating Account..." : "SIGN UP"}
+          </Button>
+        </form>
+      </Form>
+      <p className="mt-8 text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/" className="font-semibold text-primary hover:underline">
+          Sign In
+        </Link>
+      </p>
+    </div>
   );
 }
