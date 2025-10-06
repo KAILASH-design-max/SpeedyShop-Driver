@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserPlus, Mail, KeyRound, Car, Bike, User } from "lucide-react";
+import { UserPlus, Mail, KeyRound, Car, Bike, User, Truck } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -37,26 +37,6 @@ const formSchema = z.object({
     errorMap: () => ({ message: "You must accept the terms and conditions to continue." }),
   }),
 });
-
-const TruckIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-        {...props}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        >
-        <path d="M5 18H3c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h10v11" />
-        <path d="M14 9h4l4 4v4h-8v-11" />
-        <circle cx="7.5" cy="18.5" r="2.5" />
-        <circle cx="17.5" cy="18.5" r="2.5" />
-    </svg>
-);
 
 export function SignupForm() {
   const router = useRouter();
@@ -136,7 +116,7 @@ export function SignupForm() {
   return (
     <div className="w-full max-w-sm z-10">
        <div className="flex flex-col items-center text-center mb-8">
-        <TruckIcon className="h-20 w-20 mb-2 text-primary" data-ai-hint="delivery truck"/>
+        <Truck className="h-20 w-20 mb-2 text-primary" data-ai-hint="delivery truck"/>
         <h1 className="text-3xl font-bold text-gray-800">SpeedyDelivery</h1>
       </div>
       
