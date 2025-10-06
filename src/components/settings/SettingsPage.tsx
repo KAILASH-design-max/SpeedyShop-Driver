@@ -30,17 +30,28 @@ import type { Profile } from "@/types";
 import { endSession } from "@/lib/sessionManager";
 import { AvailabilityToggle } from "../dashboard/AvailabilityToggle";
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
 
 const mainNavItems = [
-  { href: "/earnings", label: "Earnings", icon: IndianRupee },
-  { href: "/analytics", label: "Analytics", icon: BarChart },
-  { href: "/achievements", label: "Achievements", icon: Trophy },
-  { href: "/community", label: "Community", icon: Users },
-  { href: "/chat", label: "Chat", icon: MessagesSquare },
+  { href: "/earnings", labelKey: "earnings", icon: IndianRupee },
+  { href: "/analytics", labelKey: "analytics", icon: BarChart },
+  { href: "/achievements", labelKey: "achievements", icon: Trophy },
+  { href: "/community", labelKey: "community", icon: Users },
+  { href: "/chat", labelKey: "chat", icon: MessagesSquare },
 ];
 
 const supportNavItems = [
-    { href: "/support", label: "Help & Info", icon: HelpCircle },
+    { href: "/support", labelKey: "help_info", icon: HelpCircle },
 ]
 
 export function SettingsPage() {
@@ -51,6 +62,8 @@ export function SettingsPage() {
     const { theme, setTheme } = useTheme();
     const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus'] | undefined>(undefined);
     const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(true);
+    const { language, setLanguage, translations } = useLanguage();
+    const [isLangDialogOpen, setLangDialogOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -109,7 +122,7 @@ export function SettingsPage() {
         try {
           await endSession();
           await signOut(auth);
-          toast({ title: "Logged Out", description: "You have been successfully logged out." });
+          toast({ title: translations.logged_out, description: translations.logged_out_desc });
           router.push("/");
         } catch (error) {
           console.error("Logout error:", error);
@@ -120,6 +133,11 @@ export function SettingsPage() {
     const handleThemeChange = (checked: boolean) => {
         setTheme(checked ? 'dark' : 'light');
     };
+    
+    const handleLanguageChange = (lang: 'en' | 'hi') => {
+        setLanguage(lang);
+        setLangDialogOpen(false);
+    }
 
   return (
     <div className="space-y-6">
@@ -149,11 +167,11 @@ export function SettingsPage() {
              <Separator />
 
             {mainNavItems.map((item) => (
-                <Link href={item.href} key={item.label} className="block">
+                <Link href={item.href} key={item.labelKey} className="block">
                      <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary">
                         <div className="flex items-center gap-3">
                             <item.icon className="h-5 w-5 text-muted-foreground" />
-                            <span className="font-medium">{item.label}</span>
+                            <span className="font-medium">{translations[item.labelKey]}</span>
                         </div>
                         <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
@@ -162,11 +180,11 @@ export function SettingsPage() {
              <Separator />
 
              {supportNavItems.map((item) => (
-                <Link href={item.href} key={item.label} className="block">
+                <Link href={item.href} key={item.labelKey} className="block">
                      <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary">
                         <div className="flex items-center gap-3">
                             <item.icon className="h-5 w-5 text-muted-foreground" />
-                            <span className="font-medium">{item.label}</span>
+                            <span className="font-medium">{translations[item.labelKey]}</span>
                         </div>
                         <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
@@ -176,7 +194,7 @@ export function SettingsPage() {
              <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
                 <div className="flex items-center gap-3">
                     <Moon className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Dark Mode</span>
+                    <span className="font-medium">{translations.dark_mode}</span>
                 </div>
                 <Switch 
                     checked={theme === 'dark'}
@@ -184,20 +202,42 @@ export function SettingsPage() {
                     aria-label="Toggle dark mode"
                 />
             </div>
-             <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
-                <div className="flex items-center gap-3">
-                    <Languages className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Language</span>
-                </div>
-                <span className="text-muted-foreground">English</span>
-            </div>
+             <Dialog open={isLangDialogOpen} onOpenChange={setLangDialogOpen}>
+                <DialogTrigger asChild>
+                    <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary cursor-pointer">
+                        <div className="flex items-center gap-3">
+                            <Languages className="h-5 w-5 text-muted-foreground" />
+                            <span className="font-medium">{translations.language}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <span className="text-muted-foreground">{language === 'hi' ? 'हिंदी' : 'English'}</span>
+                           <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                    </div>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{translations.select_language}</DialogTitle>
+                    </DialogHeader>
+                    <RadioGroup defaultValue={language} onValueChange={(value) => handleLanguageChange(value as 'en' | 'hi')} className="py-4 space-y-2">
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="en" id="lang-en" />
+                            <Label htmlFor="lang-en" className="text-base font-normal">English</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="hi" id="lang-hi" />
+                            <Label htmlFor="lang-hi" className="text-base font-normal">हिंदी (Hindi)</Label>
+                        </div>
+                    </RadioGroup>
+                </DialogContent>
+             </Dialog>
         </div>
 
         <Separator />
 
         <Button variant="outline" className="w-full justify-center h-12 text-base text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive" onClick={handleLogout}>
             <LogOut className="mr-2 h-5 w-5" />
-            Log out
+            {translations.log_out}
         </Button>
     </div>
   );

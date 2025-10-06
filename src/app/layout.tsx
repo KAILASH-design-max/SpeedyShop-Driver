@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ConnectionStatusBanner } from '@/components/layout/ConnectionStatusBanner';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 import { DeviceStatusMonitor } from '@/components/layout/DeviceStatusMonitor';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 export const metadata: Metadata = {
   title: 'Velocity Driver',
@@ -23,17 +24,19 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-            {children}
-            <Toaster />
-            <ConnectionStatusBanner />
-            <DeviceStatusMonitor />
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+              {children}
+              <Toaster />
+              <ConnectionStatusBanner />
+              <DeviceStatusMonitor />
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
