@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -47,7 +46,6 @@ const mainNavItems = [
   { href: "/analytics", labelKey: "analytics", icon: BarChart },
   { href: "/achievements", labelKey: "achievements", icon: Trophy },
   { href: "/community", labelKey: "community", icon: Users },
-  { href: "/chat", labelKey: "chat", icon: MessagesSquare },
 ];
 
 const supportNavItems = [
