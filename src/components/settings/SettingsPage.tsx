@@ -123,11 +123,6 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
-        <header className="flex items-center gap-3">
-            <Settings className="h-7 w-7 text-foreground" />
-            <h1 className="text-2xl font-bold">Settings</h1>
-        </header>
-
         {profile && (
             <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
