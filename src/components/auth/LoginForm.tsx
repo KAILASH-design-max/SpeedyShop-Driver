@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, KeyRound, Truck, ShoppingBag } from "lucide-react";
+import { Mail, KeyRound, ShoppingBag } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -74,7 +74,6 @@ export function LoginForm() {
     <div className="w-full max-w-sm z-10">
       <div className="flex flex-col items-center text-center mb-8">
         <div className="flex items-center gap-4">
-            <Truck className="h-16 w-16 text-primary" data-ai-hint="delivery truck" />
             <ShoppingBag className="h-16 w-16 text-primary" data-ai-hint="shopping bag" />
         </div>
         <h1 className="text-3xl font-bold text-gray-800 mt-4">SpeedyDelivery</h1>
