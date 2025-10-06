@@ -9,6 +9,13 @@ import {
   Moon,
   Languages,
   LogOut,
+  IndianRupee,
+  BarChart,
+  Trophy,
+  Users,
+  MessagesSquare,
+  HelpCircle,
+  ChevronRight
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase";
@@ -22,6 +29,19 @@ import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import type { Profile } from "@/types";
 import { endSession } from "@/lib/sessionManager";
 import { AvailabilityToggle } from "../dashboard/AvailabilityToggle";
+import Link from "next/link";
+
+const mainNavItems = [
+  { href: "/earnings", label: "Earnings", icon: IndianRupee },
+  { href: "/analytics", label: "Analytics", icon: BarChart },
+  { href: "/achievements", label: "Achievements", icon: Trophy },
+  { href: "/community", label: "Community", icon: Users },
+  { href: "/chat", label: "Chat", icon: MessagesSquare },
+];
+
+const supportNavItems = [
+    { href: "/support", label: "Help & Info", icon: HelpCircle },
+]
 
 export function SettingsPage() {
     const { toast } = useToast();
@@ -131,16 +151,37 @@ export function SettingsPage() {
                     isLoading={isAvailabilityLoading}
                 />
             </div>
-            <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
-                <div className="flex items-center gap-3">
-                    <Settings className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">App Settings</span>
-                </div>
-            </div>
+             <Separator />
+
+            {mainNavItems.map((item) => (
+                <Link href={item.href} key={item.label} className="block">
+                     <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary">
+                        <div className="flex items-center gap-3">
+                            <item.icon className="h-5 w-5 text-muted-foreground" />
+                            <span className="font-medium">{item.label}</span>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                </Link>
+            ))}
+             <Separator />
+
+             {supportNavItems.map((item) => (
+                <Link href={item.href} key={item.label} className="block">
+                     <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary">
+                        <div className="flex items-center gap-3">
+                            <item.icon className="h-5 w-5 text-muted-foreground" />
+                            <span className="font-medium">{item.label}</span>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                </Link>
+            ))}
+
              <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
                 <div className="flex items-center gap-3">
                     <Moon className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Theme</span>
+                    <span className="font-medium">Dark Mode</span>
                 </div>
                 <Switch 
                     checked={theme === 'dark'}
