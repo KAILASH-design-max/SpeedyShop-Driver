@@ -132,7 +132,7 @@ export function SignupForm() {
       </div>
       
       <div className="text-left mb-6">
-        <h2 className="text-3xl font-bold text-primary">Create Account ✍️</h2>
+        <h2 className="text-3xl font-bold text-primary">Create Account</h2>
         <p className="text-muted-foreground">Sign up to start your journey</p>
       </div>
       

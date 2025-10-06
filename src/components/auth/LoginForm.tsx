@@ -90,7 +90,7 @@ export function LoginForm() {
       </div>
       
       <div className="text-left mb-6">
-        <h2 className="text-3xl font-bold text-primary">Welcome 👋</h2>
+        <h2 className="text-3xl font-bold text-primary">Welcome</h2>
         <p className="text-muted-foreground">Sign in to your account</p>
       </div>
 
