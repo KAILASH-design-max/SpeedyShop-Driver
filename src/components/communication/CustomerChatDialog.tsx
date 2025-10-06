@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import type { CommunicationMessage, ChatThread } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Phone, X } from "lucide-react";
+import { Send, Loader2, Phone, X, User } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -34,8 +34,7 @@ import {
   DialogClose,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Avatar } from "../ui/avatar";
-import { AvatarFallback } from "@radix-ui/react-avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface CustomerChatDialogProps {
   order: Order;
@@ -65,7 +64,6 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
       const threadSnap = await getDoc(threadRef);
 
       if (!threadSnap.exists()) {
-          // Prevent creating a chat where the driver and customer are the same user, which can happen in testing.
           if (!order.userId || driver.uid === order.userId) {
               console.warn("Skipping chat thread creation: driver and customer are the same user.");
               return;
@@ -181,68 +179,74 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="p-0 border-none w-[90vw] sm:max-w-[425px] lg:max-w-lg">
-        <div className="flex flex-col max-h-[90vh]">
-          <DialogHeader className="py-4 px-1 border-b">
-            <div className="flex justify-between items-center">
-              <div>
-                <DialogTitle>Customer Chat</DialogTitle>
-                <DialogDescription>
-                  Chatting about order #{order.id}
-                </DialogDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                 <Button variant="ghost" size="icon" asChild>
+      <DialogContent className="p-0 border-none w-[90vw] sm:max-w-md md:max-w-lg rounded-lg overflow-hidden">
+        <div className="flex flex-col h-[80vh] max-h-[600px]">
+          <DialogHeader className="p-4 border-b bg-background">
+            <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 border-2 border-primary">
+                    <AvatarFallback>{order.customerName.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-grow">
+                    <DialogTitle className="text-lg font-bold">{order.customerName}</DialogTitle>
+                    <DialogDescription>
+                    Order #{order.id.substring(0, 6)}
+                    </DialogDescription>
+                </div>
+                <Button variant="outline" size="icon" asChild>
                    <a href={`tel:${order.customerContact}`}>
                      <Phone className="h-5 w-5"/>
                    </a>
-                 </Button>
-              </div>
+                </Button>
             </div>
           </DialogHeader>
-          <ScrollArea className="flex-grow px-1 py-4" ref={scrollAreaRef}>
+          <ScrollArea className="flex-grow bg-muted/30 p-4" ref={scrollAreaRef}>
             {isLoading ? (
               <div className="flex justify-center items-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : messages.length === 0 ? (
-                <div className="flex items-start gap-3 p-3 bg-muted rounded-md">
+                <div className="flex justify-center items-center h-full">
+                    <p className="text-sm text-muted-foreground p-4 bg-background rounded-full">
+                        Start the conversation...
+                    </p>
                 </div>
             ) : (
-                messages.map((msg) => (
-                    <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUser?.uid ? "justify-end" : "justify-start")}>
-                        {msg.senderId !== currentUser?.uid && (
-                           <Avatar className="h-8 w-8">
-                                <AvatarFallback>C</AvatarFallback>
-                           </Avatar>
-                        )}
+                <div className="space-y-4">
+                {messages.map((msg) => (
+                    <div key={msg.id} className={cn("flex items-end gap-2 max-w-[85%]", msg.senderId === currentUser?.uid ? "ml-auto flex-row-reverse" : "mr-auto")}>
+                        <Avatar className="h-8 w-8">
+                           <AvatarFallback>
+                                {msg.senderId === currentUser?.uid ? <User /> : order.customerName.charAt(0).toUpperCase()}
+                           </AvatarFallback>
+                        </Avatar>
                         <div
                         className={cn(
-                            "max-w-[80%] p-3 rounded-xl text-sm",
-                            msg.senderId === currentUser?.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                            "p-3 rounded-xl text-sm",
+                            msg.senderId === currentUser?.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-background shadow-sm rounded-bl-none"
                         )}
                         >
                             <p>{msg.message}</p>
-                            <p className={cn("text-xs mt-1", msg.senderId === currentUser?.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+                            <p className={cn("text-xs mt-1.5", msg.senderId === currentUser?.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
                                 {formatMessageTimestamp(msg.timestamp)}
                             </p>
                         </div>
                     </div>
-                ))
+                ))}
+                </div>
             )}
           </ScrollArea>
-          <div className="border-t py-4 px-1">
+          <div className="border-t p-4 bg-background">
             <div className="w-full flex items-center gap-2">
               <Input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type your message..."
+                placeholder="Type a message..."
                 onKeyPress={(e) => e.key === "Enter" && !isSending && handleSendMessage()}
                 disabled={isSending}
-                className="flex-grow"
+                className="flex-grow h-12 rounded-full px-5"
               />
-              <Button onClick={handleSendMessage} size="icon" disabled={isSending}>
-                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-5 w-5" />}
+              <Button onClick={handleSendMessage} size="icon" disabled={isSending} className="rounded-full w-12 h-12">
+                {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
               </Button>
             </div>
           </div>
