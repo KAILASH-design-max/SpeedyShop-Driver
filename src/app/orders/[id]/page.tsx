@@ -159,12 +159,6 @@ export default function OrderPage() {
           console.warn(`Geolocation Error: ${error.message}`);
           if (error.code === 1) { // PERMISSION_DENIED
             setLocationPermissionDenied(true);
-            toast({
-              variant: "destructive",
-              title: "Location Access Denied",
-              description: "Live location tracking requires permission to access your location.",
-              duration: 10000,
-            });
             stopWatching();
           }
         },
@@ -323,15 +317,6 @@ export default function OrderPage() {
     <div className="space-y-6 pb-6 px-1">
       <OrderDetailsDisplay order={order} deliveryPartner={deliveryPartner} />
       
-      {isTrackingActive && locationPermissionDenied && (
-         <Alert variant="destructive">
-          <LocateFixed className="h-4 w-4" />
-          <AlertTitle>Location Access Required for Tracking</AlertTitle>
-          <AlertDescription>
-            Live location tracking is required for this order. Please enable location permissions in your browser or device settings to continue.
-          </AlertDescription>
-        </Alert>
-      )}
 
       {order.status === "Placed" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -481,4 +466,5 @@ export default function OrderPage() {
     
 
     
+
 
