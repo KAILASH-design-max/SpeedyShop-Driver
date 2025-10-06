@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import type { CommunicationMessage, ChatThread } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Phone, X, User } from "lucide-react";
+import { Send, Loader2, Phone, X, User, ArrowLeft } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -183,6 +183,11 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
         <div className="flex flex-col h-full">
           <DialogHeader className="p-4 border-b bg-background">
             <div className="flex items-center gap-4">
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon">
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                </DialogClose>
                 <Avatar className="h-12 w-12 border-2 border-primary">
                     <AvatarFallback>{order.customerName.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
