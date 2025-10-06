@@ -200,24 +200,8 @@ export default function OrderPage() {
     }
   };
 
-  const handleArrivedAtStore = async () => {
-    if (order && order.status === "accepted") {
-      setIsUpdating(true);
-      try {
-        const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "arrived-at-store" });
-        toast({ title: "Arrived at Store", description: `You have arrived at the pickup location.`, className: "bg-blue-500 text-white" });
-      } catch (error) {
-        console.error("Error setting arrived at store:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not update status." });
-      } finally {
-        setIsUpdating(false);
-      }
-    }
-  };
-
   const handlePickupConfirmation = async () => {
-    if (order && order.status === "arrived-at-store") {
+    if (order && (order.status === "arrived-at-store" || order.status === "accepted")) {
       setIsUpdating(true);
       try {
         const orderRef = doc(db, "orders", order.id);
@@ -401,14 +385,10 @@ export default function OrderPage() {
                      <Store className="mr-2 h-5 w-5" /> Navigate to Store
                   </Link>
                 </Button>
-                <Button onClick={handleArrivedAtStore} className="w-full bg-teal-500 hover:bg-teal-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-5 w-5" />}
-                   Arrived at Store
-                </Button>
               </>
             )}
 
-            {order.status === "arrived-at-store" && (
+            {(order.status === "arrived-at-store" || order.status === "accepted") && (
                  <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
                    Confirm Pickup from Store
