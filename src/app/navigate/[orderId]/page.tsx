@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
@@ -10,32 +11,6 @@ import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import type { Order } from '@/types';
 import { mapFirestoreDocToOrder } from '@/lib/orderUtils';
 import { useToast } from '@/hooks/use-toast';
-
-// Haversine formula to calculate distance between two points in meters
-const getDistance = (from: { lat: number, lon: number }, to: { lat: number, lon: number }) => {
-    const R = 6371e3; // metres
-    const φ1 = from.lat * Math.PI / 180;
-    const φ2 = to.lat * Math.PI / 180;
-    const Δφ = (to.lat - from.lat) * Math.PI / 180;
-    const Δλ = (to.lon - from.lon) * Math.PI / 180;
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c;
-};
-
-const parseCoordinates = (locationString: string): { lat: number, lon: number } | null => {
-    // This is a simple parser. A real app would use a geocoding service.
-    const parts = locationString.split(',').map(s => parseFloat(s.trim()));
-    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-        return { lat: parts[0], lon: parts[1] };
-    }
-    return null;
-}
-
 
 export default function NavigatePage() {
     const params = useParams();
@@ -51,7 +26,6 @@ export default function NavigatePage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [mapUrl, setMapUrl] = useState('');
     const [currentLocation, setCurrentLocation] = useState<string>('');
-    const [distance, setDistance] = useState<number | null>(null);
 
     // Fetch Order Data
     useEffect(() => {
@@ -100,30 +74,12 @@ export default function NavigatePage() {
         };
     }, []);
 
-    // Calculate distance whenever currentLocation or order changes
-    useEffect(() => {
-        if (currentLocation && order) {
-            const driverCoords = parseCoordinates(currentLocation);
-            const destinationLocation = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
-            const destinationCoords = parseCoordinates(destinationLocation);
-
-            if (driverCoords && destinationCoords) {
-                const dist = getDistance(driverCoords, destinationCoords);
-                setDistance(dist);
-            } else {
-                // If we can't parse coordinates, we can't show the button based on distance.
-                // We'll set a high distance to hide it, but a better solution might be needed for production.
-                setDistance(9999);
-            }
-        }
-    }, [currentLocation, order, type]);
-
-    // Update Map URL
+    // Update Map URL with Traffic Layer
     useEffect(() => {
         if (order && currentLocation) {
             const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
             const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-            const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&mode=driving`;
+            const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&mode=driving&maptype=roadmap&layer=traffic`;
             setMapUrl(url);
         }
     }, [order, currentLocation, type]);
@@ -199,12 +155,10 @@ export default function NavigatePage() {
     };
     
     const renderBottomButton = () => {
-        if (!order || distance === null) return null;
-
-        const showButton = distance <= 20;
+        if (!order) return null;
 
         if (type === 'pickup') {
-            if (order.status === 'accepted' && showButton) {
+            if (order.status === 'accepted') {
                 return (
                     <Button onClick={handleArrivedAtStore} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
                         {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -231,7 +185,7 @@ export default function NavigatePage() {
         }
 
         if (type === 'dropoff') {
-             if (order.status === 'out-for-delivery' && showButton) {
+             if (order.status === 'out-for-delivery') {
                 return (
                     <Button onClick={handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
                         {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -241,7 +195,7 @@ export default function NavigatePage() {
             }
         }
         
-        return null; // Don't show button for other statuses or if not close enough
+        return null; // Don't show button for other statuses
     };
 
 
