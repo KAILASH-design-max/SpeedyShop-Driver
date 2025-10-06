@@ -87,12 +87,8 @@ export default function NavigatePage() {
                     setCurrentLocation(`${latitude},${longitude}`);
                 },
                 (error) => {
-                    console.error("Error watching position:", error);
-                    toast({
-                      variant: "destructive",
-                      title: "Location Error",
-                      description: "Could not get live location updates.",
-                    });
+                    // This can happen if the user denies location permissions.
+                    // We will not show a toast here to avoid annoying the user if it's intentional.
                 },
                 { enableHighAccuracy: true }
             );
@@ -102,7 +98,7 @@ export default function NavigatePage() {
                 navigator.geolocation.clearWatch(watcherId);
             }
         };
-    }, [toast]);
+    }, []);
 
     // Calculate distance whenever currentLocation or order changes
     useEffect(() => {
@@ -283,5 +279,7 @@ export default function NavigatePage() {
         </div>
     );
 }
+
+    
 
     
