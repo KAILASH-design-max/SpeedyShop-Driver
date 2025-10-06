@@ -5,7 +5,7 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { ArrowLeft, Navigation, Loader2, Truck } from 'lucide-react';
+import { ArrowLeft, Navigation, Loader2, Truck, Phone, MessageSquare } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import type { Order } from '@/types';
@@ -201,11 +201,24 @@ export default function NavigatePage() {
 
     return (
         <div className="h-full w-full bg-background flex flex-col">
-             <div className="p-4 border-b flex items-center justify-between gap-4 bg-background z-10 absolute top-0 left-0 right-0">
+             <div className="p-4 border-b flex items-center justify-between gap-2 bg-background z-10 absolute top-0 left-0 right-0">
                 <Button variant="outline" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <Button variant="destructive" size="icon">
+                <div className="flex-grow"></div>
+                {order?.customerContact && (
+                    <Button variant="outline" size="icon" asChild>
+                        <a href={`tel:${order.customerContact}`} aria-label="Call customer">
+                            <Phone className="h-5 w-5"/>
+                        </a>
+                    </Button>
+                )}
+                {order && (
+                    <Button variant="outline" size="icon" onClick={() => router.push(`/chat?orderId=${order.id}`)}>
+                        <MessageSquare className="h-5 w-5"/>
+                    </Button>
+                )}
+                <Button variant="default" size="icon">
                     <Navigation className="h-5 w-5"/>
                 </Button>
             </div>
@@ -237,3 +250,4 @@ export default function NavigatePage() {
     
 
     
+
