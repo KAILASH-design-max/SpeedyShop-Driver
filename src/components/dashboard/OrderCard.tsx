@@ -5,9 +5,10 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, User, FileText, MessageSquare, Store, Home, Truck, ChevronRight, PackageCheck, Navigation, CheckCircle } from "lucide-react";
+import { Navigation, MessageSquare, CheckCircle, PackageCheck } from "lucide-react";
 import type { Order } from "@/types";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 
 interface OrderCardProps {
@@ -15,37 +16,14 @@ interface OrderCardProps {
   onCustomerChat: (order: Order) => void;
 }
 
-const statusInfo: { [key in Order['status']]?: { icon: React.ElementType, label: string, color: string, action: { href: (orderId: string, dest: string) => string; text: string, icon: React.ElementType } | null } } = {
-    'accepted': { 
-        icon: PackageCheck, 
-        label: 'Accepted', 
-        color: 'text-accent',
-        action: { href: (orderId, dest) => `/navigate/${orderId}?type=pickup`, text: "Navigate to Store", icon: Store }
-    },
-    'arrived-at-store': { 
-        icon: Store, 
-        label: 'At Store', 
-        color: 'text-teal-400',
-        action: { href: (orderId, dest) => `/orders/${orderId}`, text: "Confirm Pickup", icon: PackageCheck }
-    },
-    'picked-up': { 
-        icon: Truck, 
-        label: 'Picked Up', 
-        color: 'text-cyan-400',
-        action: { href: (orderId, dest) => `/navigate/${orderId}?type=dropoff`, text: "Navigate to Customer", icon: Navigation }
-    },
-    'out-for-delivery': { 
-        icon: Truck, 
-        label: 'Out for Delivery', 
-        color: 'text-purple-400',
-        action: { href: (orderId, dest) => `/navigate/${orderId}?type=dropoff`, text: "Navigate to Customer", icon: Navigation }
-    },
-     'arrived': { 
-        icon: MapPin, 
-        label: 'Arrived at Drop-off', 
-        color: 'text-indigo-400',
-        action: { href: (orderId, dest) => `/orders/${orderId}`, text: "Confirm Delivery", icon: CheckCircle }
-    },
+const statusInfo: { [key in Order['status']]?: { label: string, color: string, action: { href: (orderId: string) => string; text: string } | null } } = {
+    'accepted': { label: 'Accepted', color: 'text-accent', action: { href: (orderId) => `/orders/${orderId}`, text: "Go to Pickup" }},
+    'arrived-at-store': { label: 'At Store', color: 'text-teal-400', action: { href: (orderId) => `/orders/${orderId}`, text: "Confirm Pickup" }},
+    'picked-up': { label: 'Picked Up', color: 'text-cyan-400', action: { href: (orderId) => `/orders/${orderId}`, text: "Navigate to Customer" }},
+    'out-for-delivery': { label: 'Out for Delivery', color: 'text-purple-400', action: { href: (orderId) => `/orders/${orderId}`, text: "Navigate to Customer" }},
+    'arrived': { label: 'Arrived', color: 'text-indigo-400', action: { href: (orderId) => `/orders/${orderId}`, text: "Confirm Delivery" }},
+    'delivered': { label: 'Delivered', color: 'text-green-500', action: null },
+    'cancelled': { label: 'Cancelled', color: 'text-destructive', action: null }
 }
 
 export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
@@ -57,74 +35,64 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   }
   
   const currentStatus = statusInfo[order.status];
-  
-  const getNavAction = () => {
-      if (!currentStatus || !currentStatus.action) return null;
-      const destination = order.status === 'accepted' ? order.pickupLocation : order.dropOffLocation;
-      return {
-          href: currentStatus.action.href(order.id, destination),
-          text: currentStatus.action.text,
-          Icon: currentStatus.action.icon,
-      }
-  }
-
-  const navAction = getNavAction();
+  const navAction = currentStatus?.action ? { href: currentStatus.action.href(order.id), text: currentStatus.action.text } : null;
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-card border-border/50 hover:border-primary/50">
-        {currentStatus && (
-            <CardHeader className={cn("p-4 flex flex-row items-center justify-between", `bg-secondary border-b`)}>
-                <div className="flex items-center gap-2">
-                    <currentStatus.icon className={cn("h-5 w-5", currentStatus.color)} />
-                    <CardTitle className={cn("text-base font-semibold", currentStatus.color)}>
-                        {currentStatus.label}
-                    </CardTitle>
-                </div>
-                <Badge variant={"secondary"} className="capitalize bg-muted/50 border-border/50 text-muted-foreground">
-                    #{order.id.substring(0,6)}
-                </Badge>
-            </CardHeader>
-        )}
-
-        <CardContent className="p-4 pt-4 text-sm space-y-3 flex-grow">
-            <div className="flex items-start gap-3">
-                <Store className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col h-full bg-card">
+        <CardHeader className="p-4">
+            <div className="flex justify-between items-start">
                 <div>
-                    <p className="text-xs text-muted-foreground">Pickup</p>
-                    <p className="font-medium" title={order.pickupLocation}>{order.pickupLocation}</p>
+                     {currentStatus && (
+                        <div className="flex items-center gap-2">
+                           <span className={cn("h-2.5 w-2.5 rounded-full", currentStatus.color.replace('text-','bg-'))}></span>
+                           <CardTitle className={cn("text-base font-semibold", currentStatus.color)}>
+                             {currentStatus.label}
+                           </CardTitle>
+                        </div>
+                     )}
+                     <p className="text-xs text-muted-foreground mt-1">Order #{order.id.substring(0,6)} &bull; {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit'})}</p>
                 </div>
+                <Link href={`/orders/${order.id}`}>
+                    <Button variant="secondary" size="sm">Details</Button>
+                </Link>
             </div>
-            <div className="flex items-start gap-3">
-                <Home className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+        </CardHeader>
+        
+        <CardContent className="p-4 pt-0 space-y-4">
+            <div className="flex items-center gap-4">
+                <Avatar className="h-14 w-14 border-2 border-primary">
+                    <AvatarFallback>{order.customerName.substring(0,2)}</AvatarFallback>
+                </Avatar>
                 <div>
-                    <p className="text-xs text-muted-foreground">Drop-off for {order.customerName}</p>
-                    <p className="font-medium" title={order.dropOffLocation}>{order.dropOffLocation}</p>
-
+                    <p className="font-bold text-lg">{order.customerName}</p>
+                    <p className="text-sm text-muted-foreground">{order.dropOffLocation}</p>
+                    <p className="text-sm text-muted-foreground">{order.customerContact}</p>
                 </div>
             </div>
         </CardContent>
 
-        <CardFooter className="p-3 mt-auto border-t bg-muted/20 flex flex-col items-stretch gap-2">
+        <CardFooter className="p-4 mt-auto border-t flex flex-col gap-2">
             {navAction && (
-                <Button asChild size="lg" className="font-bold bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Button asChild className="w-full text-base font-bold py-6">
                     <Link href={navAction.href}>
-                        <navAction.Icon className="mr-2 h-4 w-4" />
                         {navAction.text}
                     </Link>
                 </Button>
             )}
-            <div className="flex justify-between items-center w-full">
-                 <Button variant="ghost" size="sm" aria-label="Chat with customer" onClick={handleCustomerChatClick}>
+             <div className="flex w-full gap-2">
+                <Button variant="outline" className="w-full" onClick={handleCustomerChatClick}>
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Chat
                 </Button>
-                <Button asChild variant="link" className="text-primary font-semibold text-sm hover:underline p-0 h-auto">
-                    <Link href={`/orders/${order.id}`} className="flex items-center">
-                        View Details
-                        <ChevronRight className="h-4 w-4 ml-1" />
-                    </Link>
-                </Button>
-            </div>
+                {order.status === 'arrived' && (
+                    <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white">
+                        <Link href={`/orders/${order.id}`}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Confirm
+                        </Link>
+                    </Button>
+                )}
+             </div>
         </CardFooter>
     </Card>
   );
