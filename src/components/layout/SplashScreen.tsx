@@ -1,8 +1,8 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const TruckIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -27,15 +27,8 @@ const TruckIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export function SplashScreen() {
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Only show splash screen on mobile
-    if (!isMobile) {
-        setIsVisible(false);
-        return;
-    }
-
     if (sessionStorage.getItem('splash-screen-shown')) {
       setIsVisible(false);
       return;
@@ -54,9 +47,9 @@ export function SplashScreen() {
       clearTimeout(fadeTimer);
       clearTimeout(visibilityTimer);
     };
-  }, [isMobile]);
+  }, []);
 
-  if (!isVisible || !isMobile) {
+  if (!isVisible) {
     return null;
   }
 
