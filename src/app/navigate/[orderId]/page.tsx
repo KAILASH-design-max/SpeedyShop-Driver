@@ -26,7 +26,7 @@ export default function NavigatePage() {
     const [mapUrl, setMapUrl] = useState('');
     const [currentLocation, setCurrentLocation] = useState<string>('');
 
-    const mapsApiKey = "AlzaSyAXbTZqB9WBQI0qmz8wCmUK82V7RfcKoko";
+    const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     useEffect(() => {
         if (!orderId) {
