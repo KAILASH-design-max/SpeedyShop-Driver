@@ -8,7 +8,7 @@ import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin, Map, LayoutDashboard } from "lucide-react";
+import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin, Map, LayoutDashboard, LocateFixed } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
@@ -44,6 +44,8 @@ export default function OrderPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const locationWatcherId = useRef<number | null>(null);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -136,16 +138,27 @@ export default function OrderPage() {
   useEffect(() => {
     const isOrderActiveForTracking = order?.status === 'picked-up' || order?.status === 'out-for-delivery';
 
+    const stopWatching = () => {
+      if (locationWatcherId.current !== null) {
+        navigator.geolocation.clearWatch(locationWatcherId.current);
+        locationWatcherId.current = null;
+      }
+    };
+
     const startWatching = () => {
       if (locationWatcherId.current !== null || !isOrderActiveForTracking) return;
+      
+      setLocationPermissionDenied(false);
 
       locationWatcherId.current = navigator.geolocation.watchPosition(
         (position) => {
           throttledLocationUpdate(position);
+          setLocationPermissionDenied(false); // Reset if permission is granted later
         },
         (error) => {
           console.warn(`Geolocation Error: ${error.message}`);
           if (error.code === 1) { // PERMISSION_DENIED
+            setLocationPermissionDenied(true);
             toast({
               variant: "destructive",
               title: "Location Access Denied",
@@ -157,13 +170,6 @@ export default function OrderPage() {
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
-    };
-
-    const stopWatching = () => {
-      if (locationWatcherId.current !== null) {
-        navigator.geolocation.clearWatch(locationWatcherId.current);
-        locationWatcherId.current = null;
-      }
     };
 
     if (isOrderActiveForTracking) {
@@ -200,21 +206,6 @@ export default function OrderPage() {
     }
   };
 
-  const handleOutOfDelivery = async () => {
-    if (order && order.status === "picked-up") {
-      setIsUpdating(true);
-      try {
-        const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "out-for-delivery" });
-        toast({ title: "Out for Delivery", description: `Order #${order.id} is now out for delivery.`, className: "bg-blue-500 text-white" });
-      } catch (error) {
-        console.error("Error setting out for delivery:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not update status." });
-      } finally {
-        setIsUpdating(false);
-      }
-    }
-  };
 
   const handleDeliveryConfirmed = async (proof?: {type: 'photo' | 'signature', value: string}) => {
     if (order) {
@@ -332,6 +323,16 @@ export default function OrderPage() {
     <div className="space-y-6 pb-6 px-1">
       <OrderDetailsDisplay order={order} deliveryPartner={deliveryPartner} />
       
+      {isTrackingActive && locationPermissionDenied && (
+         <Alert variant="destructive">
+          <LocateFixed className="h-4 w-4" />
+          <AlertTitle>Location Access Required for Tracking</AlertTitle>
+          <AlertDescription>
+            Live location tracking is required for this order. Please enable location permissions in your browser or device settings to continue.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {order.status === "Placed" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Button onClick={handleAcceptOrder} className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
@@ -357,21 +358,11 @@ export default function OrderPage() {
             )}
 
             
-            {order.status === "picked-up" && (
+            {(order.status === "picked-up" || order.status === "out-for-delivery") && (
               <>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
                   <Link href={`/navigate/${order.id}?type=dropoff`}>
                       <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
-                  </Link>
-                </Button>
-              </>
-            )}
-
-             {order.status === "out-for-delivery" && (
-              <>
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
-                  <Link href={`/navigate/${order.id}?type=dropoff`}>
-                     <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
                   </Link>
                 </Button>
               </>
@@ -437,10 +428,6 @@ export default function OrderPage() {
                     {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
                     Confirm Pickup
                 </Button>
-                <Button onClick={handleOutOfDelivery} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-5 w-5" />}
-                  Out for Delivery
-                </Button>
             </div>
         )}
 
@@ -494,3 +481,4 @@ export default function OrderPage() {
     
 
     
+
