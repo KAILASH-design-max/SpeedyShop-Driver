@@ -6,24 +6,26 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Navigation, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import type { Order } from '@/types';
 import { mapFirestoreDocToOrder } from '@/lib/orderUtils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function NavigatePage() {
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { toast } = useToast();
 
     const orderId = typeof params.orderId === 'string' ? params.orderId : '';
     const type = searchParams.get('type') || 'dropoff'; // Default to dropoff
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isUpdating, setIsUpdating] = useState(false);
     const [mapUrl, setMapUrl] = useState('');
     const [currentLocation, setCurrentLocation] = useState<string>('');
 
-    const pageTitle = type === 'pickup' ? 'Navigate to Store' : 'Navigate to Customer';
     const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     useEffect(() => {
@@ -70,33 +72,58 @@ export default function NavigatePage() {
         }
     }, [order, mapsApiKey, currentLocation, type]);
 
-    const handleOpenInMaps = () => {
-        if (order) {
-            const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
-            const externalMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
-            window.open(externalMapsUrl, '_blank');
+    const handleConfirmArrival = async () => {
+        if (!order) return;
+
+        const targetStatus = type === 'pickup' ? 'arrived-at-store' : 'arrived';
+        const successMessage = type === 'pickup' 
+            ? "Arrived at Store" 
+            : "Arrived at Location";
+        const successDescription = type === 'pickup' 
+            ? `You have arrived at the store.` 
+            : `You have arrived at the customer's location.`;
+
+        if (order.status === 'accepted' && type === 'pickup') {
+            setIsUpdating(true);
+            try {
+                const orderRef = doc(db, "orders", order.id);
+                await updateDoc(orderRef, { status: targetStatus });
+                toast({ title: successMessage, description: successDescription, className: "bg-blue-500 text-white" });
+                router.push(`/orders/${order.id}`);
+            } catch (error) {
+                console.error(`Error setting ${targetStatus}:`, error);
+                toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+            } finally {
+                setIsUpdating(false);
+            }
+        } else if (order.status === 'out-for-delivery' && type === 'dropoff') {
+            setIsUpdating(true);
+            try {
+                const orderRef = doc(db, "orders", order.id);
+                await updateDoc(orderRef, { status: targetStatus });
+                toast({ title: successMessage, description: successDescription, className: "bg-blue-500 text-white" });
+                 router.push(`/orders/${order.id}`);
+            } catch (error) {
+                console.error(`Error setting ${targetStatus}:`, error);
+                toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+            } finally {
+                setIsUpdating(false);
+            }
         }
     };
 
 
     return (
         <div className="h-full w-full bg-background flex flex-col">
-             <div className="p-4 border-b flex items-center justify-between gap-4 bg-background z-10">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-bold">{pageTitle}</h1>
-                        <p className="text-muted-foreground text-sm">Order #{orderId}</p>
-                    </div>
-                </div>
-                 <Button onClick={handleOpenInMaps} size="sm">
-                    <Navigation className="mr-2 h-4 w-4"/>
-                    Open Native App
+             <div className="p-4 border-b flex items-center justify-between gap-4 bg-background z-10 absolute top-0 left-0 right-0">
+                <Button variant="outline" size="icon" onClick={() => router.back()}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <Button variant="destructive" size="icon">
+                    <Navigation className="h-5 w-5"/>
                 </Button>
             </div>
-            <div className="flex-grow relative">
+            <div className="flex-grow relative mt-20">
                  {(loading || !mapUrl) ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-background">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -113,6 +140,12 @@ export default function NavigatePage() {
                         src={mapUrl}>
                     </iframe>
                 )}
+            </div>
+             <div className="p-4 bg-background z-10 absolute bottom-0 left-0 right-0">
+                 <Button onClick={handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Confirm
+                </Button>
             </div>
         </div>
     );

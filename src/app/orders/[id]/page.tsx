@@ -215,22 +215,6 @@ export default function OrderPage() {
       }
     }
   };
-  
-  const handleArrived = async () => {
-    if (order && order.status === "out-for-delivery") {
-      setIsUpdating(true);
-      try {
-        const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "arrived" });
-        toast({ title: "Arrived at Location", description: `You have arrived at the customer's location.`, className: "bg-blue-500 text-white" });
-      } catch (error) {
-        console.error("Error setting arrived:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not update status." });
-      } finally {
-        setIsUpdating(false);
-      }
-    }
-  };
 
   const handleDeliveryConfirmed = async (proof?: {type: 'photo' | 'signature', value: string}) => {
     if (order) {
@@ -394,10 +378,6 @@ export default function OrderPage() {
                      <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
                   </Link>
                 </Button>
-                <Button onClick={handleArrived} className="w-full bg-purple-500 hover:bg-purple-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-5 w-5" />}
-                    Arrived at Location
-                </Button>
               </>
             )}
 
@@ -448,6 +428,15 @@ export default function OrderPage() {
               </AlertDialog>
             )}
         </div>
+
+        {order.status === "arrived-at-store" && (
+            <div className="space-y-4">
+                 <Button onClick={() => {}} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
+                  Confirm Pickup from Store
+                </Button>
+            </div>
+        )}
 
         {order.status === "arrived" && (
           <DeliveryConfirmation order={order} onConfirm={handleDeliveryConfirmed} isUpdating={isUpdating} />
