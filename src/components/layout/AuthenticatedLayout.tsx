@@ -66,8 +66,8 @@ const bottomNavItems = [
 ];
 
 const mobileNavItems = [
-    { href: "/profile", label: "My Profile", icon: UserIcon },
     { href: "/dashboard", label: "Home", icon: Home },
+    { href: "/profile", label: "My Profile", icon: UserIcon },
     { href: "/settings", label: "Settings", icon: Settings },
 ]
 
@@ -316,3 +316,5 @@ export default function AuthenticatedLayout({
     </SidebarProvider>
   );
 }
+
+    
