@@ -31,7 +31,7 @@ export function AvailableOrderCard({ order, onAccept }: AvailableOrderCardProps)
   const distanceDrop = (Math.random() * (5 - 1) + 1).toFixed(1);
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-card/80 border-border/50 hover:border-accent/50">
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-card border-border/50 hover:border-accent/50">
       <CardHeader className="p-4">
         <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-bold text-primary">₹{order.estimatedEarnings.toFixed(2)}</CardTitle>

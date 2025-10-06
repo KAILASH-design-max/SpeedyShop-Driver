@@ -74,7 +74,7 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md shadow-xl">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full inline-block">
+        <div className="mx-auto mb-4 p-3 bg-secondary rounded-full inline-block">
           <LogIn className="h-10 w-10 text-primary" />
         </div>
         <CardTitle className="text-3xl font-bold text-primary">Welcome Back!</CardTitle>

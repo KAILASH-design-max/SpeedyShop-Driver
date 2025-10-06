@@ -40,7 +40,7 @@ export function EmergencySupport() {
   };
 
   return (
-    <Card className="bg-destructive/10 border-destructive shadow-lg">
+    <Card className="bg-destructive/20 border-destructive shadow-lg">
       <CardHeader className="flex-row items-center gap-4 space-y-0">
         <div className="p-3 rounded-full bg-destructive/20">
             <Siren className="h-6 w-6 text-destructive" />

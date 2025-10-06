@@ -124,7 +124,7 @@ export function EarningsForecast() {
     }
 
     return (
-        <Card className="shadow-lg bg-primary/5 border-primary/20">
+        <Card className="shadow-lg bg-secondary border-border">
             <CardHeader>
                 <CardTitle className="flex items-center text-xl">
                     <BrainCircuit className="mr-2 text-primary h-5 w-5" />

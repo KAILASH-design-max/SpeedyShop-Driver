@@ -215,7 +215,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                                 onClick={() => setSelectedThread(thread)}
                                 className={cn(
                                     "p-3 rounded-lg cursor-pointer transition-colors border border-transparent",
-                                    isSelected ? "bg-muted border-primary/50" : "hover:bg-muted/50"
+                                    isSelected ? "bg-muted border-primary/50" : "hover:bg-muted"
                                 )}
                                 role="button"
                                 tabIndex={0}

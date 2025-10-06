@@ -106,7 +106,7 @@ export function TopEarnersLeaderboard() {
             {leaderboard.map((entry, index) => (
               <div key={entry.uid} className={cn(
                   "flex items-center gap-4 p-3 rounded-lg",
-                  index === 0 && "bg-yellow-100 border border-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/20"
+                  index === 0 && "bg-yellow-100 border border-yellow-200 dark:bg-yellow-900/50 dark:border-yellow-500/20"
               )}>
                 <div className={cn(
                     "font-bold text-lg w-6 text-center",

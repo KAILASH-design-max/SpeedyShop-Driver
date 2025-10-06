@@ -143,7 +143,7 @@ export function TrainingModule() {
             {trainingModules.map((module, index) => (
               <Card key={index} className="overflow-hidden shadow-sm">
                 <AccordionItem value={`item-${index}`} className="border-none">
-                  <AccordionTrigger className="p-4 hover:no-underline bg-muted/50 data-[state=open]:bg-primary/10">
+                  <AccordionTrigger className="p-4 hover:no-underline bg-muted/50 data-[state=open]:bg-secondary">
                     <div className="flex items-center gap-4 text-left">
                       <div className="p-3 bg-background rounded-full">
                         <module.icon className="h-6 w-6 text-primary" />

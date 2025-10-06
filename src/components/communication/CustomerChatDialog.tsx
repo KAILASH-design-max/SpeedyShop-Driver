@@ -206,7 +206,7 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : messages.length === 0 ? (
-                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-md">
+                <div className="flex items-start gap-3 p-3 bg-muted rounded-md">
                 </div>
             ) : (
                 messages.map((msg) => (

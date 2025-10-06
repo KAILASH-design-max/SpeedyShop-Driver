@@ -257,7 +257,7 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
         </div>
 
         {/* Overall Rating */}
-        <div className="text-center p-6 bg-primary/5 rounded-lg">
+        <div className="text-center p-6 bg-secondary rounded-lg">
             <p className="text-muted-foreground">Overall Rating (from {totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'})</p>
             <div className="text-5xl font-bold my-2 text-primary">{overallRating.toFixed(1)} / 5.0</div>
             <div className="flex justify-center gap-1">
