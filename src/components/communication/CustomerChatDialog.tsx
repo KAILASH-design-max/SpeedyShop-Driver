@@ -183,11 +183,9 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
         <div className="flex flex-col h-full">
           <DialogHeader className="p-4 border-b bg-background">
             <div className="flex items-center gap-4">
-                <DialogClose asChild>
-                    <Button variant="ghost" size="icon">
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                </DialogClose>
+                <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
                 <Avatar className="h-12 w-12 border-2 border-primary">
                     <AvatarFallback>{order.customerName.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
@@ -217,26 +215,29 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
                 </div>
             ) : (
                 <div className="space-y-4">
-                {messages.map((msg) => (
-                    <div key={msg.id} className={cn("flex items-end gap-2 max-w-[85%]", msg.senderId === currentUser?.uid ? "ml-auto flex-row-reverse" : "mr-auto")}>
-                        <Avatar className="h-8 w-8">
-                           <AvatarFallback>
-                                {msg.senderId === currentUser?.uid ? <User /> : order.customerName.charAt(0).toUpperCase()}
-                           </AvatarFallback>
-                        </Avatar>
-                        <div
-                        className={cn(
-                            "p-3 rounded-xl text-sm",
-                            msg.senderId === currentUser?.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-background shadow-sm rounded-bl-none"
-                        )}
-                        >
-                            <p>{msg.message}</p>
-                            <p className={cn("text-xs mt-1.5", msg.senderId === currentUser?.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
-                                {formatMessageTimestamp(msg.timestamp)}
-                            </p>
+                {messages.map((msg) => {
+                    const isDeliveryPartner = msg.senderId === currentUser?.uid;
+                    return (
+                        <div key={msg.id} className={cn("flex items-end gap-2 max-w-[85%]", isDeliveryPartner ? "ml-auto flex-row-reverse" : "mr-auto")}>
+                            <Avatar className="h-8 w-8">
+                               <AvatarFallback>
+                                    {isDeliveryPartner ? <User /> : order.customerName.charAt(0).toUpperCase()}
+                               </AvatarFallback>
+                            </Avatar>
+                            <div
+                            className={cn(
+                                "p-3 rounded-xl text-sm",
+                                isDeliveryPartner ? "bg-primary text-primary-foreground rounded-br-none" : "bg-background shadow-sm rounded-bl-none"
+                            )}
+                            >
+                                <p>{msg.message}</p>
+                                <p className={cn("text-xs mt-1.5", isDeliveryPartner ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
+                                    {formatMessageTimestamp(msg.timestamp)}
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    )
+                })}
                 </div>
             )}
           </ScrollArea>
