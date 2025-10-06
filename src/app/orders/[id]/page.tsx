@@ -30,6 +30,7 @@ import { useThrottle } from "@/hooks/use-throttle";
 import { RateAndReport } from "@/components/orders/RateAndReport";
 import Link from 'next/link';
 import { User } from "firebase/auth";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function OrderPage() {
   const params = useParams();
@@ -42,6 +43,7 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const locationWatcherId = useRef<number | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -293,12 +295,22 @@ export default function OrderPage() {
 
   const handleRedispatch = async () => {
     if (!order) return;
+    if (cancellationReason.trim() === "") {
+      toast({
+        variant: "destructive",
+        title: "Reason Required",
+        description: "Please provide a reason for releasing the order.",
+      });
+      return;
+    }
     setIsUpdating(true);
     try {
       const orderRef = doc(db, "orders", order.id);
       await updateDoc(orderRef, {
         deliveryPartnerId: null,
-        status: "Placed",
+        status: "Placed", // Or a new status like 'redispatched'
+        cancellationReason: cancellationReason,
+        lastStatus: order.status, // Keep track of where it was cancelled from
       });
       toast({
         title: "Order Released",
@@ -312,6 +324,7 @@ export default function OrderPage() {
         title: "Redispatch Failed",
         description: "Could not release the order. Please contact support.",
       });
+    } finally {
       setIsUpdating(false);
     }
   };
@@ -451,15 +464,26 @@ export default function OrderPage() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to release this order?</AlertDialogTitle>
+                    <AlertDialogTitle>Reason for canceling the order:</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. The order will be returned to the pool for other drivers to accept. Only do this if you are unable to complete the delivery.
+                      This action cannot be undone. The order will be returned to the pool for other drivers to accept.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
+                  <div>
+                    <Textarea
+                      placeholder="Type your note..."
+                      value={cancellationReason}
+                      onChange={(e) => setCancellationReason(e.target.value)}
+                      maxLength={200}
+                    />
+                    <p className="text-right text-sm text-muted-foreground mt-1">
+                      {cancellationReason.length}/200
+                    </p>
+                  </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleRedispatch} className="bg-destructive hover:bg-destructive/90">
-                      Yes, Release Order
+                    <AlertDialogAction onClick={handleRedispatch} disabled={!cancellationReason.trim()}>
+                      Confirm
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

@@ -38,6 +38,8 @@ export interface Order {
   accessibleTo?: string[]; // Array of UIDs that can access this order
   deliveryPartnerFeedback?: DeliveryPartnerFeedback;
   tipAmount?: number;
+  cancellationReason?: string;
+  lastStatus?: string;
 }
 
 export interface EarningSummary {
