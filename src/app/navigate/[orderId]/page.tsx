@@ -10,7 +10,6 @@ import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import type { Order } from '@/types';
 import { mapFirestoreDocToOrder } from '@/lib/orderUtils';
 import { useToast } from '@/hooks/use-toast';
-import { getDistance } from 'geolib';
 
 export default function NavigatePage() {
     const params = useParams();
@@ -26,11 +25,6 @@ export default function NavigatePage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [mapUrl, setMapUrl] = useState('');
     const [currentLocation, setCurrentLocation] = useState<string>('');
-    const [destinationCoords, setDestinationCoords] = useState<{latitude: number, longitude: number} | null>(null);
-    const [isNearDestination, setIsNearDestination] = useState(false);
-    const locationWatcherId = useRef<number | null>(null);
-
-    const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     useEffect(() => {
         if (!orderId) {
@@ -55,73 +49,33 @@ export default function NavigatePage() {
         return () => unsubscribe();
     }, [orderId]);
     
-    // Geocode destination address
+    // Get current location
     useEffect(() => {
-        if (order && mapsApiKey) {
-            const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
-            fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(destination)}&key=${mapsApiKey}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'OK' && data.results[0]) {
-                        const { lat, lng } = data.results[0].geometry.location;
-                        setDestinationCoords({ latitude: lat, longitude: lng });
-                    }
-                });
-        }
-    }, [order, type, mapsApiKey]);
-
-    // Watch current location and check distance
-    useEffect(() => {
-        const handlePositionUpdate = (position: GeolocationPosition) => {
-            const { latitude, longitude } = position.coords;
-            setCurrentLocation(`${latitude},${longitude}`);
-
-            if (destinationCoords) {
-                const distance = getDistance(
-                    { latitude, longitude },
-                    destinationCoords
-                );
-                // Show button if within 20 meters
-                if (distance < 20) {
-                    setIsNearDestination(true);
-                } else {
-                    setIsNearDestination(false);
-                }
-            }
-        };
-        
-        const handleError = (error: GeolocationPositionError) => {
-            toast({
-              variant: "destructive",
-              title: "Location Error",
-              description: "Could not get current location. Please enable location services in your browser.",
-            });
-        };
-
         if (navigator.geolocation) {
-             locationWatcherId.current = navigator.geolocation.watchPosition(handlePositionUpdate, handleError, {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            });
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    setCurrentLocation(`${latitude},${longitude}`);
+                },
+                (error) => {
+                    toast({
+                      variant: "destructive",
+                      title: "Location Error",
+                      description: "Could not get current location. Please enable location services in your browser.",
+                    });
+                }
+            );
         }
-       
-
-        return () => {
-             if (locationWatcherId.current !== null) {
-                navigator.geolocation.clearWatch(locationWatcherId.current);
-            }
-        };
-    }, [toast, destinationCoords]);
+    }, [toast]);
 
 
     useEffect(() => {
-        if (order && mapsApiKey && currentLocation) {
+        if (order && currentLocation) {
             const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
-            const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&mode=driving`;
+            const url = `https://www.google.com/maps/embed/v1/directions?key=YOUR_API_KEY&origin=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&mode=driving`;
             setMapUrl(url);
         }
-    }, [order, mapsApiKey, currentLocation, type]);
+    }, [order, currentLocation, type]);
 
     const handleConfirmArrival = async () => {
         if (!order) return;
@@ -141,6 +95,21 @@ export default function NavigatePage() {
             successMessage = "Arrived at Location";
             successDescription = "You have arrived at the customer's location.";
             canUpdate = order.status === 'out-for-delivery';
+        }
+        
+        const isReadyForPickup = type === 'pickup' && order.status === 'arrived-at-store';
+        const isReadyForDropoff = type === 'dropoff' && order.status === 'out-for-delivery';
+
+        if (isReadyForPickup) {
+            targetStatus = 'picked-up';
+            successMessage = 'Pickup Confirmed';
+            successDescription = 'Order status updated to picked up.';
+            canUpdate = true;
+        } else if (isReadyForDropoff) {
+            targetStatus = 'arrived';
+            successMessage = 'Arrival Confirmed';
+            successDescription = "You've arrived at the customer's location.";
+            canUpdate = true;
         }
 
         if (canUpdate) {
@@ -205,14 +174,12 @@ export default function NavigatePage() {
                     </iframe>
                 )}
             </div>
-             {isNearDestination && (
-                <div className="p-4 bg-background z-10 absolute bottom-0 left-0 right-0">
-                    <Button onClick={type === 'pickup' ? handleArrivedAtStore : handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
-                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {type === 'pickup' ? "Confirm Arrival at Store" : "Confirm Arrival"}
-                    </Button>
-                </div>
-             )}
+            <div className="p-4 bg-background z-10 absolute bottom-0 left-0 right-0">
+                <Button onClick={type === 'pickup' ? handleArrivedAtStore : handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {type === 'pickup' ? 'Confirm Pickup From Store' : 'Confirm Arrival'}
+                </Button>
+            </div>
         </div>
     );
 }

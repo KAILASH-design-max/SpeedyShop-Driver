@@ -449,6 +449,10 @@ export default function OrderPage() {
                     {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
                     Confirm Pickup
                 </Button>
+                <Button onClick={handleOutOfDelivery} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-5 w-5" />}
+                  Out for Delivery
+                </Button>
             </div>
         )}
 
@@ -497,3 +501,6 @@ export default function OrderPage() {
 
     
 
+
+
+    

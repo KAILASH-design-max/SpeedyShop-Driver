@@ -44,7 +44,6 @@
     "firebase": "^11.9.1",
     "firebase-admin": "^12.2.0",
     "genkit": "^1.9.0",
-    "geolib": "^3.3.4",
     "lucide-react": "^0.475.0",
     "next": "15.3.3",
     "next-themes": "^0.3.0",
@@ -59,10 +58,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/geolib": "^2.0.28",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
     "genkit-cli": "^1.9.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
