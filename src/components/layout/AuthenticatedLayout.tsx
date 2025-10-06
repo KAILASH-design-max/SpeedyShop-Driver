@@ -240,11 +240,25 @@ export default function AuthenticatedLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-end border-b bg-background px-4 md:px-6 md:hidden">
-            <div className="flex items-center gap-4">
-                <ActiveTimeTracker />
-                <NotificationBell />
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="md:hidden" />
+            <div className="md:hidden">
+              <ActiveTimeTracker />
             </div>
+            <div className="hidden items-center gap-4 md:flex">
+              <ActiveTimeTracker />
+              <NotificationBell />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="md:hidden flex items-center gap-2">
+              <NotificationBell />
+            </div>
+            <div className="hidden md:flex">
+              <ThemeToggle />
+            </div>
+          </div>
         </header>
         <main className="flex-1 overflow-auto pb-20 md:pb-0">
             {children}
