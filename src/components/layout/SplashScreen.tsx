@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { ShoppingBag } from 'lucide-react';
 
 const TruckIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -59,7 +60,7 @@ export function SplashScreen() {
         isFading ? "opacity-0" : "opacity-100"
     )}>
         <div className="flex flex-col items-center gap-4 animate-pulse">
-            <TruckIcon className="h-24 w-24 text-primary" data-ai-hint="delivery truck" />
+            <ShoppingBag className="h-24 w-24 text-primary" data-ai-hint="shopping bag" />
             <h1 className="text-4xl font-bold text-primary">SpeedyDelivery</h1>
         </div>
     </div>
