@@ -200,22 +200,6 @@ export default function OrderPage() {
     }
   };
 
-  const handlePickupConfirmation = async () => {
-    if (order && (order.status === "arrived-at-store" || order.status === "accepted")) {
-      setIsUpdating(true);
-      try {
-        const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { status: "picked-up" });
-        toast({ title: "Pickup Confirmed", description: `Order #${order.id} marked as picked-up.`, className: "bg-blue-500 text-white" });
-      } catch (error) {
-        console.error("Error confirming pickup:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not confirm pickup." });
-      } finally {
-        setIsUpdating(false);
-      }
-    }
-  };
-
   const handleOutOfDelivery = async () => {
     if (order && order.status === "picked-up") {
       setIsUpdating(true);
@@ -388,12 +372,6 @@ export default function OrderPage() {
               </>
             )}
 
-            {(order.status === "arrived-at-store" || order.status === "accepted") && (
-                 <Button onClick={handlePickupConfirmation} className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
-                   Confirm Pickup from Store
-                </Button>
-            )}
             
             {order.status === "picked-up" && (
               <>
