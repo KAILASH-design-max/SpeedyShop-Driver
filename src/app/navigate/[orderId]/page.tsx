@@ -4,7 +4,7 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState, useRef } from 'react';
-import { ArrowLeft, Navigation, Loader2 } from 'lucide-react';
+import { ArrowLeft, Navigation, Loader2, Truck } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import type { Order } from '@/types';
@@ -25,7 +25,7 @@ export default function NavigatePage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [mapUrl, setMapUrl] = useState('');
     const [currentLocation, setCurrentLocation] = useState<string>('');
-
+    
     useEffect(() => {
         if (!orderId) {
             setLoading(false);
@@ -72,55 +72,27 @@ export default function NavigatePage() {
     useEffect(() => {
         if (order && currentLocation) {
             const destination = type === 'pickup' ? order.pickupLocation : order.dropOffLocation;
-            const url = `https://www.google.com/maps/embed/v1/directions?key=YOUR_API_KEY&origin=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&mode=driving`;
+            // The API key is now managed via environment variables for security.
+            const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+            const url = `https://www.google.com/maps/embed/v1/directions?key=${mapsApiKey}&origin=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&mode=driving`;
             setMapUrl(url);
         }
     }, [order, currentLocation, type]);
 
     const handleConfirmArrival = async () => {
         if (!order) return;
-
-        let targetStatus: Order['status'];
-        let successMessage: string;
-        let successDescription: string;
-        let canUpdate = false;
-
-        if (type === 'pickup') {
-            targetStatus = 'picked-up';
-            successMessage = "Pickup Confirmed";
-            successDescription = "Order has been marked as picked up.";
-            canUpdate = order.status === 'arrived-at-store';
-        } else {
-            targetStatus = 'arrived';
-            successMessage = "Arrived at Location";
-            successDescription = "You have arrived at the customer's location.";
-            canUpdate = order.status === 'out-for-delivery';
-        }
         
-        const isReadyForPickup = type === 'pickup' && order.status === 'arrived-at-store';
         const isReadyForDropoff = type === 'dropoff' && order.status === 'out-for-delivery';
 
-        if (isReadyForPickup) {
-            targetStatus = 'picked-up';
-            successMessage = 'Pickup Confirmed';
-            successDescription = 'Order status updated to picked up.';
-            canUpdate = true;
-        } else if (isReadyForDropoff) {
-            targetStatus = 'arrived';
-            successMessage = 'Arrival Confirmed';
-            successDescription = "You've arrived at the customer's location.";
-            canUpdate = true;
-        }
-
-        if (canUpdate) {
+        if (isReadyForDropoff) {
             setIsUpdating(true);
             try {
                 const orderRef = doc(db, "orders", order.id);
-                await updateDoc(orderRef, { status: targetStatus });
-                toast({ title: successMessage, description: successDescription, className: "bg-blue-500 text-white" });
+                await updateDoc(orderRef, { status: "arrived" });
+                toast({ title: "Arrival Confirmed", description: "You've arrived at the customer's location.", className: "bg-blue-500 text-white" });
                 router.push(`/orders/${order.id}`);
             } catch (error) {
-                console.error(`Error setting ${targetStatus}:`, error);
+                console.error(`Error setting arrived:`, error);
                 toast({ variant: "destructive", title: "Error", description: "Could not update status." });
             } finally {
                 setIsUpdating(false);
@@ -135,7 +107,7 @@ export default function NavigatePage() {
                 const orderRef = doc(db, "orders", order.id);
                 await updateDoc(orderRef, { status: 'arrived-at-store' });
                 toast({ title: "Arrived at Store", description: "You have arrived at the store.", className: "bg-blue-500 text-white" });
-                // No redirect, just update status
+                // No redirect, just update status. The listener will update the UI.
             } catch (error) {
                 console.error("Error setting arrived-at-store:", error);
                 toast({ variant: "destructive", title: "Error", description: "Could not update status." });
@@ -143,6 +115,84 @@ export default function NavigatePage() {
                 setIsUpdating(false);
             }
         }
+    };
+
+    const handlePickupFromStore = async () => {
+        if (order && order.status === 'arrived-at-store') {
+            setIsUpdating(true);
+            try {
+                const orderRef = doc(db, "orders", order.id);
+                await updateDoc(orderRef, { status: 'picked-up' });
+                toast({ title: "Pickup Confirmed", description: "Order has been marked as picked up.", className: "bg-green-500 text-white" });
+                 // No redirect, just update status. The listener will update the UI.
+            } catch (error) {
+                console.error("Error setting picked-up:", error);
+                toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+            } finally {
+                setIsUpdating(false);
+            }
+        }
+    };
+    
+    const handleOutOfDelivery = async () => {
+        if (order && order.status === "picked-up") {
+          setIsUpdating(true);
+          try {
+            const orderRef = doc(db, "orders", order.id);
+            await updateDoc(orderRef, { status: "out-for-delivery" });
+            toast({ title: "Out for Delivery", description: `Order #${order.id} is now out for delivery.`, className: "bg-blue-500 text-white" });
+            router.push(`/navigate/${order.id}?type=dropoff`);
+          } catch (error) {
+            console.error("Error setting out for delivery:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+          } finally {
+            setIsUpdating(false);
+          }
+        }
+    };
+
+    const renderBottomButton = () => {
+        if (!order) return null;
+
+        if (type === 'pickup') {
+            if (order.status === 'accepted') {
+                return (
+                    <Button onClick={handleArrivedAtStore} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Confirm Arrival at Store
+                    </Button>
+                );
+            }
+            if (order.status === 'arrived-at-store') {
+                return (
+                    <Button onClick={handlePickupFromStore} className="w-full text-base font-bold py-6 bg-green-500 hover:bg-green-600 text-white" size="lg" disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Confirm Pickup From Store
+                    </Button>
+                );
+            }
+            if (order.status === 'picked-up') {
+                return (
+                    <Button onClick={handleOutOfDelivery} className="w-full text-base font-bold py-6 bg-cyan-500 hover:bg-cyan-600 text-white" size="lg" disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-5 w-5" />}
+                        Out for Delivery
+                    </Button>
+                );
+            }
+        }
+
+        if (type === 'dropoff') {
+             if (order.status === 'out-for-delivery') {
+                return (
+                    <Button onClick={handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Confirm Arrival at Customer
+                    </Button>
+                );
+            }
+        }
+        
+        return null; // Don't show button for other statuses
     };
 
 
@@ -175,12 +225,8 @@ export default function NavigatePage() {
                 )}
             </div>
             <div className="p-4 bg-background z-10 absolute bottom-0 left-0 right-0">
-                <Button onClick={type === 'pickup' ? handleArrivedAtStore : handleConfirmArrival} className="w-full text-base font-bold py-6" size="lg" disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {type === 'pickup' ? 'Confirm Pickup From Store' : 'Confirm Arrival'}
-                </Button>
+                {renderBottomButton()}
             </div>
         </div>
     );
 }
-
