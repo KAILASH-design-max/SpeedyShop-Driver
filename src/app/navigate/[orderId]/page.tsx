@@ -63,7 +63,6 @@ export default function NavigatePage() {
                   title: "Location Error",
                   description: "Could not get current location. Please enable location services in your browser.",
                 });
-                console.error("Error getting current location:", error);
                 // Fallback or show error message
             }
         );
