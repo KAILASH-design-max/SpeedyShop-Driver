@@ -153,10 +153,10 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
         messagePayload
       );
       const threadRef = doc(db, "Customer&deliveryboy", order.id);
-      await updateDoc(threadRef, {
+      await setDoc(threadRef, {
         lastMessage: newMessage,
         lastMessageTimestamp: serverTimestamp(),
-      });
+      }, { merge: true });
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
