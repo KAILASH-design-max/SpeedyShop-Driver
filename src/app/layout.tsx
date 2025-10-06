@@ -5,6 +5,7 @@ import { ConnectionStatusBanner } from '@/components/layout/ConnectionStatusBann
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 import { DeviceStatusMonitor } from '@/components/layout/DeviceStatusMonitor';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { SplashScreen } from '@/components/layout/SplashScreen';
 
 export const metadata: Metadata = {
   title: 'Velocity Driver',
@@ -31,6 +32,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+              <SplashScreen />
               {children}
               <Toaster />
               <ConnectionStatusBanner />
