@@ -2,29 +2,19 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { ShieldX } from 'lucide-react';
 import { EarningsSummaryCard } from "@/components/earnings/EarningsSummaryCard";
 import { WeeklyEarningsChart } from "@/components/earnings/WeeklyEarningsChart";
 import { EarningsOverview } from '@/app/earnings/EarningsOverview';
 import { WalletBalanceCard } from '@/components/earnings/WalletBalanceCard';
 import { EarningsForecast } from '@/components/dashboard/EarningsForecast';
+import { EarningsHeader } from '@/components/earnings/EarningsHeader';
 
 export default function EarningsPage() {
   const router = useRouter();
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <div>
-            <h1 className="text-3xl font-bold text-primary">Earnings</h1>
-            <p className="text-muted-foreground mt-1 hidden md:block">A summary of your current and lifetime earnings.</p>
-        </div>
-        <Button variant="destructive" onClick={() => router.push('/penalties')}>
-            <ShieldX className="mr-2 h-4 w-4" />
-            View Penalties
-        </Button>
-      </div>
+      <EarningsHeader />
 
       <div>
         <EarningsOverview />
