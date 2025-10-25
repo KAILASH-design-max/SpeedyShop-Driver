@@ -1,0 +1,23 @@
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Allow users to upload to their own document folder.
+    match /deliveryDocs/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow users to upload proof of delivery for any order.
+    // In a real app, this would be locked down further to only the assigned driver.
+    match /deliveryProofs/{orderId}/{allPaths=**} {
+        allow read, write: if request.auth != null;
+    }
+
+    // Fallback rule for any other path.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
