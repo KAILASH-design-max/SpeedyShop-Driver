@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import type { Order, Profile, DeliveryRating } from "@/types";
+import type { Profile, DeliveryRating } from "@/types";
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 
 const staticStats = [
