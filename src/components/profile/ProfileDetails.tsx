@@ -85,6 +85,12 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                             <span className="text-muted-foreground flex items-center gap-2"><MapPin size={16}/>Current Address</span>
                             <span className="font-medium text-right">{addressString}</span>
                         </div>
+                        {profile.preferredZone && (
+                          <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground flex items-center gap-2"><Star size={16}/>Preferred Zone</span>
+                              <span className="font-medium text-right">{profile.preferredZone}</span>
+                          </div>
+                        )}
                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground flex items-center gap-2"><Bike size={16}/>Vehicle</span>
                             <span className="font-medium">{vehicleString}</span>
