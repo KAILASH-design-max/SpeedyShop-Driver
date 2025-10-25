@@ -32,7 +32,7 @@ const ensureChannelExists = async () => {
             const messagesRef = collection(db, `announcements/${ANNOUNCEMENT_CHANNEL_ID}/messages`);
             await addDoc(messagesRef, {
                 senderId: "system",
-                senderName: "Velocity Support",
+                senderName: "SpeedyDelivery Support",
                 message: "Welcome to the Community Announcements channel! Important updates and tips will be posted here.",
                 timestamp: serverTimestamp(),
             });
@@ -87,7 +87,7 @@ export function Announcements() {
                 Announcements
             </CardTitle>
             <CardDescription>
-                Updates from the Velocity team.
+                Updates from the SpeedyDelivery team.
             </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow p-4">

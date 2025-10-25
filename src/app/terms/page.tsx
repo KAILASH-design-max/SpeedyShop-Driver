@@ -29,7 +29,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-2">1. Introduction</h2>
             <p>
-              Welcome to Velocity Driver! These terms and conditions outline the rules and regulations for the use of our application and services. By accessing this app, we assume you accept these terms and conditions. Do not continue to use Velocity Driver if you do not agree to all of the terms and conditions stated on this page.
+              Welcome to SpeedyDelivery! These terms and conditions outline the rules and regulations for the use of our application and services. By accessing this app, we assume you accept these terms and conditions. Do not continue to use SpeedyDelivery if you do not agree to all of the terms and conditions stated on this page.
             </p>
           </section>
           <section>
@@ -41,7 +41,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-2">3. Deliveries</h2>
             <p>
-              As a delivery partner, you agree to complete deliveries in a safe, timely, and professional manner. You are responsible for maintaining your vehicle in good working condition and complying with all local traffic laws. Velocity Driver is a platform that connects you with delivery opportunities and is not responsible for your actions while performing deliveries.
+              As a delivery partner, you agree to complete deliveries in a safe, timely, and professional manner. You are responsible for maintaining your vehicle in good working condition and complying with all local traffic laws. SpeedyDelivery is a platform that connects you with delivery opportunities and is not responsible for your actions while performing deliveries.
             </p>
           </section>
            <section>
@@ -59,7 +59,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-2">6. Limitation of Liability</h2>
             <p>
-              In no event shall Velocity Driver, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.
+              In no event shall SpeedyDelivery, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.
             </p>
           </section>
         </CardContent>

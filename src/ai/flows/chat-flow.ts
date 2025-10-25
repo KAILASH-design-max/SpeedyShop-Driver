@@ -5,7 +5,7 @@
  * @fileOverview A customer support chat AI agent.
  *
  * This file defines a Genkit flow for a conversational AI that acts as a
- * customer support agent for the "Velocity Driver" application.
+ * customer support agent for the "SpeedyDelivery" application.
  *
  * - chat - A function that takes the chat history and a new message and returns an AI-generated response.
  * - ChatHistory - The type representing a single message in the chat history.
@@ -36,7 +36,7 @@ const chatFlow = ai.defineFlow(
     outputSchema: z.object({ response: z.string() }),
   },
   async ({ history, message, orderId }) => {
-    const prompt = `You are a friendly and helpful customer support agent for a delivery driver app called "Velocity Driver".
+    const prompt = `You are a friendly and helpful customer support agent for a delivery driver app called "SpeedyDelivery".
 
     Your role is to assist drivers with their questions and concerns. Keep your responses concise and to the point.
     

@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -9,7 +10,7 @@ import { SplashScreen } from '@/components/layout/SplashScreen';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'Velocity Driver',
+  title: 'SpeedyDelivery Driver',
   description: 'Quick Commerce Delivery Partner App',
 };
 

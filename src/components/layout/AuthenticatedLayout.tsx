@@ -148,7 +148,7 @@ export default function AuthenticatedLayout({
           <Link href="/dashboard" className="flex items-center gap-2">
             <Truck className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
-              Velocity
+              SpeedyDelivery
             </h1>
           </Link>
         </SidebarHeader>
