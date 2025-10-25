@@ -62,6 +62,7 @@ export interface DocumentMetadata {
   fileName: string;
   url: string;
   uploadedAt?: any; // Should be Firestore ServerTimestamp on write
+  expiryDate?: string; // YYYY-MM-DD format
 }
 
 export type ProfileDocuments = {

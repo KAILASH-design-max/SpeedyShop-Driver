@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Edit, User, FileText, Banknote, ShieldCheck, Download, MapPin, Bike, Crown, Star } from "lucide-react";
+import { Edit, User, FileText, Banknote, ShieldCheck, Download, MapPin, Bike, Crown, Star, AlertTriangle } from "lucide-react";
 import type { Profile } from "@/types";
 import { cn } from "@/lib/utils";
 import { ProfileForm } from "./ProfileForm";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { app } from "@/lib/firebase";
+import { parseISO, differenceInDays } from "date-fns";
 
 interface ProfileDetailsProps {
     profile: Profile;
@@ -45,6 +46,19 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
     const vehicleString = `${profile.vehicleType.charAt(0).toUpperCase() + profile.vehicleType.slice(1)} - ${profile.vehicleRegistrationNumber}`;
     const bankAccountNumberCensored = profile.bankDetails?.accountNumber ? `********${profile.bankDetails.accountNumber.slice(-4)}` : 'N/A';
     const addressString = profile.address ? `${profile.address.street}, ${profile.address.city}` : '456 Delivery Ave, Bangalore';
+
+    const licenseExpiryDate = profile.documents?.driverLicense?.expiryDate;
+    let licenseExpiryInfo = null;
+    if (licenseExpiryDate) {
+        const daysUntilExpiry = differenceInDays(parseISO(licenseExpiryDate), new Date());
+        if (daysUntilExpiry <= 30) {
+            licenseExpiryInfo = {
+                text: daysUntilExpiry <= 0 ? `Expired` : `Expires in ${daysUntilExpiry} days`,
+                isWarning: true,
+            };
+        }
+    }
+
 
     // Placeholder for gamification level
     const level = "Gold"; 
@@ -95,6 +109,18 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                             <span className="text-muted-foreground flex items-center gap-2"><Bike size={16}/>Vehicle</span>
                             <span className="font-medium">{vehicleString}</span>
                         </div>
+                        {profile.drivingLicenseNumber && (
+                           <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground flex items-center gap-2"><FileText size={16}/>License Number</span>
+                              <span className="font-medium text-right">{profile.drivingLicenseNumber}</span>
+                          </div>
+                        )}
+                        {licenseExpiryInfo && (
+                            <div className="flex justify-between items-center p-2 bg-destructive/10 rounded-md">
+                              <span className="text-destructive flex items-center gap-2 font-semibold"><AlertTriangle size={16}/>License Status</span>
+                              <Badge variant="destructive">{licenseExpiryInfo.text}</Badge>
+                          </div>
+                        )}
                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground flex items-center gap-2"><ShieldCheck size={16}/>Gov ID Status</span>
                              <Badge variant={getVerificationBadgeVariant(profile.verificationStatus)} className="capitalize">

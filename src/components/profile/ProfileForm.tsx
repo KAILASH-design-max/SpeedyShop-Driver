@@ -30,6 +30,7 @@ const profileFormSchema = z.object({
   vehicleType: z.enum(["bike", "scooter", "car"]),
   vehicleRegistrationNumber: z.string().min(2, { message: "Vehicle registration number is required." }),
   drivingLicenseNumber: z.string().optional(),
+  'documents.driverLicense.expiryDate': z.string().optional(),
 
   bankDetails: z.object({
     accountHolderName: z.string().min(2, "Account holder name is required"),
@@ -61,6 +62,7 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
       vehicleType: profile.vehicleType || "bike",
       vehicleRegistrationNumber: profile.vehicleRegistrationNumber || "",
       drivingLicenseNumber: profile.drivingLicenseNumber || "",
+      'documents.driverLicense.expiryDate': profile.documents?.driverLicense?.expiryDate || "",
       bankDetails: {
         accountHolderName: profile.bankDetails?.accountHolderName || "",
         accountNumber: profile.bankDetails?.accountNumber || "",
@@ -72,7 +74,20 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
 
   async function onSubmit(values: z.infer<typeof profileFormSchema>) {
     setIsSaving(true);
-    await onUpdate(values);
+    // The form gives us a flat structure for the expiry date, so we need to nest it correctly for Firestore.
+    const { 'documents.driverLicense.expiryDate': expiryDate, ...restValues } = values;
+    const updateData = {
+        ...restValues,
+        documents: {
+            ...profile.documents,
+            driverLicense: {
+                ...profile.documents?.driverLicense,
+                expiryDate: expiryDate,
+            },
+        },
+    };
+
+    await onUpdate(updateData);
     setIsSaving(false);
     setOpen(false);
   }
@@ -178,6 +193,19 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
                     <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>Driving License No.</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter your driving license number" {...field} disabled={isSaving}/>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="documents.driverLicense.expiryDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center"><Car className="mr-2 h-4 w-4 text-muted-foreground"/>License Expiry Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} disabled={isSaving}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

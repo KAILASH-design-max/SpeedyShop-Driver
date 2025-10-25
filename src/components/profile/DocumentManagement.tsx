@@ -14,6 +14,7 @@ import { storage } from "@/lib/firebase";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, UploadTaskSnapshot } from "firebase/storage";
 import { Badge } from "@/components/ui/badge";
 import imageCompression from 'browser-image-compression';
+import { differenceInDays, parseISO } from 'date-fns';
 
 type DocumentTypeKey = keyof ProfileDocuments;
 
@@ -29,6 +30,16 @@ interface DocumentItemProps {
 const getStatusInfo = (docKey: DocumentTypeKey, document?: DocumentMetadata) => {
     if (!document?.url) {
         return { text: 'Missing', variant: 'destructive', actionText: 'Upload', hasAction: true, hasView: false };
+    }
+
+    if (document.expiryDate) {
+        const daysUntilExpiry = differenceInDays(parseISO(document.expiryDate), new Date());
+        if (daysUntilExpiry <= 0) {
+            return { text: 'Expired', variant: 'destructive', actionText: 'Update', hasAction: true, hasView: true };
+        }
+        if (daysUntilExpiry <= 30) {
+            return { text: `Expires in ${daysUntilExpiry} days`, variant: 'secondary', actionText: 'Update', hasAction: true, hasView: true };
+        }
     }
     
     // This is a placeholder for real verification logic which would come from the backend.
@@ -95,12 +106,21 @@ function DocumentItem({ docName, docKey, document, profileUid, onUpdate }: Docum
       async () => { // Complete
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          const documentData: DocumentMetadata = {
+          const documentData: Partial<DocumentMetadata> = {
             fileName: fileToUpload.name,
             url: downloadURL,
             uploadedAt: true, 
           };
-          const updatePayload = { documents: { [docKey]: documentData } };
+          
+          const updatePayload = {
+            documents: {
+                [docKey]: {
+                    ...document, // Preserve existing data like expiryDate
+                    ...documentData,
+                }
+            }
+          };
+
           await onUpdate(updatePayload);
           toast({ title: "Document Uploaded", description: `${docName} has been successfully uploaded.`, className: "bg-green-500 text-white" });
         } catch (error) {
