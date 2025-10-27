@@ -197,7 +197,7 @@ export interface ChatMessage {
     id?: string;
     message: string;
     senderId: string;
-    senderName?: string; // Name of the sender (e.g., "Admin", "Velocity Support")
+    senderName?: string; // Name of the sender (e.g., "Admin", "SpeedyDelivery Support")
     senderRole: 'user' | 'agent' | 'driver' | 'system';
     timestamp: any;
 }
@@ -261,3 +261,5 @@ export interface Transaction {
   type: 'Delivery' | 'Tip' | 'Bonus' | 'Adjustment';
   amount: number;
 }
+
+    
