@@ -57,7 +57,6 @@ const baseNavItems = [
   { href: "/analytics", label: "Analytics", icon: BarChart },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/community", label: "Community", icon: Users },
-  { href: "/chat", label: "Chat", icon: MessagesSquare },
 ];
 
 const bottomNavItems = [
@@ -138,6 +137,7 @@ export default function AuthenticatedLayout({
   const navItems = [
     ...baseNavItems,
     ...(profile?.verificationStatus === 'pending' ? [{ href: "/training", label: "Training", icon: BookOpen }] : []),
+    { href: "/chat", label: "Chat", icon: MessagesSquare },
   ];
 
   return (
@@ -244,7 +244,15 @@ export default function AuthenticatedLayout({
             <div className="hidden items-center gap-4 md:flex">
               <ActiveTimeTracker />
             </div>
+            <div className="md:hidden">
+              <SidebarTrigger />
+            </div>
           </div>
+
+          <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
+              <h1 className="text-xl font-bold text-primary">SpeedyDriver</h1>
+          </div>
+
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-2">
               <ThemeToggle />
