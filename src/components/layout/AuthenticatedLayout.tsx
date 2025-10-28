@@ -48,7 +48,6 @@ import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Profile } from "@/types";
 import { AvailabilityToggle } from "../dashboard/AvailabilityToggle";
-import { NotificationBell } from "./NotificationBell";
 
 
 const baseNavItems = [
@@ -67,6 +66,7 @@ const bottomNavItems = [
 
 const mobileNavItems = [
     { href: "/dashboard", label: "Home", icon: Home },
+    { href: "/chat", label: "Chat", icon: MessagesSquare },
     { href: "/profile", label: "My Profile", icon: UserIcon },
     { href: "/settings", label: "Settings", icon: Settings },
 ]
@@ -263,7 +263,7 @@ export default function AuthenticatedLayout({
         </main>
         {/* Mobile Bottom Navigation */}
         <nav className="fixed bottom-0 left-0 right-0 z-10 border-t bg-background md:hidden">
-          <div className="grid h-16 grid-cols-3">
+          <div className="grid h-16 grid-cols-4">
             {mobileNavItems.map((item) => (
               <Link
                 key={item.label}
