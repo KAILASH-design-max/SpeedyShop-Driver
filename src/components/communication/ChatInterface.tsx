@@ -239,8 +239,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const renderThreadList = () => (
     <Card className="md:col-span-1 lg:col-span-1 h-full flex flex-col shadow-xl">
         <CardHeader>
-            <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Conversations</CardTitle>
-            <CardDescription className="hidden md:block">Your conversations with support.</CardDescription>
+            <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Support Chat</CardTitle>
+            <CardDescription className="hidden md:block">Your conversations with our AI support.</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow overflow-hidden p-2">
             <ScrollArea className="h-full">
