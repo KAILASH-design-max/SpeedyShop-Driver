@@ -241,14 +241,12 @@ export default function AuthenticatedLayout({
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
+            <div className="md:hidden">
+                <h1 className="text-xl font-bold text-primary">SpeedyDriver</h1>
+            </div>
             <div className="hidden md:flex">
               <ActiveTimeTracker />
             </div>
-            
-          </div>
-
-          <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
-              <h1 className="text-xl font-bold text-primary">SpeedyDriver</h1>
           </div>
 
           <div className="flex items-center gap-2">
