@@ -32,11 +32,11 @@ export function AvailabilityToggle({ currentStatus, onStatusChange, isLoading }:
   };
 
   const getStatusInfo = () => {
-    if (isLoading) return { text: "Updating...", icon: Loader2, color: "text-muted-foreground", animate: "animate-spin" };
+    if (isLoading) return { text: "Updating...", color: "text-muted-foreground" };
     if (isOnline) {
-      return { text: "Online", icon: Zap, color: "text-green-400", animate: "" };
+      return { text: "Online", color: "text-green-400" };
     }
-    return { text: "Offline", icon: Zap, color: "text-red-500", animate: "" };
+    return { text: "Offline", color: "text-red-500" };
   }
 
   const statusInfo = getStatusInfo();
@@ -54,7 +54,6 @@ export function AvailabilityToggle({ currentStatus, onStatusChange, isLoading }:
                     aria-label={isOnline ? "Go Offline" : "Go Online"}
                     disabled={isLoading}
                 />
-                <statusInfo.icon className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-4 text-white pointer-events-none", isOnline ? 'left-[22px]' : 'left-[6px]', statusInfo.animate, isLoading && 'text-muted-foreground')} />
               </div>
               <Label htmlFor="online-toggle" className={cn("text-lg font-medium", statusInfo.color)}>
                  {statusInfo.text}
