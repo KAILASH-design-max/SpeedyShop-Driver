@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import type { Order, DeliveryPartnerFeedback, Profile } from "@/types";
+import type { Order, DeliveryPartnerFeedback, Profile, Penalty } from "@/types";
 import { OrderDetailsDisplay } from "@/components/orders/OrderDetailsDisplay";
 import { DeliveryConfirmation } from "@/components/orders/DeliveryConfirmation";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Navigation, PackageCheck, MessageSquare, Loader2, CheckCircle, AlertTriangle, ShieldX, Store, Truck, MapPin, Map, LayoutDashboard, LocateFixed } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db, auth } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc, arrayUnion } from "firebase/firestore";
 import { mapFirestoreDocToOrder } from "@/lib/orderUtils";
 import {
   AlertDialog,
@@ -72,7 +72,7 @@ export default function OrderPage() {
     if (orderId) {
         try {
             const cachedOrder = localStorage.getItem(`order-cache-${orderId}`);
-            if (cachedOrder && cachedOrder !== "") {
+            if (cachedOrder && cachedOrder !== "undefined") {
                 setOrder(JSON.parse(cachedOrder));
             }
         } catch (error) {
@@ -231,7 +231,7 @@ export default function OrderPage() {
   };
 
   const handleRedispatch = async () => {
-    if (!order) return;
+    if (!order || !currentUser) return;
     if (cancellationReason.trim() === "") {
       toast({
         variant: "destructive",
@@ -245,13 +245,26 @@ export default function OrderPage() {
       const orderRef = doc(db, "orders", order.id);
       await updateDoc(orderRef, {
         deliveryPartnerId: null,
-        status: "Placed", // Or a new status like 'redispatched'
+        status: "Placed", 
         cancellationReason: cancellationReason,
-        lastStatus: order.status, // Keep track of where it was cancelled from
+        lastStatus: order.status,
       });
+
+      // Add a penalty to the driver's profile
+      const driverRef = doc(db, "users", currentUser.uid);
+      const newPenalty: Penalty = {
+        id: `pen-${order.id}-${Date.now()}`,
+        reason: `Order released: ${cancellationReason}`,
+        date: serverTimestamp(),
+        status: 'Active',
+      };
+      await updateDoc(driverRef, {
+        penalties: arrayUnion(newPenalty),
+      });
+
       toast({
-        title: "Order Released",
-        description: "The order has been returned to the pool for other drivers.",
+        title: "Order Released & Penalty Logged",
+        description: "The order has been returned to the pool. A penalty has been recorded on your profile.",
       });
       router.push("/dashboard");
     } catch (error) {

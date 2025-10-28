@@ -261,5 +261,3 @@ export interface Transaction {
   type: 'Delivery' | 'Tip' | 'Bonus' | 'Adjustment';
   amount: number;
 }
-
-    
