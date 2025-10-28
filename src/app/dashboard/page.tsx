@@ -14,6 +14,7 @@ import { CustomerChatDialog } from "@/components/communication/CustomerChatDialo
 import { AvailableOrderCard } from "@/components/dashboard/AvailableOrderCard";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { createNotification } from "@/lib/notifications";
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
+  const notifiedOrderIds = useRef(new Set<string>());
   
   const { toast } = useToast();
 
@@ -58,6 +60,19 @@ export default function DashboardPage() {
         );
 
         setAvailableOrders(fetchedAvailableOrders);
+
+        // --- Create notifications for new orders ---
+        fetchedAvailableOrders.forEach(order => {
+            if (!notifiedOrderIds.current.has(order.id)) {
+                createNotification(currentUser.uid, {
+                    title: 'New Order Available',
+                    message: `A new order worth ₹${order.estimatedEarnings.toFixed(2)} is available for you to accept.`,
+                    link: `/orders/${order.id}`,
+                });
+                notifiedOrderIds.current.add(order.id);
+            }
+        });
+
         setIsLoading(false);
 
     }, (error) => {

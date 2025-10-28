@@ -23,6 +23,8 @@ import type { User } from "firebase/auth";
 import type { Notification } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import Link from 'next/link';
+
 
 export function NotificationBell() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -102,6 +104,26 @@ export function NotificationBell() {
         console.error("Error marking all notifications as read:", error);
     }
   }
+  
+  const NotificationLink = ({ notification, children }: { notification: Notification, children: React.ReactNode }) => {
+    const content = (
+      <div
+        className={cn(
+            "p-3 rounded-md transition-colors hover:bg-muted/50",
+            !notification.read && "bg-primary/10"
+        )}
+        onClick={() => !notification.read && handleMarkAsRead(notification.id)}
+        >
+        {children}
+      </div>
+    );
+  
+    if (notification.link) {
+      return <Link href={notification.link}>{content}</Link>;
+    }
+  
+    return content;
+  };
 
   return (
     <Popover>
@@ -139,14 +161,7 @@ export function NotificationBell() {
             ) : (
               <div className="space-y-1">
                 {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={cn(
-                        "p-3 rounded-md transition-colors hover:bg-muted/50",
-                        !notification.read && "bg-primary/10"
-                    )}
-                    onClick={() => !notification.read && handleMarkAsRead(notification.id)}
-                    >
+                  <NotificationLink key={notification.id} notification={notification}>
                     <div className="flex items-start gap-3">
                         {!notification.read && (
                             <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
@@ -159,7 +174,7 @@ export function NotificationBell() {
                             </p>
                         </div>
                     </div>
-                  </div>
+                  </NotificationLink>
                 ))}
               </div>
             )}
