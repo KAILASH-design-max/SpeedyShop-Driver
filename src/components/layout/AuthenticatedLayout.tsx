@@ -248,12 +248,10 @@ export default function AuthenticatedLayout({
             </div>
             <div className="hidden items-center gap-4 md:flex">
               <ActiveTimeTracker />
-              <NotificationBell />
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-              <NotificationBell />
             </div>
             <div className="hidden md:flex">
               <ThemeToggle />
