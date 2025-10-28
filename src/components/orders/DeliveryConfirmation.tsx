@@ -48,7 +48,7 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
     stopCamera(); 
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -234,7 +234,7 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
       </CardHeader>
       <CardContent className="space-y-6">
         
-        {hasCameraPermission === null && (
+        {hasCameraPermission === null && !photoPreview && (
           <div className="flex justify-center items-center h-24">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
             <p className="ml-2">Accessing camera...</p>
@@ -254,11 +254,11 @@ export function DeliveryConfirmation({ order, onConfirm, isUpdating }: DeliveryC
         {photoPreview && (
             <div className="mt-4">
                 <p className="text-sm font-medium mb-2">Photo Preview:</p>
-                <img src={photoPreview} alt="Delivery proof" className="rounded-md max-h-48 w-auto object-contain border" />
+                <img src={photoPreview} alt="Delivery proof" className="rounded-md max-h-48 w-auto object-contain border" data-ai-hint="delivery package" />
             </div>
         )}
 
-        {hasCameraPermission === false && (
+        {hasCameraPermission === false && !photoPreview && (
              <Alert>
                 <VideoOff className="h-4 w-4" />
                 <AlertTitle>Camera Not Available</AlertTitle>

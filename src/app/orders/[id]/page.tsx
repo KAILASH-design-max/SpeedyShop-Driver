@@ -72,7 +72,7 @@ export default function OrderPage() {
     if (orderId) {
         try {
             const cachedOrder = localStorage.getItem(`order-cache-${orderId}`);
-            if (cachedOrder) {
+            if (cachedOrder && cachedOrder !== "") {
                 setOrder(JSON.parse(cachedOrder));
             }
         } catch (error) {
@@ -314,7 +314,7 @@ export default function OrderPage() {
 
 
   return (
-    <div className="space-y-6 pb-6 px-1">
+    <div className="space-y-6 p-6">
       <OrderDetailsDisplay order={order} deliveryPartner={deliveryPartner} />
       
 
