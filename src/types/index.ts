@@ -210,7 +210,6 @@ export interface SupportChatSession {
   lastUpdated: any; // Firestore Timestamp
   status: 'active' | 'waiting' | 'resolved';
   lastMessage?: string;
-  lastMessageTimestamp?: any; // To align with ChatThread
   orderId?: string; 
 }
 
