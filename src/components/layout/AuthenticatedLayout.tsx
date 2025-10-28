@@ -241,12 +241,10 @@ export default function AuthenticatedLayout({
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
-            <div className="hidden items-center gap-4 md:flex">
+            <div className="hidden md:flex">
               <ActiveTimeTracker />
             </div>
-            <div className="md:hidden">
-              <SidebarTrigger />
-            </div>
+            
           </div>
 
           <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
@@ -254,9 +252,7 @@ export default function AuthenticatedLayout({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2">
-              <ThemeToggle />
-            </div>
+            
              {profile && (
               <Link href="/profile">
                   <Avatar className="h-9 w-9 border-2 border-transparent hover:border-primary transition-colors">
