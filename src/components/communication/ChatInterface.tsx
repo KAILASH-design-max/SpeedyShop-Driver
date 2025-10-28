@@ -12,10 +12,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { PredefinedMessages } from "./PredefinedMessages";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
+import { chat, type ChatHistory } from "@/ai/flows/chat-flow";
 
 type UnifiedChatThread = SupportChatSession & { type: 'support' };
 
@@ -59,11 +60,35 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     );
 
     const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, async (snapshot) => {
-        const supportThreads: UnifiedChatThread[] = snapshot.docs.map(doc => ({
+        let supportThreads: UnifiedChatThread[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...(doc.data() as SupportChatSession),
             type: 'support'
         }));
+
+        if (snapshot.empty && preselectedThreadId) {
+             const newThread: UnifiedChatThread = {
+                id: preselectedThreadId,
+                orderId: preselectedThreadId,
+                userId: currentUser.uid,
+                type: 'support',
+                createdAt: serverTimestamp(),
+                lastUpdated: serverTimestamp(),
+                status: 'active',
+                lastMessage: 'New chat about order started.',
+             };
+            const threadRef = doc(db, 'supportMessages', preselectedThreadId);
+            await setDoc(threadRef, {
+                userId: currentUser.uid,
+                orderId: preselectedThreadId,
+                createdAt: serverTimestamp(),
+                lastUpdated: serverTimestamp(),
+                status: 'active',
+                lastMessage: 'New chat about order started.'
+            });
+            supportThreads = [newThread];
+        }
+
 
         supportThreads.sort((a, b) => {
             const tsA = a.lastUpdated;
@@ -129,37 +154,59 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   }, [messages]);
 
 
-  const handleSendMessage = async () => {
+ const handleSendMessage = async () => {
     if (newMessage.trim() === "" || !selectedThread || !currentUser) return;
     setIsSending(true);
 
     const collectionName = `supportMessages/${selectedThread.id}/messages`;
     const threadRef = doc(db, 'supportMessages', selectedThread.id);
     
-    const messagePayload: Omit<CommunicationMessage, 'id'> = {
+    const userMessagePayload: Omit<CommunicationMessage, 'id'> = {
       senderId: currentUser.uid,
       message: newMessage,
       senderRole: 'driver',
       timestamp: serverTimestamp(),
     };
     
+    const currentMessage = newMessage;
     setNewMessage("");
 
     try {
-      await addDoc(collection(db, collectionName), messagePayload);
-      
-      const updateData: {[key: string]: any} = {
-        lastMessage: newMessage,
+      await addDoc(collection(db, collectionName), userMessagePayload);
+      await updateDoc(threadRef, {
+        lastMessage: currentMessage,
         lastUpdated: serverTimestamp(),
-        status: 'waiting', // Driver replied, needs agent attention
+        status: 'waiting', 
+      });
+
+      // Prepare history for AI
+      const chatHistoryForAI: ChatHistory[] = messages.map(msg => ({
+          role: msg.senderId === currentUser.uid ? 'user' : 'model',
+          message: msg.message,
+      }));
+
+      // Call AI flow
+      const aiResponse = await chat(chatHistoryForAI, currentMessage, selectedThread.orderId);
+
+      // Save AI response to Firestore
+       const aiMessagePayload: Omit<CommunicationMessage, 'id'> = {
+        senderId: 'ai_support_agent',
+        message: aiResponse,
+        senderRole: 'agent',
+        timestamp: serverTimestamp(),
       };
-      
-      await updateDoc(threadRef, updateData);
+      await addDoc(collection(db, collectionName), aiMessagePayload);
+      await updateDoc(threadRef, {
+        lastMessage: aiResponse,
+        lastUpdated: serverTimestamp(),
+        status: 'active',
+      });
+
 
     } catch (error) {
       console.error("Error sending message:", error);
       toast({ variant: "destructive", title: "Error", description: "Could not send message." });
-      setNewMessage(messagePayload.message); // Restore message on error
+      setNewMessage(currentMessage); // Restore message on error
     } finally {
         setIsSending(false);
     }
