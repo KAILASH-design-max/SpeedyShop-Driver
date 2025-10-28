@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { ActiveTimeTracker } from "../dashboard/ActiveTimeTracker";
 
 
 const mainNavItems = [
@@ -162,6 +163,7 @@ export function SettingsPage() {
                     onStatusChange={handleAvailabilityChange}
                     isLoading={isAvailabilityLoading}
                 />
+                <ActiveTimeTracker />
             </div>
              <Separator />
 
