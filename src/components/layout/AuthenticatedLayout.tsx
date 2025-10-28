@@ -47,7 +47,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Profile } from "@/types";
-import { AvailabilityToggle } from "../dashboard/AvailabilityToggle";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 
 const baseNavItems = [
@@ -246,12 +246,18 @@ export default function AuthenticatedLayout({
               <ActiveTimeTracker />
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <div className="md:hidden flex items-center gap-2">
             </div>
-            <div className="hidden md:flex">
-              <ThemeToggle />
-            </div>
+            <ThemeToggle />
+             {profile && (
+              <Link href="/profile">
+                  <Avatar className="h-9 w-9 border-2 border-transparent hover:border-primary transition-colors">
+                      <AvatarImage src={profile.profilePictureUrl || undefined} alt={profile.name} />
+                      <AvatarFallback>{profile.name?.substring(0,2).toUpperCase() || 'P'}</AvatarFallback>
+                  </Avatar>
+              </Link>
+            )}
           </div>
         </header>
         <main className="flex-1 overflow-auto pb-20 md:pb-0">
