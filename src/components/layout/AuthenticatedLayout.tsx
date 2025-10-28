@@ -246,9 +246,9 @@ export default function AuthenticatedLayout({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="md:hidden flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
+              <ThemeToggle />
             </div>
-            <ThemeToggle />
              {profile && (
               <Link href="/profile">
                   <Avatar className="h-9 w-9 border-2 border-transparent hover:border-primary transition-colors">
