@@ -141,6 +141,7 @@ export interface Profile {
 
   // Performance metrics (populated by another system, read-only here)
   penalties?: Penalty[];
+  customQuickReplies?: string[];
 }
 
 

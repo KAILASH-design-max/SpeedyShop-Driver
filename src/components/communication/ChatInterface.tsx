@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { CommunicationMessage, SupportChatSession } from "@/types";
+import type { CommunicationMessage, SupportChatSession, Profile } from "@/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [selectedThread, setSelectedThread] = useState<UnifiedChatThread | null>(null);
   const [chatThreads, setChatThreads] = useState<UnifiedChatThread[]>([]);
   const [messages, setMessages] = useState<CommunicationMessage[]>([]);
@@ -43,6 +44,21 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     });
     return () => unsubscribe();
   }, []);
+
+  // Fetch user profile to get custom quick replies
+   useEffect(() => {
+    if (!currentUser) {
+        setProfile(null);
+        return;
+    };
+    const profileRef = doc(db, 'users', currentUser.uid);
+    const unsubscribe = onSnapshot(profileRef, (doc) => {
+        if(doc.exists()) {
+            setProfile(doc.data() as Profile);
+        }
+    });
+    return () => unsubscribe();
+   }, [currentUser]);
 
   // Fetch only support threads
   useEffect(() => {
@@ -369,7 +385,10 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                     {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-5 w-5" />}
                 </Button>
                 </div>
-                 <PredefinedMessages onSelectMessage={handleUsePredefinedMessage}/>
+                 <PredefinedMessages 
+                    customMessages={profile?.customQuickReplies}
+                    onSelectMessage={handleUsePredefinedMessage}
+                 />
             </div>
             </CardFooter>
       </Card>

@@ -44,6 +44,7 @@ import { Label } from "@/components/ui/label";
 import { ActiveTimeTracker } from "../dashboard/ActiveTimeTracker";
 import { ProfileForm } from "../profile/ProfileForm";
 import { AppPermissions } from "./AppPermissions";
+import { ManageQuickReplies } from "./ManageQuickReplies";
 
 
 const mainNavItems = [
@@ -215,6 +216,8 @@ export function SettingsPage() {
                     </div>
                 </ProfileForm>
             )}
+
+            {profile && <ManageQuickReplies profile={profile} onUpdate={handleProfileUpdate} />}
 
 
              {supportNavItems.map((item) => (
