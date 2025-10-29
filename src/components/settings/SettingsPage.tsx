@@ -15,7 +15,8 @@ import {
   Users,
   MessagesSquare,
   HelpCircle,
-  ChevronRight
+  ChevronRight,
+  Banknote
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase";
@@ -41,6 +42,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { ActiveTimeTracker } from "../dashboard/ActiveTimeTracker";
+import { ProfileForm } from "../profile/ProfileForm";
 
 
 const mainNavItems = [
@@ -99,6 +101,22 @@ export function SettingsPage() {
       }
     }, [currentUser]);
 
+    const handleProfileUpdate = async (updatedData: Partial<Profile>) => {
+        if (!currentUser) return;
+        const profileRef = doc(db, "users", currentUser.uid);
+        try {
+            await updateDoc(profileRef, updatedData);
+            toast({
+                title: "Profile Updated",
+                description: "Your changes have been saved.",
+                className: "bg-green-500 text-white",
+            });
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            toast({ variant: "destructive", title: "Update Failed", description: "Could not save your changes." });
+        }
+    };
+
     const handleAvailabilityChange = async (newStatus: Required<Profile['availabilityStatus']>) => {
         if (!currentUser) {
           toast({ variant: "destructive", title: "Error", description: "Not logged in." });
@@ -142,16 +160,19 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
         {profile && (
-            <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                    <AvatarImage src={profile.profilePictureUrl} alt={profile.name} />
-                    <AvatarFallback>{profile.name?.substring(0, 2).toUpperCase() || 'P'}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <p className="text-xl font-bold">{profile.name}</p>
-                    <p className="text-muted-foreground">{profile.email}</p>
+             <Link href="/profile" className="block">
+                <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted active:bg-secondary">
+                    <Avatar className="h-16 w-16">
+                        <AvatarImage src={profile.profilePictureUrl} alt={profile.name} />
+                        <AvatarFallback>{profile.name?.substring(0, 2).toUpperCase() || 'P'}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-grow">
+                        <p className="text-xl font-bold">{profile.name}</p>
+                        <p className="text-muted-foreground">View your profile</p>
+                    </div>
+                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>
-            </div>
+            </Link>
         )}
         
         <Separator />
@@ -163,7 +184,9 @@ export function SettingsPage() {
                     onStatusChange={handleAvailabilityChange}
                     isLoading={isAvailabilityLoading}
                 />
-                <ActiveTimeTracker />
+                <div className="md:hidden">
+                    <ActiveTimeTracker />
+                </div>
             </div>
              <Separator />
 
@@ -179,6 +202,19 @@ export function SettingsPage() {
                 </Link>
             ))}
              <Separator />
+             
+            {profile && (
+                 <ProfileForm profile={profile} onUpdate={handleProfileUpdate}>
+                    <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary cursor-pointer">
+                        <div className="flex items-center gap-3">
+                            <Banknote className="h-5 w-5 text-muted-foreground" />
+                            <span className="font-medium">Payment Settings</span>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                </ProfileForm>
+            )}
+
 
              {supportNavItems.map((item) => (
                 <Link href={item.href} key={item.labelKey} className="block">
