@@ -91,14 +91,6 @@ export interface DeliveryRating {
   tip?: number;
 }
 
-export interface MaintenanceLogEntry {
-    id: string;
-    serviceType: string;
-    date: any; // Firestore Timestamp
-    cost: number;
-    notes?: string;
-}
-
 export interface Penalty {
   id: string;
   reason: string;
@@ -148,7 +140,6 @@ export interface Profile {
   updatedAt?: string; // ISO string for last update
 
   // Performance metrics (populated by another system, read-only here)
-  maintenanceLog?: MaintenanceLogEntry[];
   penalties?: Penalty[];
 }
 

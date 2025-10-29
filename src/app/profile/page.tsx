@@ -12,7 +12,6 @@ import { Loader2, Star, ShieldX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { User } from "firebase/auth";
 import { Button } from "@/components/ui/button";
-import { VehicleMaintenanceLog } from "@/components/profile/VehicleMaintenanceLog";
 import { DocumentManagement } from "@/components/profile/DocumentManagement";
 
 export default function ProfilePage() {
@@ -138,7 +137,6 @@ export default function ProfilePage() {
     <div className="p-6 space-y-6">
         <ProfileDetails profile={profile} onUpdate={handleProfileUpdate} />
         <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
-        <VehicleMaintenanceLog profile={profile} onUpdate={handleProfileUpdate} />
     </div>
   );
 }
