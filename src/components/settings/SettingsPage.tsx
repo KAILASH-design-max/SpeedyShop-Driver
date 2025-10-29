@@ -43,6 +43,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { ActiveTimeTracker } from "../dashboard/ActiveTimeTracker";
 import { ProfileForm } from "../profile/ProfileForm";
+import { AppPermissions } from "./AppPermissions";
 
 
 const mainNavItems = [
@@ -227,6 +228,8 @@ export function SettingsPage() {
                     </div>
                 </Link>
             ))}
+             
+             <AppPermissions />
 
              <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
                 <div className="flex items-center gap-3">
