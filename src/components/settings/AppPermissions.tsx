@@ -10,9 +10,9 @@ import { useAppPermissions, type PermissionState } from "@/hooks/use-permissions
 import { cn } from "@/lib/utils";
 
 const permissionItems = [
-    { name: "Location", key: "location", icon: MapPin, description: "Required for navigation and order assignment." },
-    { name: "Camera", key: "camera", icon: Camera, description: "Needed for photo proof of delivery." },
-    { name: "Notifications", key: "notifications", icon: Bell, description: "For new order alerts and important updates." },
+    { name: "Location", key: "location", icon: MapPin, description: "Required for navigation and to receive relevant, nearby order alerts." },
+    { name: "Camera", key: "camera", icon: Camera, description: "Needed for photo proof of delivery and document uploads." },
+    { name: "Notifications", key: "notifications", icon: Bell, description: "For new order alerts and other important updates." },
 ] as const;
 
 const getStatusInfo = (status: PermissionState) => {
@@ -28,8 +28,6 @@ const getStatusInfo = (status: PermissionState) => {
 }
 
 const openAppSettings = () => {
-    // This is a best-effort attempt. It won't work in all browsers/OSes.
-    // The primary goal is to guide the user.
     alert("To change app permissions, please go to your browser's settings for this site. This is usually found by clicking the lock icon next to the URL.");
 }
 
@@ -47,8 +45,8 @@ export function AppPermissions() {
             </div>
             <div className="pl-3 pr-3 pb-3 space-y-2">
                 {permissionItems.map(item => {
-                    const status = permissions[item.key];
-                    const statusInfo = getStatusInfo(status);
+                    const permission = permissions[item.key];
+                    const statusInfo = getStatusInfo(permission.status);
                     return (
                         <div key={item.key} className="p-3 border rounded-lg flex items-center justify-between bg-muted/20">
                             <div className="flex items-center gap-3">
@@ -63,9 +61,14 @@ export function AppPermissions() {
                                     <statusInfo.icon className="mr-1.5 h-3 w-3"/>
                                     {statusInfo.text}
                                 </Badge>
-                                {status === 'denied' && (
+                                {permission.status === 'denied' && (
                                     <Button size="sm" variant="outline" onClick={openAppSettings}>
                                         Settings
+                                    </Button>
+                                )}
+                                 {permission.status === 'prompt' && (
+                                    <Button size="sm" variant="default" onClick={permission.request}>
+                                        Request Access
                                     </Button>
                                 )}
                             </div>
