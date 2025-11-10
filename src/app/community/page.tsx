@@ -10,16 +10,6 @@ import { Users } from "lucide-react";
 export default function CommunityPage() {
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-primary flex items-center">
-            <Users className="mr-3 h-8 w-8"/>
-            Community Hub
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Connect with other drivers, check leaderboards, and stay updated.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
            <CommunityChat />
