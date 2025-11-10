@@ -218,17 +218,17 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className="px-4">
+      <div className="md:px-4">
         <div className="space-y-6">
             {/* Active Orders Section */}
-            <Card className="shadow-lg col-span-1 lg:col-span-3 bg-card" style={{backgroundImage: 'radial-gradient(circle at top right, hsl(var(--primary) / 0.1), transparent 40%)'}}>
-                <CardHeader>
+            <Card className="shadow-lg col-span-1 lg:col-span-3 bg-card md:rounded-xl" style={{backgroundImage: 'radial-gradient(circle at top right, hsl(var(--primary) / 0.1), transparent 40%)'}}>
+                <CardHeader className="px-4 pt-4">
                     <CardTitle className="text-2xl font-bold text-primary flex items-center">
                         <PackageCheck className="mr-3 h-7 w-7" />
                         Your Active Orders
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4">
                     {isLoadingOrders && activeOrders.length === 0 ? (
                         <div className="flex justify-center items-center p-4">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
 
-            <div className="col-span-1 lg:col-span-3">
+            <div className="col-span-1 lg:col-span-3 px-4 md:px-0">
               <EarningsForecast />
             </div>
         </div>
@@ -262,7 +262,7 @@ export default function DashboardPage() {
       <Separator />
 
       {/* Available Orders Section */}
-       <Card className="shadow-lg mx-4">
+       <Card className="shadow-lg mx-4 md:rounded-xl">
             <CardHeader>
                 <CardTitle className="text-2xl font-bold text-primary flex items-center">
                     <PackagePlus className="mr-3 h-7 w-7" />
@@ -299,3 +299,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
