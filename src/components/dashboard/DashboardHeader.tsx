@@ -42,11 +42,11 @@ export function DashboardHeader({
                 <AvatarFallback>{profile.name?.substring(0, 2).toUpperCase() || 'P'}</AvatarFallback>
             </Avatar>
         </Link>
-        <div>
+        <div className="hidden md:block">
           <h1 className="text-xl font-bold text-foreground">
             Welcome, {profile.name.split(" ")[0]}!
           </h1>
-          <div className="hidden md:flex mt-1">
+          <div className="mt-1">
              <AvailabilityToggle 
                 currentStatus={availabilityStatus}
                 onStatusChange={onStatusChange}
