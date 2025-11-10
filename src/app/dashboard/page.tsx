@@ -19,6 +19,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { EarningsForecast } from "@/components/dashboard/EarningsForecast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 export default function DashboardPage() {
@@ -28,6 +29,8 @@ export default function DashboardPage() {
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [isLoadingAvailableOrders, setIsLoadingAvailableOrders] = useState(true);
+
 
   const [customerChatOrder, setCustomerChatOrder] = useState<Order | null>(null);
   const notifiedOrderIds = useRef(new Set<string>());
@@ -44,6 +47,7 @@ export default function DashboardPage() {
         setActiveOrders([]);
         setAvailableOrders([]);
         setIsLoadingOrders(false);
+        setIsLoadingAvailableOrders(false);
         setProfile(null);
       }
     });
@@ -81,12 +85,12 @@ export default function DashboardPage() {
   // Listener for NEW orders available to the driver
   useEffect(() => {
     if (!currentUser || availabilityStatus !== 'online') {
-        if (!auth.currentUser) setIsLoadingOrders(false);
+        if (!auth.currentUser) setIsLoadingAvailableOrders(false);
         setAvailableOrders([]);
         return;
     }
     
-    setIsLoadingOrders(true);
+    setIsLoadingAvailableOrders(true);
 
     const availableOrdersQuery = query(
         collection(db, "orders"),
@@ -114,12 +118,12 @@ export default function DashboardPage() {
             }
         });
 
-        setIsLoadingOrders(false);
+        setIsLoadingAvailableOrders(false);
 
     }, (error) => {
       console.error("Error fetching available orders:", error);
       toast({ variant: "destructive", title: "Load Failed", description: "Could not check for new orders." });
-      setIsLoadingOrders(false);
+      setIsLoadingAvailableOrders(false);
     });
 
     return () => unsubscribe();
@@ -217,85 +221,79 @@ export default function DashboardPage() {
           onOpenChange={(isOpen) => !isOpen && setCustomerChatOrder(null)}
         />
       )}
-
-      <div className="md:px-4">
+        
         <div className="space-y-6">
-            {/* Active Orders Section */}
-            <Card className="shadow-lg col-span-1 lg:col-span-3 bg-card md:rounded-xl" style={{backgroundImage: 'radial-gradient(circle at top right, hsl(var(--primary) / 0.1), transparent 40%)'}}>
-                <CardHeader className="px-4 pt-4">
-                    <CardTitle className="text-2xl font-bold text-primary flex items-center">
-                        <PackageCheck className="mr-3 h-7 w-7" />
-                        Your Active Orders
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                    {isLoadingOrders && activeOrders.length === 0 ? (
-                        <div className="flex justify-center items-center p-4">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : activeOrders.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {activeOrders.map((order) => (
-                            <OrderCard 
-                            key={order.id} 
-                            order={order} 
-                            onCustomerChat={handleCustomerChatOpen}
-                            />
-                        ))}
-                        </div>
-                    ) : (
-                        <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
-                        <PackageSearch className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                        <p className="font-semibold text-lg">You have no active orders.</p>
-                        <p className="text-sm mt-1">Accept an order to get started.</p>
-                        </div>
-                    )}
-                </CardContent>
+            <Card className="shadow-lg md:mx-4 md:rounded-xl">
+                <Tabs defaultValue="active-orders">
+                    <CardHeader>
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="active-orders">
+                                <PackageCheck className="mr-2 h-4 w-4" /> Active Orders
+                            </TabsTrigger>
+                            <TabsTrigger value="available-orders">
+                                <PackagePlus className="mr-2 h-4 w-4" /> Available Orders
+                            </TabsTrigger>
+                        </TabsList>
+                    </CardHeader>
+                    
+                    <TabsContent value="active-orders">
+                         <CardContent className="p-4 pt-0">
+                            {isLoadingOrders ? (
+                                <div className="flex justify-center items-center p-4">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                </div>
+                            ) : activeOrders.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {activeOrders.map((order) => (
+                                    <OrderCard 
+                                    key={order.id} 
+                                    order={order} 
+                                    onCustomerChat={handleCustomerChatOpen}
+                                    />
+                                ))}
+                                </div>
+                            ) : (
+                                <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
+                                <PackageSearch className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                                <p className="font-semibold text-lg">You have no active orders.</p>
+                                <p className="text-sm mt-1">Accept an order to get started.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </TabsContent>
+
+                    <TabsContent value="available-orders">
+                        <CardContent className="p-4 pt-0">
+                             {isLoadingAvailableOrders ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Skeleton className="h-64 w-full" />
+                                    <Skeleton className="h-64 w-full hidden md:block" />
+                                </div>
+                            ) : availableOrders.length > 0 && availabilityStatus === 'online' ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {availableOrders.map((order) => (
+                                    <AvailableOrderCard 
+                                    key={order.id} 
+                                    order={order} 
+                                    onAccept={handleOrderAccept}
+                                    />
+                                ))}
+                                </div>
+                            ) : (
+                                <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
+                                    <p className="font-semibold text-lg">No new orders available right now.</p>
+                                    <p className="text-sm mt-1">{availabilityStatus !== 'online' ? "You are currently offline." : "Check back soon!"}</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </TabsContent>
+                </Tabs>
             </Card>
 
-            <div className="col-span-1 lg:col-span-3 px-4 md:px-0">
+            <div className="md:px-4">
               <EarningsForecast />
             </div>
         </div>
-      </div>
-
-      <Separator />
-
-      {/* Available Orders Section */}
-       <Card className="shadow-lg md:mx-4 md:rounded-xl">
-            <CardHeader>
-                <CardTitle className="text-2xl font-bold text-primary flex items-center">
-                    <PackagePlus className="mr-3 h-7 w-7" />
-                    Available Orders
-                </CardTitle>
-                <CardDescription>
-                    {availabilityStatus === 'online' ? "New orders available for you to accept." : "Go online to see new orders."}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {isLoadingOrders && availableOrders.length === 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Skeleton className="h-64 w-full" />
-                        <Skeleton className="h-64 w-full hidden md:block" />
-                    </div>
-                ) : availableOrders.length > 0 && availabilityStatus === 'online' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {availableOrders.map((order) => (
-                        <AvailableOrderCard 
-                        key={order.id} 
-                        order={order} 
-                        onAccept={handleOrderAccept}
-                        />
-                    ))}
-                    </div>
-                ) : (
-                    <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
-                        <p className="font-semibold text-lg">No new orders available right now.</p>
-                        <p className="text-sm mt-1">{availabilityStatus !== 'online' ? "You are currently offline." : "Check back soon!"}</p>
-                    </div>
-                )}
-            </CardContent>
-       </Card>
     </div>
   );
 }
