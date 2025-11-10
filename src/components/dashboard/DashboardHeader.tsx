@@ -36,38 +36,13 @@ export function DashboardHeader({
   return (
     <div className="flex justify-between items-center p-4">
       <div className="flex items-center gap-4">
-        <Link href="/profile" className="hidden md:block">
-            <Avatar className="h-14 w-14 border-2 border-primary">
-                <AvatarImage src={profile.profilePictureUrl || undefined} alt={profile.name} data-ai-hint="person face" />
-                <AvatarFallback>{profile.name?.substring(0, 2).toUpperCase() || 'P'}</AvatarFallback>
-            </Avatar>
-        </Link>
-        <div className="hidden md:block">
-          <h1 className="text-xl font-bold text-foreground">
-            Welcome, {profile.name.split(" ")[0]}!
-          </h1>
-          <div className="mt-1">
-             <AvailabilityToggle 
-                currentStatus={availabilityStatus}
-                onStatusChange={onStatusChange}
-                isLoading={isAvailabilityLoading}
-              />
-          </div>
-        </div>
+        {/* This div is now empty for mobile, effectively removing the toggle from the left side */}
         <div className="md:hidden">
-             <AvailabilityToggle 
-                currentStatus={availabilityStatus}
-                onStatusChange={onStatusChange}
-                isLoading={isAvailabilityLoading}
-              />
         </div>
       </div>
       <div className="flex items-center gap-2">
         <div className="hidden md:block">
             <ActiveTimeTracker />
-        </div>
-        <div className="hidden md:block">
-            <NotificationBell />
         </div>
       </div>
     </div>
