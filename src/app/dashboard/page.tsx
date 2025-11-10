@@ -262,7 +262,7 @@ export default function DashboardPage() {
       <Separator />
 
       {/* Available Orders Section */}
-       <Card className="shadow-lg mx-4 md:rounded-xl">
+       <Card className="shadow-lg md:mx-4 md:rounded-xl">
             <CardHeader>
                 <CardTitle className="text-2xl font-bold text-primary flex items-center">
                     <PackagePlus className="mr-3 h-7 w-7" />
