@@ -218,11 +218,10 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-4 items-start">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="px-4">
+        <div className="space-y-6">
             {/* Active Orders Section */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg col-span-1 lg:col-span-3 bg-card" style={{backgroundImage: 'radial-gradient(circle at top right, hsl(var(--primary) / 0.1), transparent 40%)'}}>
                 <CardHeader>
                     <CardTitle className="text-2xl font-bold text-primary flex items-center">
                         <PackageCheck className="mr-3 h-7 w-7" />
@@ -235,7 +234,7 @@ export default function DashboardPage() {
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : activeOrders.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {activeOrders.map((order) => (
                             <OrderCard 
                             key={order.id} 
@@ -253,10 +252,10 @@ export default function DashboardPage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
-        {/* Right Column */}
-        <div className="lg:col-span-1 space-y-6">
-             <EarningsForecast />
+
+            <div className="col-span-1 lg:col-span-3">
+              <EarningsForecast />
+            </div>
         </div>
       </div>
 
