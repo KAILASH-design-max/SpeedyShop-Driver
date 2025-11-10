@@ -48,6 +48,7 @@ import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import type { Profile } from "@/types";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { NotificationBell } from "./NotificationBell";
 
 
 const baseNavItems = [
@@ -250,7 +251,9 @@ export default function AuthenticatedLayout({
           </div>
 
           <div className="flex items-center gap-2">
-            
+            <div className="hidden md:flex">
+              <NotificationBell />
+            </div>
              {profile && (
               <Link href="/profile">
                   <Avatar className="h-9 w-9 border-2 border-transparent hover:border-primary transition-colors">
