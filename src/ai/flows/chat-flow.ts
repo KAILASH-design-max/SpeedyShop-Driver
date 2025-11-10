@@ -54,7 +54,7 @@ const chatFlow = ai.defineFlow(
 
     const llmResponse = await ai.generate({
       prompt,
-      model: 'googleai/gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       config: {
         temperature: 0.7,
       },
