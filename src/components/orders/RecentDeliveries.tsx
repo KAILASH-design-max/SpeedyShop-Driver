@@ -162,11 +162,10 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
   };
 
   return (
-    <div>
+    <div className="p-6">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div>
-                <CardTitle className="text-2xl font-bold flex items-center"><Package className="mr-2 h-6 w-6"/>Delivery History</CardTitle>
-                <CardDescription className="mt-1">
+                <CardDescription>
                  Viewing your deliveries from the last 30 days. Use filters to narrow down the results.
                 </CardDescription>
             </div>
@@ -251,7 +250,7 @@ export function RecentDeliveries({}: RecentDeliveriesProps) {
                             <TableRow key={delivery.id}>
                                 <TableCell className="font-medium">
                                 <Link href={`/orders/${delivery.id}`} className="flex items-center gap-1 text-primary hover:underline">
-                                    #{delivery.id} <Link2 size={12}/>
+                                    #{delivery.id.substring(0, 8)}... <Link2 size={12}/>
                                 </Link>
                                 </TableCell>
                                 <TableCell>{delivery.customerName}</TableCell>
