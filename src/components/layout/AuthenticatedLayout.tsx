@@ -35,6 +35,7 @@ import {
   Megaphone,
   BarChart,
   Home,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -141,6 +142,11 @@ export default function AuthenticatedLayout({
     { href: "/chat", label: "Chat", icon: MessagesSquare },
   ];
 
+  const isOrderPage = pathname.startsWith('/orders/');
+  const headerTitle = isOrderPage ? "Order" : "SpeedyDriver";
+  const HeaderIcon = isOrderPage ? Package : Truck;
+
+
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
@@ -242,8 +248,9 @@ export default function AuthenticatedLayout({
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
-            <div className="md:hidden">
-                <h1 className="text-xl font-bold text-primary">SpeedyDriver</h1>
+            <div className="md:hidden flex items-center gap-2">
+                <HeaderIcon className="h-6 w-6 text-primary" />
+                <h1 className="text-xl font-bold text-primary">{headerTitle}</h1>
             </div>
             <div className="hidden md:flex">
               <ActiveTimeTracker />
@@ -252,7 +259,6 @@ export default function AuthenticatedLayout({
 
           <div className="flex items-center gap-2">
             <div className="hidden md:flex">
-              <NotificationBell />
             </div>
              {profile && (
               <Link href="/profile">
