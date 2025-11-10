@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -36,6 +37,7 @@ import {
   BarChart,
   Home,
   Package,
+  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -143,8 +145,7 @@ export default function AuthenticatedLayout({
   ];
 
   const isOrderPage = pathname.startsWith('/orders/');
-  const headerTitle = isOrderPage ? "Order" : "SpeedyDriver";
-  const HeaderIcon = isOrderPage ? Package : Truck;
+  const headerTitle = isOrderPage ? "Order" : "SpeedyDelivery";
 
 
   return (
@@ -249,7 +250,13 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                <HeaderIcon className="h-6 w-6 text-primary" />
+                {isOrderPage ? (
+                    <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')}>
+                      <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                ) : (
+                    <Truck className="h-6 w-6 text-primary" />
+                )}
                 <h1 className="text-xl font-bold text-primary">{headerTitle}</h1>
             </div>
             <div className="hidden md:flex">
