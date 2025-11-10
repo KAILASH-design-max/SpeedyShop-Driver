@@ -36,8 +36,8 @@ export function OrderDetailsDisplay({ order, deliveryPartner }: OrderDetailsDisp
   }
 
   return (
-    <Card className="w-full shadow-lg border-none">
-      <CardHeader className="pb-4">
+    <Card className="w-full shadow-lg md:rounded-xl md:border">
+      <CardHeader className="p-4 md:p-6 pb-4">
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-2xl font-bold text-primary">Order #{order.id}</CardTitle>
@@ -48,7 +48,7 @@ export function OrderDetailsDisplay({ order, deliveryPartner }: OrderDetailsDisp
            </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6 pt-0">
+      <CardContent className="space-y-6 pt-0 p-4 md:p-6">
         {order.noContactDelivery && (
           <div className="p-3 border rounded-lg bg-yellow-50 border-yellow-200 text-yellow-800 flex items-center gap-3">
               <ShieldAlert className="h-6 w-6 text-yellow-600" />

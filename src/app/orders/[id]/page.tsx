@@ -327,147 +327,148 @@ export default function OrderPage() {
 
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 md:p-6">
       <OrderDetailsDisplay order={order} deliveryPartner={deliveryPartner} />
       
-
-      {order.status === "Placed" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Button onClick={handleAcceptOrder} className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-5 w-5" />}
-                    Accept Order
-                </Button>
-                <Button variant="outline" className="w-full text-base py-6 font-bold" onClick={() => router.push("/dashboard")}>
-                    Go Back to Dashboard
-                </Button>
-            </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-            {order.status === "accepted" && (
-              <>
-                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                  <Link href={`/navigate/${order.id}?type=pickup`}>
-                     <Store className="mr-2 h-5 w-5" /> Navigate to Store
-                  </Link>
-                </Button>
-              </>
-            )}
-
-            
-            {(order.status === "picked-up" || order.status === "out-for-delivery") && (
-              <>
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
-                  <Link href={`/navigate/${order.id}?type=dropoff`}>
-                      <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
-                  </Link>
-                </Button>
-              </>
-            )}
-
-            <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete} onClick={() => router.push(`/chat?orderId=${order.id}`)}>
-              <MessageSquare className="mr-2 h-5 w-5" /> Contact Support
-            </Button>
-
-            {isOrderActive && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="w-full" disabled={isUpdating}>
-                    <ShieldX className="mr-2 h-5 w-5" /> Release Order
+      <div className="px-4 md:px-0">
+        {order.status === "Placed" && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Button onClick={handleAcceptOrder} className="w-full bg-green-500 hover:bg-green-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                      {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-5 w-5" />}
+                      Accept Order
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Reason for canceling the order:</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. The order will be returned to the pool for other drivers to accept.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <div>
-                    <Textarea
-                      placeholder="Type your note..."
-                      value={cancellationReason}
-                      onChange={(e) => setCancellationReason(e.target.value)}
-                      maxLength={200}
-                    />
-                    <p className="text-right text-sm text-muted-foreground mt-1">
-                      {cancellationReason.length}/200
-                    </p>
-                  </div>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleRedispatch} disabled={!cancellationReason.trim()}>
-                      Confirm
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+                  <Button variant="outline" className="w-full text-base py-6 font-bold" onClick={() => router.push("/dashboard")}>
+                      Go Back to Dashboard
+                  </Button>
+              </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+              {order.status === "accepted" && (
+                <>
+                  <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                    <Link href={`/navigate/${order.id}?type=pickup`}>
+                      <Store className="mr-2 h-5 w-5" /> Navigate to Store
+                    </Link>
+                  </Button>
+                </>
+              )}
+
+              
+              {(order.status === "picked-up" || order.status === "out-for-delivery") && (
+                <>
+                  <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base py-6" size="lg" disabled={isUpdating}>
+                    <Link href={`/navigate/${order.id}?type=dropoff`}>
+                        <Navigation className="mr-2 h-5 w-5" /> Navigate to Customer
+                    </Link>
+                  </Button>
+                </>
+              )}
+
+              <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete} onClick={() => router.push(`/chat?orderId=${order.id}`)}>
+                <MessageSquare className="mr-2 h-5 w-5" /> Contact Support
+              </Button>
+
+              {isOrderActive && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full" disabled={isUpdating}>
+                      <ShieldX className="mr-2 h-5 w-5" /> Release Order
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reason for canceling the order:</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. The order will be returned to the pool for other drivers to accept.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div>
+                      <Textarea
+                        placeholder="Type your note..."
+                        value={cancellationReason}
+                        onChange={(e) => setCancellationReason(e.target.value)}
+                        maxLength={200}
+                      />
+                      <p className="text-right text-sm text-muted-foreground mt-1">
+                        {cancellationReason.length}/200
+                      </p>
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleRedispatch} disabled={!cancellationReason.trim()}>
+                        Confirm
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+          </div>
+
+          {order.status === "arrived-at-store" && (
+              <div className="space-y-4">
+                  <Button onClick={() => {
+                      if (order) {
+                          setIsUpdating(true);
+                          const orderRef = doc(db, "orders", order.id);
+                          updateDoc(orderRef, { status: "picked-up" })
+                              .then(() => {
+                                  toast({ title: "Pickup Confirmed", description: "Order marked as picked up.", className: "bg-green-500 text-white" });
+                              })
+                              .catch(err => {
+                                  toast({ variant: "destructive", title: "Error", description: "Could not update status." });
+                                  console.error(err);
+                              })
+                              .finally(() => setIsUpdating(false));
+                      }
+                  }} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                      {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
+                      Confirm Pickup
+                  </Button>
+              </div>
+          )}
+
+          {order.status === "arrived" && (
+            <DeliveryConfirmation order={order} onConfirm={handleDeliveryConfirmed} isUpdating={isUpdating} />
+          )}
         </div>
 
-        {order.status === "arrived-at-store" && (
-             <div className="space-y-4">
-                <Button onClick={() => {
-                    if (order) {
-                        setIsUpdating(true);
-                        const orderRef = doc(db, "orders", order.id);
-                        updateDoc(orderRef, { status: "picked-up" })
-                            .then(() => {
-                                toast({ title: "Pickup Confirmed", description: "Order marked as picked up.", className: "bg-green-500 text-white" });
-                            })
-                            .catch(err => {
-                                toast({ variant: "destructive", title: "Error", description: "Could not update status." });
-                                console.error(err);
-                            })
-                            .finally(() => setIsUpdating(false));
-                    }
-                }} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
-                    Confirm Pickup
-                </Button>
-            </div>
+        {order.status === "cancelled" && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Order Cancelled</AlertTitle>
+            <AlertDescription>
+              This order has been cancelled. No further action is required.
+            </AlertDescription>
+          </Alert>
         )}
 
-        {order.status === "arrived" && (
-          <DeliveryConfirmation order={order} onConfirm={handleDeliveryConfirmed} isUpdating={isUpdating} />
+        {order.status === "delivered" && (
+          <>
+              <Card className="mt-6 bg-green-100 border-green-300">
+              <CardContent className="p-6 text-center">
+                  <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />
+                  <p className="text-xl font-semibold text-green-800">This order has been successfully delivered!</p>
+                  {order.proofImageURL && (
+                      <div className="mt-4">
+                          <p className="text-sm text-green-700">Proof of delivery:</p>
+                          <a href={order.proofImageURL} target="_blank" rel="noopener noreferrer">
+                              <img src={order.proofImageURL} alt="Proof of delivery" className="rounded-md max-h-48 w-auto object-contain border mx-auto mt-2 shadow-sm" data-ai-hint="delivery package" />
+                          </a>
+                      </div>
+                  )}
+              </CardContent>
+              </Card>
+
+              <RateAndReport
+                  order={order}
+                  onSubmit={handleFeedbackSubmit}
+                  isSubmitting={isUpdating}
+              />
+          </>
         )}
       </div>
-
-       {order.status === "cancelled" && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Order Cancelled</AlertTitle>
-          <AlertDescription>
-            This order has been cancelled. No further action is required.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {order.status === "delivered" && (
-        <>
-            <Card className="mt-6 bg-green-100 border-green-300">
-            <CardContent className="p-6 text-center">
-                <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />
-                <p className="text-xl font-semibold text-green-800">This order has been successfully delivered!</p>
-                {order.proofImageURL && (
-                    <div className="mt-4">
-                        <p className="text-sm text-green-700">Proof of delivery:</p>
-                        <a href={order.proofImageURL} target="_blank" rel="noopener noreferrer">
-                            <img src={order.proofImageURL} alt="Proof of delivery" className="rounded-md max-h-48 w-auto object-contain border mx-auto mt-2 shadow-sm" data-ai-hint="delivery package" />
-                        </a>
-                    </div>
-                )}
-            </CardContent>
-            </Card>
-
-            <RateAndReport
-                order={order}
-                onSubmit={handleFeedbackSubmit}
-                isSubmitting={isUpdating}
-            />
-        </>
-      )}
     </div>
   );
 }
