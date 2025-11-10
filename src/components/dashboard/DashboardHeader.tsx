@@ -59,7 +59,9 @@ export function DashboardHeader({
         <div className="hidden md:block">
             <ActiveTimeTracker />
         </div>
-        <NotificationBell />
+        <div className="hidden md:block">
+            <NotificationBell />
+        </div>
       </div>
     </div>
   );
