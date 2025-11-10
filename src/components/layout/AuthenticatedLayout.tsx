@@ -277,18 +277,11 @@ export default function AuthenticatedLayout({
           <div className="flex items-center gap-2">
             <div className="hidden md:flex">
             </div>
-            {isEarningsPage ? (
+            {isEarningsPage && (
               <Button variant="destructive" size="sm" onClick={() => router.push('/penalties')}>
                 <ShieldX className="mr-2 h-4 w-4" />
                 Penalties
               </Button>
-            ) : profile && !isSettingsPage && (
-              <Link href="/profile">
-                  <Avatar className="h-9 w-9 border-2 border-transparent hover:border-primary transition-colors">
-                      <AvatarImage src={profile.profilePictureUrl || undefined} alt={profile.name} />
-                      <AvatarFallback>{profile.name?.substring(0,2).toUpperCase() || 'P'}</AvatarFallback>
-                  </Avatar>
-              </Link>
             )}
           </div>
         </header>
