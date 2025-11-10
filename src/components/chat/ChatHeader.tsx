@@ -8,15 +8,14 @@ import { ArrowLeft, MessageSquare } from "lucide-react";
 export function ChatHeader() {
   const router = useRouter();
   return (
-    <div className="flex items-center justify-between p-4 md:p-0 md:pb-4 border-b md:border-b-0">
+    <div className="flex items-center justify-between p-4 md:hidden border-b">
       <div className="flex items-center gap-4">
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="md:hidden"
           onClick={() => router.back()}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
           <h1 className="text-xl font-bold flex items-center">

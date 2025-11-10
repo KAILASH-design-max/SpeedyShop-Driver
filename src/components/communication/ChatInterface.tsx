@@ -272,12 +272,12 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   }
 
   const renderThreadList = () => (
-    <Card className="md:col-span-1 lg:col-span-1 h-full flex flex-col shadow-xl">
+    <Card className="md:col-span-1 lg:col-span-1 h-full flex flex-col shadow-none border-0 md:shadow-xl md:border">
         <CardHeader className="hidden md:block">
             <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Conversations</CardTitle>
             <CardDescription>Your chats with support.</CardDescription>
         </CardHeader>
-        <CardContent className="flex-grow overflow-hidden p-2">
+        <CardContent className="flex-grow overflow-hidden p-0 md:p-2">
             <ScrollArea className="h-full">
             {isLoadingThreads ? (
                 <div className="flex justify-center items-center p-8">
@@ -297,7 +297,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                                 onClick={() => setSelectedThread(thread)}
                                 className={cn(
                                     "p-3 rounded-lg cursor-pointer transition-colors border border-transparent",
-                                    isSelected ? "bg-muted border-primary/50" : "hover:bg-muted"
+                                    isSelected ? "bg-muted md:border-primary/50" : "hover:bg-muted"
                                 )}
                                 role="button"
                                 tabIndex={0}
@@ -342,7 +342,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       const details = getParticipantDetails(selectedThread);
 
       return (
-        <Card className="w-full h-full flex flex-col shadow-xl">
+        <Card className="w-full h-full flex flex-col shadow-none border-0 md:shadow-xl md:border">
             <CardHeader className="flex flex-row items-center gap-4 p-4 border-b">
                  <Button variant="ghost" size="icon" onClick={() => setSelectedThread(null)} className="mr-2 md:hidden">
                     <ArrowLeft className="h-5 w-5" />
@@ -360,7 +360,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                     </CardDescription>
                 </div>
             </CardHeader>
-            <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>
+            <ScrollArea className="flex-grow p-4 space-y-4 bg-muted/20" ref={scrollAreaRef}>
             {isLoadingMessages ? (
                 <div className="flex justify-center items-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -378,7 +378,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                         <div
                         className={cn(
                             "max-w-[70%] p-3 rounded-xl text-sm",
-                            msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                            msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-background shadow-sm rounded-bl-none"
                         )}
                         >
                             <p>{msg.message}</p>
@@ -390,7 +390,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                 ))
             )}
             </ScrollArea>
-            <CardFooter className="p-4 border-t">
+            <CardFooter className="p-4 border-t bg-background">
             <div className="w-full space-y-2">
                 <div className="flex items-center gap-2">
                 <Input
