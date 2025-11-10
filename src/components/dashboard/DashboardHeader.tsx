@@ -36,7 +36,7 @@ export function DashboardHeader({
   return (
     <div className="flex justify-between items-center p-4">
       <div className="flex items-center gap-4">
-        <Link href="/profile">
+        <Link href="/profile" className="hidden md:block">
             <Avatar className="h-14 w-14 border-2 border-primary">
                 <AvatarImage src={profile.profilePictureUrl || undefined} alt={profile.name} data-ai-hint="person face" />
                 <AvatarFallback>{profile.name?.substring(0, 2).toUpperCase() || 'P'}</AvatarFallback>
@@ -53,6 +53,13 @@ export function DashboardHeader({
                 isLoading={isAvailabilityLoading}
               />
           </div>
+        </div>
+        <div className="md:hidden">
+             <AvailabilityToggle 
+                currentStatus={availabilityStatus}
+                onStatusChange={onStatusChange}
+                isLoading={isAvailabilityLoading}
+              />
         </div>
       </div>
       <div className="flex items-center gap-2">
