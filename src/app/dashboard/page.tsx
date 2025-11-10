@@ -205,7 +205,7 @@ export default function DashboardPage() {
   };
   
   return (
-    <div className="space-y-6 pb-6">
+    <div className="pb-6">
 
         <DashboardHeader
             profile={profile}
@@ -222,7 +222,7 @@ export default function DashboardPage() {
         />
       )}
         
-        <div className="space-y-6">
+        <div className="space-y-6 md:mt-6">
             <Card className="shadow-lg md:mx-4 md:rounded-xl">
                 <Tabs defaultValue="active-orders">
                     <CardHeader>
