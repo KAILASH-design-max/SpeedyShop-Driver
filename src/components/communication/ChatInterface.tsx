@@ -81,9 +81,11 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             ...(doc.data() as SupportChatSession),
             type: 'support'
         }));
+        
+        let finalThreads = [...supportThreads];
 
         // If a specific thread is requested (e.g. from an order) and it doesn't exist, create it.
-        if (preselectedThreadId && !supportThreads.some(t => t.id === preselectedThreadId)) {
+        if (preselectedThreadId && !finalThreads.some(t => t.id === preselectedThreadId)) {
              const newThreadRef = doc(db, 'supportMessages', preselectedThreadId);
              const threadSnap = await getDoc(newThreadRef);
 
@@ -97,25 +99,45 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                     lastMessage: 'New chat about order started.',
                  };
                 await setDoc(newThreadRef, newThreadData);
-                supportThreads.unshift({ id: preselectedThreadId, ...newThreadData, type: 'support' });
+                finalThreads.unshift({ id: preselectedThreadId, ...newThreadData, type: 'support' });
              }
+        }
+        
+        // If there are still no threads after checking, create a default one
+        if (finalThreads.length === 0) {
+            const defaultThreadId = `support_${currentUser.uid}`;
+            const defaultThreadRef = doc(db, 'supportMessages', defaultThreadId);
+            const defaultThreadSnap = await getDoc(defaultThreadRef);
+
+            if (!defaultThreadSnap.exists()) {
+                const newThreadData: Omit<SupportChatSession, 'id'> = {
+                    userId: currentUser.uid,
+                    createdAt: serverTimestamp(),
+                    lastUpdated: serverTimestamp(),
+                    status: 'active',
+                    lastMessage: 'Welcome to support! How can we help?',
+                };
+                await setDoc(defaultThreadRef, newThreadData);
+                finalThreads.push({ id: defaultThreadId, ...newThreadData, type: 'support' });
+            }
         }
 
 
-        supportThreads.sort((a, b) => {
+        finalThreads.sort((a, b) => {
             const tsA = a.lastUpdated;
             const tsB = b.lastUpdated;
             if (!tsA || !tsB || !tsA.seconds || !tsB.seconds) return 0;
             return tsB.seconds - tsA.seconds;
         });
 
-        setChatThreads(supportThreads);
+        setChatThreads(finalThreads);
 
         if (preselectedThreadId) {
-            const threadToSelect = supportThreads.find(t => t.id === preselectedThreadId);
-            if (threadToSelect) {
-                setSelectedThread(threadToSelect);
-            }
+            const threadToSelect = finalThreads.find(t => t.id === preselectedThreadId);
+            setSelectedThread(threadToSelect || null);
+        } else if (finalThreads.length > 0 && !selectedThread) {
+            // Automatically select the most recent thread if none is selected
+            setSelectedThread(finalThreads[0]);
         }
         
         setIsLoadingThreads(false);
