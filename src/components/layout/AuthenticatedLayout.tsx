@@ -145,7 +145,13 @@ export default function AuthenticatedLayout({
   ];
 
   const isOrderPage = pathname.startsWith('/orders/');
-  const headerTitle = isOrderPage ? "Order" : "SpeedyDelivery";
+  const isEarningsPage = pathname === '/earnings';
+  let headerTitle = "SpeedyDelivery";
+  if (isOrderPage) {
+    headerTitle = "Order";
+  } else if (isEarningsPage) {
+    headerTitle = "Earnings";
+  }
 
 
   return (
@@ -250,8 +256,8 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                {isOrderPage ? (
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')}>
+                {(isOrderPage || isEarningsPage) ? (
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
                       <ArrowLeft className="h-6 w-6" />
                     </Button>
                 ) : (
