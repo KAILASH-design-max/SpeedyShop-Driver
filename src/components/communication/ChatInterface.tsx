@@ -76,33 +76,29 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     );
 
     const unsubscribeSupportChats = onSnapshot(supportThreadsQuery, async (snapshot) => {
-        let supportThreads: UnifiedChatThread[] = snapshot.docs.map(doc => ({
+        const supportThreads: UnifiedChatThread[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...(doc.data() as SupportChatSession),
             type: 'support'
         }));
 
-        if (snapshot.empty && preselectedThreadId) {
-             const newThread: UnifiedChatThread = {
-                id: preselectedThreadId,
-                orderId: preselectedThreadId,
-                userId: currentUser.uid,
-                type: 'support',
-                createdAt: serverTimestamp(),
-                lastUpdated: serverTimestamp(),
-                status: 'active',
-                lastMessage: 'New chat about order started.',
-             };
-            const threadRef = doc(db, 'supportMessages', preselectedThreadId);
-            await setDoc(threadRef, {
-                userId: currentUser.uid,
-                orderId: preselectedThreadId,
-                createdAt: serverTimestamp(),
-                lastUpdated: serverTimestamp(),
-                status: 'active',
-                lastMessage: 'New chat about order started.'
-            });
-            supportThreads = [newThread];
+        // If a specific thread is requested (e.g. from an order) and it doesn't exist, create it.
+        if (preselectedThreadId && !supportThreads.some(t => t.id === preselectedThreadId)) {
+             const newThreadRef = doc(db, 'supportMessages', preselectedThreadId);
+             const threadSnap = await getDoc(newThreadRef);
+
+             if (!threadSnap.exists()) {
+                 const newThreadData: Omit<SupportChatSession, 'id'> = {
+                    orderId: preselectedThreadId,
+                    userId: currentUser.uid,
+                    createdAt: serverTimestamp(),
+                    lastUpdated: serverTimestamp(),
+                    status: 'active',
+                    lastMessage: 'New chat about order started.',
+                 };
+                await setDoc(newThreadRef, newThreadData);
+                supportThreads.unshift({ id: preselectedThreadId, ...newThreadData, type: 'support' });
+             }
         }
 
 
@@ -113,6 +109,8 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             return tsB.seconds - tsA.seconds;
         });
 
+        setChatThreads(supportThreads);
+
         if (preselectedThreadId) {
             const threadToSelect = supportThreads.find(t => t.id === preselectedThreadId);
             if (threadToSelect) {
@@ -120,7 +118,6 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
             }
         }
         
-        setChatThreads(supportThreads);
         setIsLoadingThreads(false);
     }, error => {
         console.error("Error fetching support chat threads:", error);
@@ -406,3 +403,5 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
     </div>
   );
 }
+
+    
