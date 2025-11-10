@@ -12,7 +12,7 @@ export default function EarningsPage() {
   const router = useRouter();
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 md:p-6">
       <EarningsHeader />
 
       <div>
