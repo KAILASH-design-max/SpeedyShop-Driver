@@ -147,11 +147,14 @@ export default function AuthenticatedLayout({
 
   const isOrderPage = pathname.startsWith('/orders/');
   const isEarningsPage = pathname === '/earnings';
+  const isSettingsPage = pathname.startsWith('/settings');
   let headerTitle = "SpeedyDelivery";
   if (isOrderPage) {
     headerTitle = "Order";
   } else if (isEarningsPage) {
     headerTitle = "Earnings";
+  } else if (isSettingsPage) {
+    headerTitle = "Settings";
   }
 
 
@@ -257,7 +260,7 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                {(isOrderPage || isEarningsPage) ? (
+                {(isOrderPage || isEarningsPage || isSettingsPage) ? (
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                       <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -279,7 +282,7 @@ export default function AuthenticatedLayout({
                 <ShieldX className="mr-2 h-4 w-4" />
                 Penalties
               </Button>
-            ) : profile && (
+            ) : profile && !isSettingsPage && (
               <Link href="/profile">
                   <Avatar className="h-9 w-9 border-2 border-transparent hover:border-primary transition-colors">
                       <AvatarImage src={profile.profilePictureUrl || undefined} alt={profile.name} />
