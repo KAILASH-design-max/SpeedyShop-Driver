@@ -148,6 +148,7 @@ export default function AuthenticatedLayout({
   const isOrderPage = pathname.startsWith('/orders/');
   const isEarningsPage = pathname === '/earnings';
   const isSettingsPage = pathname.startsWith('/settings');
+  const isAnalyticsPage = pathname.startsWith('/analytics');
   let headerTitle = "SpeedyDelivery";
   if (isOrderPage) {
     headerTitle = "Order";
@@ -155,6 +156,8 @@ export default function AuthenticatedLayout({
     headerTitle = "Earnings";
   } else if (isSettingsPage) {
     headerTitle = "Settings";
+  } else if (isAnalyticsPage) {
+    headerTitle = "Analytics";
   }
 
 
@@ -260,7 +263,7 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                {(isOrderPage || isEarningsPage || isSettingsPage) ? (
+                {(isOrderPage || isEarningsPage || isSettingsPage || isAnalyticsPage) ? (
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                       <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -275,8 +278,6 @@ export default function AuthenticatedLayout({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex">
-            </div>
             {isEarningsPage && (
               <Button variant="destructive" size="sm" onClick={() => router.push('/penalties')}>
                 <ShieldX className="mr-2 h-4 w-4" />
