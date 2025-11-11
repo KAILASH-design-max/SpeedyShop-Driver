@@ -27,7 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firestore";
 import type { Profile } from "@/types";
 import { endSession } from "@/lib/sessionManager";
 import { AvailabilityToggle } from "../dashboard/AvailabilityToggle";
