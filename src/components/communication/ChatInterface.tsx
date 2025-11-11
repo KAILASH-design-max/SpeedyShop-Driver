@@ -346,10 +346,10 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       return (
         <Card className="w-full h-full flex flex-col shadow-none border-0 md:shadow-xl md:border">
             <CardHeader className="flex flex-row items-center gap-4 p-4 border-b">
-                 <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')} className="mr-2 md:hidden">
+                 <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')} className="mr-2 hidden">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <Avatar>
+                <Avatar className="hidden">
                     <AvatarFallback>
                          <details.Icon size={20}/>
                     </AvatarFallback>
