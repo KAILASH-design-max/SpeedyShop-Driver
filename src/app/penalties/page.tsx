@@ -100,11 +100,13 @@ export default function PenaltiesPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <Button variant="outline" onClick={() => router.back()}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
-      </Button>
+    <div className="space-y-6 md:p-6">
+      <div className="hidden md:block">
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>
       <PenaltyManagement profile={profile} onAppealSubmit={handleAppealSubmit} />
     </div>
   );

@@ -98,8 +98,8 @@ export function PenaltyManagement({ profile, onAppealSubmit }: PenaltyManagement
   };
 
   return (
-    <Card className="shadow-xl">
-      <CardHeader>
+    <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
+      <CardHeader className="px-4 md:px-6">
         <div>
           <CardTitle className="flex items-center text-2xl font-bold text-destructive">
             <ShieldX className="mr-3 h-6 w-6" />
@@ -110,7 +110,7 @@ export function PenaltyManagement({ profile, onAppealSubmit }: PenaltyManagement
           </CardDescription>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 md:px-6">
         <div className="border rounded-md">
           <Table>
             <TableHeader>
