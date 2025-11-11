@@ -94,7 +94,7 @@ export function LoginForm() {
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input placeholder="Email" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white"/>
+                    <Input placeholder="Email" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg"/>
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -109,7 +109,7 @@ export function LoginForm() {
                 <FormControl>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input type="password" placeholder="Password" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white" />
+                    <Input type="password" placeholder="Password" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg" />
                   </div>
                 </FormControl>
                 <FormMessage />

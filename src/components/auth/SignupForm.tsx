@@ -137,7 +137,7 @@ export function SignupForm() {
                 <FormControl>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input placeholder="Full Name" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white"/>
+                    <Input placeholder="Full Name" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg"/>
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -152,7 +152,7 @@ export function SignupForm() {
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input placeholder="Email" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white"/>
+                    <Input placeholder="Email" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg"/>
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -167,7 +167,7 @@ export function SignupForm() {
                 <FormControl>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input type="password" placeholder="Password" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white" />
+                    <Input type="password" placeholder="Password" {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg" />
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -181,7 +181,7 @@ export function SignupForm() {
               <FormItem>
                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                   <FormControl>
-                    <SelectTrigger className="pl-10 h-12 rounded-lg bg-white">
+                    <SelectTrigger className="pl-10 h-12 rounded-lg">
                       <Bike className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <SelectValue placeholder="Select your vehicle type" />
                     </SelectTrigger>
@@ -204,7 +204,7 @@ export function SignupForm() {
                 <FormControl>
                   <div className="relative">
                     <Car className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input placeholder="Vehicle Registration No." {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg bg-white"/>
+                    <Input placeholder="Vehicle Registration No." {...field} disabled={isLoading} className="pl-10 h-12 rounded-lg"/>
                   </div>
                 </FormControl>
                 <FormMessage />
