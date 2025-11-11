@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,12 +52,16 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
     const licenseExpiryDate = profile.documents?.driverLicense?.expiryDate;
     let licenseExpiryInfo = null;
     if (licenseExpiryDate) {
-        const daysUntilExpiry = differenceInDays(parseISO(licenseExpiryDate), new Date());
-        if (daysUntilExpiry <= 30) {
-            licenseExpiryInfo = {
-                text: daysUntilExpiry <= 0 ? `Expired` : `Expires in ${daysUntilExpiry} days`,
-                isWarning: true,
-            };
+        try {
+            const daysUntilExpiry = differenceInDays(parseISO(licenseExpiryDate), new Date());
+            if (daysUntilExpiry <= 30) {
+                licenseExpiryInfo = {
+                    text: daysUntilExpiry <= 0 ? `Expired` : `Expires in ${daysUntilExpiry} days`,
+                    isWarning: true,
+                };
+            }
+        } catch (e) {
+            console.error("Invalid date format for license expiry", licenseExpiryDate);
         }
     }
 

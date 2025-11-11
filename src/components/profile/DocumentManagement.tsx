@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,9 +195,13 @@ const getStatusInfo = (docKey: DocumentTypeKey, document?: DocumentMetadata) => 
         return { text: 'Missing', variant: 'destructive', actionText: 'Upload', hasAction: true, hasView: false };
     }
     if (document.expiryDate) {
-        const daysUntilExpiry = differenceInDays(parseISO(document.expiryDate), new Date());
-        if (daysUntilExpiry <= 0) return { text: 'Expired', variant: 'destructive', actionText: 'Update', hasAction: true, hasView: true };
-        if (daysUntilExpiry <= 30) return { text: `Expires in ${daysUntilExpiry} days`, variant: 'secondary', actionText: 'Update', hasAction: true, hasView: true };
+        try {
+            const daysUntilExpiry = differenceInDays(parseISO(document.expiryDate), new Date());
+            if (daysUntilExpiry <= 0) return { text: 'Expired', variant: 'destructive', actionText: 'Update', hasAction: true, hasView: true };
+            if (daysUntilExpiry <= 30) return { text: `Expires in ${daysUntilExpiry} days`, variant: 'secondary', actionText: 'Update', hasAction: true, hasView: true };
+        } catch (e) {
+            console.error("Invalid expiry date format for document", docKey, document.expiryDate);
+        }
     }
     return { text: 'Verified', variant: 'default', actionText: 'View', hasAction: false, hasView: true };
 }

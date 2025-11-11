@@ -71,7 +71,7 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
         documents: {
             ...profile.documents,
             driverLicense: {
-                ...profile.documents?.driverLicense,
+                ...(profile.documents?.driverLicense || {}),
                 expiryDate: expiryDate,
             },
         },
