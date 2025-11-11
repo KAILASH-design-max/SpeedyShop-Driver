@@ -95,8 +95,8 @@ export function MonthlyEarningsHistory() {
 
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
+    <Card className="shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border">
+      <CardHeader className="px-4 md:px-6">
         <CardTitle className="flex items-center text-2xl font-bold text-primary">
           <TrendingUp className="mr-3 h-6 w-6" />
           Daily Earnings History
@@ -105,7 +105,7 @@ export function MonthlyEarningsHistory() {
           Select a day to view a detailed breakdown of your earnings from deliveries and tips.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 md:px-6">
         {loading ? (
              <div className="flex justify-center items-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -119,7 +119,7 @@ export function MonthlyEarningsHistory() {
              </div>
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                <div className="md:col-span-1">
+                <div className="md:col-span-1 flex justify-center">
                     <Calendar
                         mode="single"
                         selected={selectedDate}
