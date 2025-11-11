@@ -84,15 +84,15 @@ export function TopPerformersLeaderboard() {
   }, []);
 
   return (
-    <Card className="shadow-xl">
-      <CardHeader>
+    <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
+      <CardHeader className="px-4 md:px-6">
         <CardTitle className="flex items-center">
           <Truck className="mr-2 h-5 w-5 text-blue-500" />
           Top Performers
         </CardTitle>
         <CardDescription>Most deliveries in the last 7 days.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 md:px-6">
         {isLoading ? (
           <div className="flex justify-center items-center h-48">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />

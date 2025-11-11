@@ -107,8 +107,8 @@ export function CommunityChat() {
   }
 
   return (
-    <Card className="h-[500px] flex flex-col shadow-xl">
-        <CardHeader className="border-b">
+    <Card className="h-[500px] flex flex-col shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
+        <CardHeader className="border-b px-4 md:px-6">
             <CardTitle className="flex items-center text-2xl font-bold text-primary">
                 <MessagesSquare className="mr-3 h-6 w-6"/>
                 Live Community Chat

@@ -80,8 +80,8 @@ export function Announcements() {
   }
 
   return (
-    <Card className="h-full flex flex-col shadow-xl">
-        <CardHeader>
+    <Card className="h-full flex flex-col shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
+        <CardHeader className="px-4 md:px-6">
             <CardTitle className="flex items-center">
                 <Megaphone className="mr-2 h-5 w-5 text-primary"/>
                 Announcements
@@ -90,7 +90,7 @@ export function Announcements() {
                 Updates from the SpeedyDelivery team.
             </CardDescription>
         </CardHeader>
-        <CardContent className="flex-grow p-4">
+        <CardContent className="flex-grow p-4 md:px-6">
         {isLoading ? (
             <div className="flex justify-center items-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
