@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -24,7 +23,6 @@ import { auth, db } from "@/lib/firebase";
 import type { User } from "firebase/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { useTheme } from "next-themes";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
@@ -44,7 +42,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { ActiveTimeTracker } from "../dashboard/ActiveTimeTracker";
 import { ProfileForm } from "../profile/ProfileForm";
-import { AppPermissions } from "./AppPermissions";
 import { ManageQuickReplies } from "./ManageQuickReplies";
 import { LoginActivity } from "./LoginActivity";
 
@@ -65,7 +62,6 @@ export function SettingsPage() {
     const router = useRouter();
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
-    const { theme, setTheme } = useTheme();
     const [availabilityStatus, setAvailabilityStatus] = useState<Profile['availabilityStatus'] | undefined>(undefined);
     const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(true);
     const { language, setLanguage, translations } = useLanguage();
@@ -152,10 +148,6 @@ export function SettingsPage() {
         }
       };
       
-    const handleThemeChange = (checked: boolean) => {
-        setTheme(checked ? 'dark' : 'light');
-    };
-    
     const handleLanguageChange = (lang: 'en' | 'hi') => {
         setLanguage(lang);
         setLangDialogOpen(false);
@@ -232,19 +224,16 @@ export function SettingsPage() {
                 </Link>
             ))}
              
-             <AppPermissions />
-
-             <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted">
-                <div className="flex items-center gap-3">
-                    <Moon className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">{translations.dark_mode}</span>
+             <Link href="/settings/permissions" className="block">
+                <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary cursor-pointer">
+                    <div className="flex items-center gap-3">
+                        <Settings className="h-5 w-5 text-muted-foreground" />
+                        <span className="font-medium">App Permissions</span>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <Switch 
-                    checked={theme === 'dark'}
-                    onCheckedChange={handleThemeChange}
-                    aria-label="Toggle dark mode"
-                />
-            </div>
+            </Link>
+             
              <Dialog open={isLangDialogOpen} onOpenChange={setLangDialogOpen}>
                 <DialogTrigger asChild>
                     <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary cursor-pointer">
