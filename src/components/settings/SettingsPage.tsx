@@ -46,6 +46,7 @@ import { ActiveTimeTracker } from "../dashboard/ActiveTimeTracker";
 import { ProfileForm } from "../profile/ProfileForm";
 import { AppPermissions } from "./AppPermissions";
 import { ManageQuickReplies } from "./ManageQuickReplies";
+import { LoginActivity } from "./LoginActivity";
 
 
 const mainNavItems = [
@@ -274,6 +275,10 @@ export function SettingsPage() {
                 </DialogContent>
              </Dialog>
         </div>
+
+        <Separator />
+
+        <LoginActivity />
 
         <Separator />
 
