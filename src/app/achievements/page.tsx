@@ -183,12 +183,8 @@ export default function AchievementsPage() {
   }
 
   return (
-    <div className="md:p-6 space-y-6">
-       <div className="flex justify-between items-center px-4 pt-4 md:px-0 md:pt-0">
-         <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+    <div className="space-y-6">
+       <div className="flex justify-end items-center px-4 pt-4 md:px-0 md:pt-0">
         <Button variant="ghost" onClick={fetchAchievements} disabled={loading}>
             <Loader2 className={loading ? "mr-2 h-4 w-4 animate-spin" : "hidden"}/>
             Refresh
