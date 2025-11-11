@@ -117,10 +117,6 @@ export default function LoginActivityPage() {
 
     return (
         <div className="p-6 space-y-6">
-            <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Settings
-            </Button>
             <Card className="shadow-xl">
                 <CardHeader>
                     <CardTitle>Login Activity</CardTitle>

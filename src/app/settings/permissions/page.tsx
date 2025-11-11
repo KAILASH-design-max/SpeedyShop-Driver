@@ -36,14 +36,7 @@ export default function AppPermissionsPage() {
     const router = useRouter();
 
     return (
-        <div className="space-y-6 md:p-6">
-            <div className="px-4 pt-4 md:p-0">
-                <Button variant="outline" onClick={() => router.back()}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Settings
-                </Button>
-            </div>
-
+        <div className="space-y-6 p-4 md:p-6">
             <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
                 <CardHeader className="px-4 md:px-6">
                     <CardTitle className="flex items-center text-2xl font-bold text-primary">
