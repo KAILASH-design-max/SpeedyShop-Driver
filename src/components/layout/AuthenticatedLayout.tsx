@@ -41,12 +41,13 @@ import {
   ShieldX,
   RefreshCw,
   Loader2,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { endSession } from "@/lib/sessionManager";
 import { ActiveTimeTracker } from "@/components/dashboard/ActiveTimeTracker";
 import { ThemeToggle } from "./ThemeToggle";
@@ -159,6 +160,7 @@ export default function AuthenticatedLayout({
   const isAchievementsPage = pathname.startsWith('/achievements');
   const isSupportPage = pathname.startsWith('/support');
   const isProfilePage = pathname.startsWith('/profile');
+  const isRatingsPage = pathname.startsWith('/ratings');
 
   let headerTitle = "SpeedyDelivery";
   if (isOrderPage) {
@@ -177,6 +179,8 @@ export default function AuthenticatedLayout({
     headerTitle = "Support";
   } else if (isProfilePage) {
     headerTitle = "Profile";
+  } else if (isRatingsPage) {
+    headerTitle = "Ratings";
   }
 
 
@@ -282,7 +286,7 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                {(isOrderPage || isEarningsPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage) ? (
+                {(isOrderPage || isEarningsPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage || isRatingsPage) ? (
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                       <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -312,6 +316,11 @@ export default function AuthenticatedLayout({
               <Button variant="destructive" size="sm" onClick={() => router.push('/penalties')}>
                 <ShieldX className="mr-2 h-4 w-4" />
                 Penalties
+              </Button>
+            )}
+            {isRatingsPage && (
+              <Button variant="ghost" size="icon" onClick={() => router.push('/ratings')}>
+                <Star className="h-5 w-5" />
               </Button>
             )}
           </div>
