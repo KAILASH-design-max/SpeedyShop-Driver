@@ -36,14 +36,16 @@ export default function AppPermissionsPage() {
     const router = useRouter();
 
     return (
-        <div className="p-6 space-y-6">
-            <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Settings
-            </Button>
+        <div className="space-y-6 md:p-6">
+            <div className="px-4 pt-4 md:p-0">
+                <Button variant="outline" onClick={() => router.back()}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Settings
+                </Button>
+            </div>
 
-            <Card className="shadow-xl">
-                <CardHeader>
+            <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
+                <CardHeader className="px-4 md:px-6">
                     <CardTitle className="flex items-center text-2xl font-bold text-primary">
                         <Settings className="mr-3 h-6 w-6"/>
                         App Permissions
@@ -52,7 +54,7 @@ export default function AppPermissionsPage() {
                         Manage permissions for location, camera, and notifications to ensure the app functions correctly.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-4 md:px-6">
                     {permissionItems.map(item => {
                         const permission = permissions[item.key];
                         const statusInfo = getStatusInfo(permission.status);
