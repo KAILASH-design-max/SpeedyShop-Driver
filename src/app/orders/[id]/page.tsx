@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -96,7 +97,7 @@ export default function OrderPage() {
         const mappedOrder = await mapFirestoreDocToOrder(docSnap);
         
         // Ensure the current user has access to this order
-        const canAccess = mappedOrder.deliveryPartnerId === currentUser.uid || (mappedOrder.accessibleTo || []).includes(currentUser.uid);
+        const canAccess = mappedOrder.status === 'Placed' || mappedOrder.deliveryPartnerId === currentUser.uid || (mappedOrder.accessibleTo || []).includes(currentUser.uid);
 
         if(canAccess) {
             setOrder(mappedOrder);
@@ -111,11 +112,13 @@ export default function OrderPage() {
                 setDeliveryPartner(null);
             }
 
-            // Cache the fetched order details
-            try {
-                localStorage.setItem(`order-cache-${orderId}`, JSON.stringify(mappedOrder));
-            } catch (error) {
-                console.error(`Failed to cache order ${orderId}:`, error);
+            // Cache the fetched order details only if it's an active order
+            if(mappedOrder.status !== 'Placed' && mappedOrder.status !== 'delivered' && mappedOrder.status !== 'cancelled') {
+              try {
+                  localStorage.setItem(`order-cache-${orderId}`, JSON.stringify(mappedOrder));
+              } catch (error) {
+                  console.error(`Failed to cache order ${orderId}:`, error);
+              }
             }
         } else {
             setOrder(null);
