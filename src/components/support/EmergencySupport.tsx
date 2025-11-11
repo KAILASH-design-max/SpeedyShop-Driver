@@ -40,8 +40,8 @@ export function EmergencySupport() {
   };
 
   return (
-    <Card className="bg-destructive/20 border-destructive shadow-lg">
-      <CardHeader className="flex-row items-center gap-4 space-y-0">
+    <Card className="bg-destructive/20 border-destructive shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border">
+      <CardHeader className="flex-row items-center gap-4 space-y-0 px-4 md:px-6">
         <div className="p-3 rounded-full bg-destructive/20">
             <Siren className="h-6 w-6 text-destructive" />
         </div>
@@ -50,7 +50,7 @@ export function EmergencySupport() {
             <CardDescription className="text-destructive/80">For urgent safety concerns.</CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-4 md:px-6">
         <div>
             <p className="text-sm text-destructive/90 mb-2">
             For accidents or critical safety issues, press the SOS button to alert our team and call emergency services.

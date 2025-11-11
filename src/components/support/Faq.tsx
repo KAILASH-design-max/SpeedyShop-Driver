@@ -41,8 +41,8 @@ const faqItems = [
 
 export function Faq() {
   return (
-    <Card className="shadow-xl">
-      <CardHeader>
+    <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
+      <CardHeader className="px-4 md:px-6">
         <CardTitle className="flex items-center">
           <HelpCircle className="mr-2 h-6 w-6 text-primary" /> Frequently Asked Questions
         </CardTitle>
@@ -50,7 +50,7 @@ export function Faq() {
           Find quick answers to common questions.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 md:px-6">
         <Accordion type="single" collapsible className="w-full">
           {faqItems.map((item, index) => (
             <AccordionItem value={`item-${index}`} key={index}>

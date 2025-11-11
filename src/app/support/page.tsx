@@ -23,21 +23,21 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 md:p-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
           <Faq />
         </div>
         <div className="space-y-6">
           <EmergencySupport />
-          <Card className="shadow-lg">
-            <CardHeader>
+          <Card className="shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border">
+            <CardHeader className="px-4 md:px-6">
               <CardTitle className="flex items-center"><BookOpen className="mr-2 h-5 w-5" /> Resources & Gear</CardTitle>
               <CardDescription>
                 Access training materials, legal information, and request gear.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2">
+            <CardContent className="flex flex-col gap-2 px-4 md:px-6">
                 <Link href="/training" passHref>
                     <Button variant="outline" className="w-full justify-start"><Info className="mr-2 h-4 w-4" />Training & Tutorials</Button>
                 </Link>
