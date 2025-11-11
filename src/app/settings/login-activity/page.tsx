@@ -116,8 +116,8 @@ export default function LoginActivityPage() {
     const hasUnrecognizedLogin = sessions.some(s => getDeviceInfo(s.userAgent).name === 'Unknown Device');
 
     return (
-        <div className="p-6 space-y-6">
-            <Card className="shadow-xl">
+        <div className="space-y-6 md:p-6">
+            <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
                 <CardHeader>
                     <CardTitle>Login Activity</CardTitle>
                     <CardDescription>Recent login sessions for your account.</CardDescription>
