@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, AlertTriangle, Trophy } from "lucide-react";
 import { AchievementsList } from "@/components/achievements/AchievementsList";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { User } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
@@ -17,7 +17,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { startOfWeek, startOfDay, endOfDay, getDay, subDays } from 'date-fns';
 import { auth, db } from "@/lib/firebase";
 
-export default function AchievementsPage() {
+interface AchievementsPageProps {
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+}
+
+export default function AchievementsPage({ onRefresh, isRefreshing }: AchievementsPageProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -32,15 +37,7 @@ export default function AchievementsPage() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchAchievements();
-    } else if (auth.currentUser === null) {
-      setLoading(false);
-    }
-  }, [currentUser]);
-
-  const fetchAchievements = async () => {
+  const fetchAchievements = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
     setError(null);
@@ -144,7 +141,16 @@ export default function AchievementsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, toast]);
+
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchAchievements();
+    } else if (auth.currentUser === null) {
+      setLoading(false);
+    }
+  }, [currentUser, fetchAchievements]);
 
   const renderContent = () => {
     if (loading) {
@@ -182,9 +188,17 @@ export default function AchievementsPage() {
     return <AchievementsList achievements={achievements} />;
   }
 
+  // Pass props up to layout
+  useEffect(() => {
+    if (onRefresh && isRefreshing !== undefined) {
+      (AchievementsPage as any).defaultProps = { onRefresh: fetchAchievements, isRefreshing: loading };
+    }
+  }, [onRefresh, isRefreshing, fetchAchievements, loading]);
+
+
   return (
     <div className="space-y-6">
-       <div className="flex justify-end items-center px-4 pt-4 md:px-0 md:pt-0">
+       <div className="hidden md:flex justify-end items-center px-4 pt-4 md:px-0 md:pt-0">
         <Button variant="ghost" onClick={fetchAchievements} disabled={loading}>
             <Loader2 className={loading ? "mr-2 h-4 w-4 animate-spin" : "hidden"}/>
             Refresh
@@ -194,3 +208,9 @@ export default function AchievementsPage() {
     </div>
   );
 }
+
+// This allows the layout to read the props from the page.
+AchievementsPage.defaultProps = {
+  onRefresh: () => {},
+  isRefreshing: false,
+};

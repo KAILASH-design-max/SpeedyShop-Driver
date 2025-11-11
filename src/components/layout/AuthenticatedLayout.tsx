@@ -39,6 +39,8 @@ import {
   Package,
   ArrowLeft,
   ShieldX,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -76,8 +78,12 @@ const mobileNavItems = [
 
 export default function AuthenticatedLayout({
   children,
+  onRefresh,
+  isRefreshing,
 }: {
   children: React.ReactNode;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -285,6 +291,17 @@ export default function AuthenticatedLayout({
           </div>
 
           <div className="flex items-center gap-2">
+            {onRefresh && (
+              <div className="md:hidden">
+                <Button variant="ghost" size="icon" onClick={onRefresh} disabled={isRefreshing}>
+                  {isRefreshing ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            )}
             {isEarningsPage && (
               <Button variant="destructive" size="sm" onClick={() => router.push('/penalties')}>
                 <ShieldX className="mr-2 h-4 w-4" />
