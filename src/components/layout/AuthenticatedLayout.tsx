@@ -42,6 +42,7 @@ import {
   RefreshCw,
   Loader2,
   Star,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "@/lib/firebase";
@@ -156,6 +157,8 @@ export default function AuthenticatedLayout({
   const isOrdersHistoryPage = pathname === '/orders';
   const isEarningsPage = pathname === '/earnings';
   const isEarningsHistoryPage = pathname.startsWith('/earnings/history');
+  const isSettingsPermissionsPage = pathname.startsWith('/settings/permissions');
+  const isSettingsLoginActivityPage = pathname.startsWith('/settings/login-activity');
   const isSettingsPage = pathname.startsWith('/settings');
   const isAnalyticsPage = pathname.startsWith('/analytics');
   const isCommunityPage = pathname.startsWith('/community');
@@ -174,6 +177,10 @@ export default function AuthenticatedLayout({
     headerTitle = "Earnings History";
   } else if (isEarningsPage) {
     headerTitle = "Earnings";
+  } else if (isSettingsPermissionsPage) {
+    headerTitle = "Permissions";
+  } else if (isSettingsLoginActivityPage) {
+    headerTitle = "Login Activity";
   } else if (isSettingsPage) {
     headerTitle = "Settings";
   } else if (isAnalyticsPage) {
@@ -191,6 +198,8 @@ export default function AuthenticatedLayout({
   } else if (isPenaltiesPage) {
     headerTitle = "Penalties";
   }
+
+  const showBackButton = isOrderDetailsPage || isOrdersHistoryPage || isEarningsPage || isEarningsHistoryPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage || isRatingsPage || isPenaltiesPage;
 
 
   return (
@@ -295,7 +304,7 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                {(isOrderDetailsPage || isOrdersHistoryPage || isEarningsPage || isEarningsHistoryPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage || isRatingsPage || isPenaltiesPage) ? (
+                {(showBackButton && pathname !== '/settings') ? (
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                       <ArrowLeft className="h-6 w-6" />
                     </Button>
