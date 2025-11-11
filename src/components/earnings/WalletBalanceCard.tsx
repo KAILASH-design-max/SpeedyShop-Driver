@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, IndianRupee, Download, Loader2, PiggyBank } from "lucide-react";
+import { Wallet, IndianRupee, Download, Loader2, PiggyBank, Zap } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,7 @@ import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, Timestamp, getDocs } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import type { Order, Profile, DeliveryRating } from "@/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const payoutSchema = z.object({
     amount: z.coerce.number().positive("Amount must be greater than 0."),
@@ -53,6 +54,7 @@ const payoutSchema = z.object({
 
 export function WalletBalanceCard() {
     const [open, setOpen] = useState(false);
+    const [isInstantPayoutOpen, setInstantPayoutOpen] = useState(false);
     const { toast } = useToast();
 
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -124,9 +126,22 @@ export function WalletBalanceCard() {
         setOpen(false);
         form.reset();
     }
+    
+    const onInstantSubmit = (values: z.infer<typeof payoutSchema>) => {
+        console.log("Instant Payout Request:", values);
+        const fee = (values.amount * 0.01).toFixed(2); // Example 1% fee
+        toast({
+            title: "Instant Payout Requested",
+            description: `An instant payout of ₹${values.amount} (fee: ₹${fee}) has been initiated.`,
+            className: "bg-green-500 text-white",
+        });
+        setInstantPayoutOpen(false);
+        form.reset();
+    }
+
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <>
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center text-xl font-bold">
@@ -135,7 +150,7 @@ export function WalletBalanceCard() {
                     </CardTitle>
                      <CardDescription>Includes all deliveries and tips.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2">
                     <div className="text-center bg-muted/50 p-6 rounded-lg">
                         {isLoading ? (
                             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
@@ -145,100 +160,77 @@ export function WalletBalanceCard() {
                                 {lifetimeEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         )}
-                        <p className="text-muted-foreground mt-1">Next payout: Tuesday</p>
+                        <p className="text-muted-foreground mt-1">Next weekly payout: Tuesday</p>
                     </div>
-                     <DialogTrigger asChild>
-                        <Button className="w-full" size="lg">
-                            <Download className="mr-2 h-5 w-5" />
-                            Withdraw Funds
-                        </Button>
-                    </DialogTrigger>
+                     <Dialog open={open} onOpenChange={setOpen}>
+                         <DialogTrigger asChild>
+                            <Button className="w-full" size="lg" variant="outline">
+                                <Download className="mr-2 h-5 w-5" />
+                                Weekly Payout
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>Request Weekly Payout</DialogTitle>
+                                <DialogDescription>
+                                    Withdraw funds from your wallet. Payouts are processed weekly.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                    {/* Form fields identical to the instant payout form */}
+                                    <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem> <FormLabel>Amount</FormLabel> <FormControl> <Input type="number" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                                    <FormField control={form.control} name="payoutMethod" render={({ field }) => ( <FormItem className="space-y-3"> <FormLabel>Payout Method</FormLabel> <FormControl> <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1"> <FormItem className="flex items-center space-x-3 space-y-0"> <FormControl> <RadioGroupItem value="upi" /> </FormControl> <FormLabel className="font-normal"> UPI </FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0"> <FormControl> <RadioGroupItem value="bank" /> </FormControl> <FormLabel className="font-normal"> Bank Transfer </FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage /> </FormItem> )}/>
+                                    {payoutMethod === 'upi' && <FormField control={form.control} name="upiId" render={({ field }) => ( <FormItem> <FormLabel>UPI ID</FormLabel> <FormControl> <Input placeholder="yourname@bank" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>}
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button type="button" variant="outline">Cancel</Button>
+                                        </DialogClose>
+                                        <Button type="submit">Request Payout</Button>
+                                    </DialogFooter>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                     </Dialog>
+
+                    <Dialog open={isInstantPayoutOpen} onOpenChange={setInstantPayoutOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="w-full" size="lg">
+                                <Zap className="mr-2 h-5 w-5" />
+                                Instant Payout
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                             <DialogHeader>
+                                <DialogTitle>Request Instant Payout</DialogTitle>
+                                <DialogDescription>
+                                    Withdraw funds immediately. A small fee will be applied.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <Alert variant="default" className="bg-blue-50 border-blue-200">
+                                <Zap className="h-4 w-4 text-blue-600" />
+                                <AlertTitle className="text-blue-800">1% Convenience Fee</AlertTitle>
+                                <AlertDescription className="text-blue-700">
+                                    A fee of 1% will be applied for instant transfers.
+                                </AlertDescription>
+                            </Alert>
+                             <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onInstantSubmit)} className="space-y-4">
+                                     <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem> <FormLabel>Amount</FormLabel> <FormControl> <Input type="number" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                                     <FormField control={form.control} name="payoutMethod" render={({ field }) => ( <FormItem className="space-y-3"> <FormLabel>Payout Method</FormLabel> <FormControl> <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1"> <FormItem className="flex items-center space-x-3 space-y-0"> <FormControl> <RadioGroupItem value="upi" /> </FormControl> <FormLabel className="font-normal"> UPI </FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0"> <FormControl> <RadioGroupItem value="bank" /> </FormControl> <FormLabel className="font-normal"> Bank Transfer </FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage /> </FormItem> )}/>
+                                    {payoutMethod === 'upi' && <FormField control={form.control} name="upiId" render={({ field }) => ( <FormItem> <FormLabel>UPI ID</FormLabel> <FormControl> <Input placeholder="yourname@bank" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>}
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button type="button" variant="outline">Cancel</Button>
+                                        </DialogClose>
+                                        <Button type="submit">Request Instant Payout</Button>
+                                    </DialogFooter>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
                 </CardContent>
             </Card>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Request Payout</DialogTitle>
-                    <DialogDescription>
-                        Withdraw funds from your wallet. Payouts are processed within 24 hours.
-                    </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="amount"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Amount</FormLabel>
-                                    <FormControl>
-                                        <Input type="number" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="payoutMethod"
-                            render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                <FormLabel>Payout Method</FormLabel>
-                                <FormControl>
-                                    <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex flex-col space-y-1"
-                                    >
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl>
-                                            <RadioGroupItem value="upi" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                            UPI
-                                        </FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl>
-                                            <RadioGroupItem value="bank" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                            Bank Transfer
-                                        </FormLabel>
-                                    </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        {payoutMethod === 'upi' && (
-                             <FormField
-                                control={form.control}
-                                name="upiId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>UPI ID</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="yourname@bank" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        )}
-                        <DialogFooter>
-                             <DialogClose asChild>
-                                <Button type="button" variant="outline">
-                                Cancel
-                                </Button>
-                            </DialogClose>
-                            <Button type="submit">
-                                Request Payout
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+        </>
     );
 }
