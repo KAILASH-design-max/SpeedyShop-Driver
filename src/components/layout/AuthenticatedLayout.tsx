@@ -154,6 +154,7 @@ export default function AuthenticatedLayout({
 
   const isOrderPage = pathname.startsWith('/orders/');
   const isEarningsPage = pathname === '/earnings';
+  const isEarningsHistoryPage = pathname.startsWith('/earnings/history');
   const isSettingsPage = pathname.startsWith('/settings');
   const isAnalyticsPage = pathname.startsWith('/analytics');
   const isCommunityPage = pathname.startsWith('/community');
@@ -165,6 +166,8 @@ export default function AuthenticatedLayout({
   let headerTitle = "SpeedyDelivery";
   if (isOrderPage) {
     headerTitle = "Order";
+  } else if (isEarningsHistoryPage) {
+    headerTitle = "Earnings History";
   } else if (isEarningsPage) {
     headerTitle = "Earnings";
   } else if (isSettingsPage) {
@@ -286,7 +289,7 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                {(isOrderPage || isEarningsPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage || isRatingsPage) ? (
+                {(isOrderPage || isEarningsPage || isEarningsHistoryPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage || isRatingsPage) ? (
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                       <ArrowLeft className="h-6 w-6" />
                     </Button>
