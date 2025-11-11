@@ -1,5 +1,6 @@
 
 "use client";
+import React from 'react';
 import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout';
 import { usePathname } from 'next/navigation';
 
