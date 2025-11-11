@@ -17,6 +17,7 @@ import type { User as FirebaseUser } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from 'date-fns';
 import { chat, type ChatHistory } from "@/ai/flows/chat-flow";
+import { useRouter } from "next/navigation";
 
 type UnifiedChatThread = SupportChatSession & { type: 'support' };
 
@@ -37,6 +38,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(user => {
@@ -255,7 +257,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       return {
           name: "Support Agent",
           avatarUrl: undefined,
-          subtext: thread.orderId ? `About Order #${thread.orderId}` : "General Support",
+          subtext: "About Order #lT2zM5q5vYVHxy3gG2v1",
           Icon: LifeBuoy
       }
   };
@@ -344,7 +346,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       return (
         <Card className="w-full h-full flex flex-col shadow-none border-0 md:shadow-xl md:border">
             <CardHeader className="flex flex-row items-center gap-4 p-4 border-b">
-                 <Button variant="ghost" size="icon" onClick={() => setSelectedThread(null)} className="mr-2 md:hidden">
+                 <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')} className="mr-2 md:hidden">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <Avatar>
@@ -415,7 +417,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 h-full">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-0 h-full">
        <div className={cn("md:col-span-1 lg:col-span-1 h-full", selectedThread && "hidden md:block")}>
         {renderThreadList()}
        </div>
