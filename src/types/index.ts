@@ -161,8 +161,6 @@ export interface ChatThread {
   lastMessage: string;
   lastMessageTimestamp: any; // Firestore ServerTimestamp
   orderId?: string;
-  lastUpdated?: any;
-  userName?: string; // Adding for consistency
 }
 
 export interface Session {

@@ -97,5 +97,3 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
     </Card>
   );
 }
-
-    

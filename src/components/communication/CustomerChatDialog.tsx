@@ -261,5 +261,3 @@ export function CustomerChatDialog({ order, children, open, onOpenChange }: Cust
     </Dialog>
   );
 }
-
-    
