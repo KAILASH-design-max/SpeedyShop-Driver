@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -205,17 +206,15 @@ export function SettingsPage() {
             ))}
              <Separator />
              
-            {profile && (
-                 <ProfileForm profile={profile} onUpdate={handleProfileUpdate}>
-                    <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary cursor-pointer">
-                        <div className="flex items-center gap-3">
-                            <Banknote className="h-5 w-5 text-muted-foreground" />
-                            <span className="font-medium">Payment Settings</span>
-                        </div>
-                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+             <Link href="/settings/payment" className="block">
+                <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary cursor-pointer">
+                    <div className="flex items-center gap-3">
+                        <Banknote className="h-5 w-5 text-muted-foreground" />
+                        <span className="font-medium">Payment Settings</span>
                     </div>
-                </ProfileForm>
-            )}
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+            </Link>
 
             {profile && <ManageQuickReplies profile={profile} onUpdate={handleProfileUpdate} />}
 

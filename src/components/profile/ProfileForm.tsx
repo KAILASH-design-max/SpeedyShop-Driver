@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,12 +32,6 @@ const profileFormSchema = z.object({
   vehicleRegistrationNumber: z.string().min(2, { message: "Vehicle registration number is required." }),
   drivingLicenseNumber: z.string().optional(),
   'documents.driverLicense.expiryDate': z.string().optional(),
-
-  bankDetails: z.object({
-    accountHolderName: z.string().min(2, "Account holder name is required"),
-    accountNumber: z.string().min(5, "A valid account number is required"),
-    ifscCode: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Invalid IFSC code format"),
-  }),
 });
 
 interface ProfileFormProps {
@@ -63,11 +58,6 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
       vehicleRegistrationNumber: profile.vehicleRegistrationNumber || "",
       drivingLicenseNumber: profile.drivingLicenseNumber || "",
       'documents.driverLicense.expiryDate': profile.documents?.driverLicense?.expiryDate || "",
-      bankDetails: {
-        accountHolderName: profile.bankDetails?.accountHolderName || "",
-        accountNumber: profile.bankDetails?.accountNumber || "",
-        ifscCode: profile.bankDetails?.ifscCode || "",
-      }
     });
   }, [profile, form, open]);
 
@@ -99,7 +89,7 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px]">
          <DialogHeader>
-           <DialogTitle className="text-xl">Edit Profile & Bank Details</DialogTitle>
+           <DialogTitle className="text-xl">Edit Profile</DialogTitle>
          </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[80vh] overflow-y-auto p-1 pr-4">
@@ -213,50 +203,6 @@ export function ProfileForm({ profile, onUpdate, children }: ProfileFormProps) {
               />
             </div>
 
-            <Separator className="my-6"/>
-
-            <h3 className="text-lg font-semibold text-primary border-b pb-2">Bank Details</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="bankDetails.accountHolderName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground"/>Account Holder Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Name as per bank records" {...field} disabled={isSaving}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="bankDetails.accountNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center"><Banknote className="mr-2 h-4 w-4 text-muted-foreground"/>Bank Account Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter account number" {...field} disabled={isSaving}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="bankDetails.ifscCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center"><Banknote className="mr-2 h-4 w-4 text-muted-foreground"/>IFSC Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter IFSC code" {...field} disabled={isSaving}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
              <DialogFooter className="pt-4">
                 <DialogClose asChild>
                     <Button type="button" variant="outline">Cancel</Button>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { app } from "@/lib/firebase";
 import { parseISO, differenceInDays } from "date-fns";
+import Link from 'next/link';
 
 interface ProfileDetailsProps {
     profile: Profile;
@@ -131,8 +133,13 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                 </Card>
 
                  <Card>
-                    <CardHeader>
+                    <CardHeader className="flex flex-row justify-between items-center">
                         <CardTitle className="flex items-center text-lg"><Banknote className="mr-2 text-primary"/>Bank & Payment</CardTitle>
+                         <Link href="/settings/payment">
+                            <Button variant="outline" size="sm">
+                                <Edit className="mr-2 h-4 w-4"/> Manage
+                            </Button>
+                        </Link>
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm">
                         <div className="flex justify-between items-center">
