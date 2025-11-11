@@ -349,6 +349,11 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                  <Button variant="ghost" size="icon" onClick={() => setSelectedThread(null)} className="mr-2 md:hidden">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
+                <Avatar className="h-10 w-10">
+                    <AvatarFallback>
+                        <LifeBuoy size={20} />
+                    </AvatarFallback>
+                </Avatar>
                 <div>
                     <CardTitle className="text-lg">{details.name}</CardTitle>
                     {selectedThread.orderId &&
