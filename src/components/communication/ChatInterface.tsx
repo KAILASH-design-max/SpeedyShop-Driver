@@ -31,7 +31,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [selectedThread, setSelectedThread] = useState<UnifiedChatThread | null>(null);
   const [chatThreads, setChatThreads] = useState<UnifiedChatThread[]>([]);
-  const [messages, setMessages] = useState<CommunicationMessage[]>([]);
+  const [messages, setMessages] useState<CommunicationMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
