@@ -2,8 +2,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Laptop, Smartphone, Loader2, AlertTriangle, CheckCircle, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Laptop, Smartphone, Loader2, AlertTriangle, CheckCircle, LogOut, ArrowLeft } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -11,7 +13,6 @@ import type { Session } from "@/types";
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "../ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { endAllOtherSessions } from "@/lib/sessionManager";
 
@@ -29,12 +30,13 @@ const getDeviceInfo = (userAgent?: string) => {
 };
 
 
-export function LoginActivity() {
+export default function LoginActivityPage() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { toast } = useToast();
+    const router = useRouter();
 
     useEffect(() => {
         const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -114,54 +116,60 @@ export function LoginActivity() {
     const hasUnrecognizedLogin = sessions.some(s => getDeviceInfo(s.userAgent).name === 'Unknown Device');
 
     return (
-        <Card className="shadow-lg">
-            <CardHeader>
-                <CardTitle>Login Activity</CardTitle>
-                <CardDescription>Recent login sessions for your account.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {loading ? (
-                    <div className="flex items-center justify-center p-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="ml-2">Loading sessions...</span>
-                    </div>
-                ) : (
-                    <ul className="space-y-4">
-                        {sessions.map((session, index) => {
-                            const { name: deviceName, icon: DeviceIcon } = getDeviceInfo(session.userAgent);
-                            const isActive = !session.logoutTimestamp;
+        <div className="p-6 space-y-6">
+            <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Settings
+            </Button>
+            <Card className="shadow-xl">
+                <CardHeader>
+                    <CardTitle>Login Activity</CardTitle>
+                    <CardDescription>Recent login sessions for your account.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {loading ? (
+                        <div className="flex items-center justify-center p-4">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            <span className="ml-2">Loading sessions...</span>
+                        </div>
+                    ) : (
+                        <ul className="space-y-4">
+                            {sessions.map((session, index) => {
+                                const { name: deviceName, icon: DeviceIcon } = getDeviceInfo(session.userAgent);
+                                const isActive = !session.logoutTimestamp;
 
-                            return (
-                                <li key={session.id} className="flex items-center gap-4">
-                                    <DeviceIcon className="h-6 w-6 text-muted-foreground"/>
-                                    <div className="flex-grow">
-                                        <p className="font-semibold">{deviceName}</p>
-                                        <p className={cn("text-sm", isActive ? "text-green-600" : "text-muted-foreground")}>
-                                            {session.location || "Unknown Location"} - {isActive ? <span className="font-bold">Active Now</span> : `Logged out ${formatTimestamp(session.logoutTimestamp)}`}
-                                        </p>
-                                    </div>
-                                    {isActive && index === 0 && <CheckCircle className="h-5 w-5 text-green-500" />}
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-                 {hasUnrecognizedLogin && (
-                     <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Unrecognized Login Detected</AlertTitle>
-                        <AlertDescription>
-                            We detected a login from an unrecognized device. If this wasn't you, please secure your account immediately.
-                        </AlertDescription>
-                    </Alert>
-                )}
-            </CardContent>
-             <CardFooter className="border-t pt-4">
-                <Button variant="outline" className="w-full" onClick={handleLogoutFromAll} disabled={isLoggingOut}>
-                    {isLoggingOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <LogOut className="mr-2 h-4 w-4"/>}
-                    {isLoggingOut ? "Logging out..." : "Log out from all other devices"}
-                </Button>
-            </CardFooter>
-        </Card>
+                                return (
+                                    <li key={session.id} className="flex items-center gap-4">
+                                        <DeviceIcon className="h-6 w-6 text-muted-foreground"/>
+                                        <div className="flex-grow">
+                                            <p className="font-semibold">{deviceName}</p>
+                                            <p className={cn("text-sm", isActive ? "text-green-600" : "text-muted-foreground")}>
+                                                {session.location || "Unknown Location"} - {isActive ? <span className="font-bold">Active Now</span> : `Logged out ${formatTimestamp(session.logoutTimestamp)}`}
+                                            </p>
+                                        </div>
+                                        {isActive && index === 0 && <CheckCircle className="h-5 w-5 text-green-500" />}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                    {hasUnrecognizedLogin && (
+                        <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Unrecognized Login Detected</AlertTitle>
+                            <AlertDescription>
+                                We detected a login from an unrecognized device. If this wasn't you, please secure your account immediately.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </CardContent>
+                <CardFooter className="border-t pt-4">
+                    <Button variant="outline" className="w-full" onClick={handleLogoutFromAll} disabled={isLoggingOut}>
+                        {isLoggingOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <LogOut className="mr-2 h-4 w-4"/>}
+                        {isLoggingOut ? "Logging out..." : "Log out from all other devices"}
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
     );
 }

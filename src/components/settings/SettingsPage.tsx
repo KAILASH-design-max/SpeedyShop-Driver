@@ -16,7 +16,8 @@ import {
   MessagesSquare,
   HelpCircle,
   ChevronRight,
-  Banknote
+  Banknote,
+  Activity,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase";
@@ -43,7 +44,6 @@ import { Label } from "@/components/ui/label";
 import { ActiveTimeTracker } from "../dashboard/ActiveTimeTracker";
 import { ProfileForm } from "../profile/ProfileForm";
 import { ManageQuickReplies } from "./ManageQuickReplies";
-import { LoginActivity } from "./LoginActivity";
 
 
 const mainNavItems = [
@@ -233,6 +233,16 @@ export function SettingsPage() {
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>
             </Link>
+
+            <Link href="/settings/login-activity" className="block">
+                <div className="flex items-center justify-between rounded-lg p-3 hover:bg-muted active:bg-secondary cursor-pointer">
+                    <div className="flex items-center gap-3">
+                        <Activity className="h-5 w-5 text-muted-foreground" />
+                        <span className="font-medium">Login Activity</span>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+            </Link>
              
              <Dialog open={isLangDialogOpen} onOpenChange={setLangDialogOpen}>
                 <DialogTrigger asChild>
@@ -264,10 +274,6 @@ export function SettingsPage() {
                 </DialogContent>
              </Dialog>
         </div>
-
-        <Separator />
-
-        <LoginActivity />
 
         <Separator />
 
