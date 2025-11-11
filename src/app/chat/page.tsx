@@ -6,7 +6,7 @@ import { ChatHeader } from '@/components/chat/ChatHeader';
 
 export default function ChatPage() {
   return (
-    <div className="h-[calc(100vh-5rem)] flex flex-col">
+    <div className="h-screen md:h-[calc(100vh-5rem)] flex flex-col">
       <ChatHeader />
       <div className="flex-grow min-h-0">
         <Suspense fallback={<div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
@@ -16,4 +16,3 @@ export default function ChatPage() {
     </div>
   );
 }
-

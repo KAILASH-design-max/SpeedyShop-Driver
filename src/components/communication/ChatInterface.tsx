@@ -270,11 +270,11 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
   const formatMessageTimestamp = (timestamp: any) => {
     if (!timestamp || !timestamp.seconds) return "";
     const date = new Date(timestamp.seconds * 1000);
-    return format(date, 'p');
+    return formatDistanceToNow(date, { addSuffix: true });
   }
 
   const renderThreadList = () => (
-    <Card className="md:col-span-1 lg:col-span-1 h-full flex flex-col shadow-none border-0 md:shadow-xl md:border">
+    <Card className={cn("h-full flex-col shadow-none border-0 md:shadow-xl md:border", selectedThread ? "hidden md:flex" : "flex")}>
         <CardHeader className="hidden md:block">
             <CardTitle className="flex items-center text-2xl font-bold text-primary"><MessageSquare className="mr-2 h-6 w-6"/>Conversations</CardTitle>
             <CardDescription>Your chats with support.</CardDescription>
@@ -346,20 +346,17 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
       return (
         <Card className="w-full h-full flex flex-col shadow-none border-0 md:shadow-xl md:border">
             <CardHeader className="flex flex-row items-center gap-4 p-4 border-b">
-                 <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')} className="mr-2 hidden">
+                 <Button variant="ghost" size="icon" onClick={() => setSelectedThread(null)} className="mr-2 md:hidden">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <Avatar className="hidden">
-                    <AvatarFallback>
-                         <details.Icon size={20}/>
-                    </AvatarFallback>
-                </Avatar>
                 <div>
                     <CardTitle className="text-lg">{details.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-1">
-                        {selectedThread.orderId && <Package size={14}/>}
-                        {details.subtext}
-                    </CardDescription>
+                    {selectedThread.orderId &&
+                        <CardDescription className="flex items-center gap-1">
+                            <Package size={14}/>
+                            {'About Order #' + selectedThread.orderId.substring(0, 6)}...
+                        </CardDescription>
+                    }
                 </div>
             </CardHeader>
             <ScrollArea className="flex-grow p-4 space-y-4 bg-muted/20" ref={scrollAreaRef}>
@@ -369,24 +366,34 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
                 </div>
             ) : (
                 messages.map((msg) => (
-                    <div key={msg.id} className={cn("flex mb-3 items-end gap-2", msg.senderId === currentUser.uid ? "justify-end" : "justify-start")}>
+                    <div key={msg.id} className={cn("flex mb-3 items-start gap-3", msg.senderId === currentUser.uid ? "justify-end" : "justify-start")}>
                         {msg.senderId !== currentUser.uid && (
                            <Avatar className="h-8 w-8">
                                 <AvatarFallback>
-                                   {details.name.substring(0,1).toUpperCase()}
+                                   <LifeBuoy size={16} />
                                 </AvatarFallback>
                            </Avatar>
                         )}
                         <div
                         className={cn(
-                            "max-w-[70%] p-3 rounded-xl text-sm",
-                            msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-background shadow-sm rounded-bl-none"
+                            "max-w-[70%]",
+                            msg.senderId === currentUser.uid && "ml-auto"
                         )}
                         >
-                            <p>{msg.message}</p>
-                            <p className={cn("text-xs mt-1", msg.senderId === currentUser.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-left")}>
-                                {formatMessageTimestamp(msg.timestamp)}
-                            </p>
+                            <div className="flex justify-between items-center mb-1">
+                                <p className="text-xs font-semibold">{msg.senderId === currentUser.uid ? profile?.name || "Me" : details.name}</p>
+                                 <p className="text-xs text-muted-foreground">
+                                    {formatMessageTimestamp(msg.timestamp)}
+                                </p>
+                            </div>
+                            <div
+                                className={cn(
+                                "p-3 rounded-xl text-sm",
+                                msg.senderId === currentUser.uid ? "bg-primary text-primary-foreground rounded-br-none" : "bg-background shadow-sm rounded-bl-none"
+                            )}
+                            >
+                                <p>{msg.message}</p>
+                            </div>
                         </div>
                     </div>
                 ))
@@ -418,9 +425,7 @@ export function ChatInterface({ preselectedThreadId }: ChatInterfaceProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-0 h-full">
-       <div className={cn("md:col-span-1 lg:col-span-1 h-full", selectedThread && "hidden md:block")}>
-        {renderThreadList()}
-       </div>
+       {renderThreadList()}
        <div className={cn("md:col-span-2 lg:col-span-3 h-full", !selectedThread && "hidden md:flex")}>
         {renderChatWindow()}
        </div>
