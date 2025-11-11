@@ -11,12 +11,6 @@ export default function MonthlyEarningsHistoryPage() {
 
   return (
     <div className="md:p-6 space-y-6">
-      <div className="p-4 md:p-0">
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-      </div>
       <MonthlyEarningsHistory />
     </div>
   );
