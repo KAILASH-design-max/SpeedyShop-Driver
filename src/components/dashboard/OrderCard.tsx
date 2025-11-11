@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Navigation, MessageSquare, CheckCircle, PackageCheck } from "lucide-react";
+import { Navigation, MessageSquare, CheckCircle, PackageCheck, Store } from "lucide-react";
 import type { Order } from "@/types";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -16,15 +16,16 @@ interface OrderCardProps {
   onCustomerChat: (order: Order) => void;
 }
 
-const statusInfo: { [key in Order['status']]?: { label: string, color: string, action: { href: (orderId: string) => string; text: string } | null } } = {
-    'accepted': { label: 'Accepted', color: 'text-accent', action: { href: (orderId) => `/orders/${orderId}`, text: "Go to Pickup" }},
-    'arrived-at-store': { label: 'At Store', color: 'text-teal-400', action: { href: (orderId) => `/orders/${orderId}`, text: "Confirm Pickup" }},
-    'picked-up': { label: 'Picked Up', color: 'text-cyan-400', action: { href: (orderId) => `/orders/${orderId}`, text: "Navigate to Customer" }},
-    'out-for-delivery': { label: 'Out for Delivery', color: 'text-purple-400', action: { href: (orderId) => `/orders/${orderId}`, text: "Navigate to Customer" }},
-    'arrived': { label: 'Arrived', color: 'text-indigo-400', action: { href: (orderId) => `/orders/${orderId}`, text: "Confirm Delivery" }},
+const statusInfo: { [key in Order['status']]?: { label: string, color: string, action: { getHref: (orderId: string) => string; text: string; icon: React.ElementType } | null } } = {
+    'accepted': { label: 'Go to Store', color: 'text-accent', action: { getHref: (orderId) => `/navigate/${orderId}?type=pickup`, text: "Navigate to Store", icon: Store }},
+    'arrived-at-store': { label: 'At Store', color: 'text-teal-400', action: { getHref: (orderId) => `/navigate/${orderId}?type=pickup`, text: "Confirm Pickup", icon: PackageCheck }},
+    'picked-up': { label: 'Picked Up', color: 'text-cyan-400', action: { getHref: (orderId) => `/navigate/${orderId}?type=dropoff`, text: "Navigate to Customer", icon: Navigation }},
+    'out-for-delivery': { label: 'Out for Delivery', color: 'text-purple-400', action: { getHref: (orderId) => `/navigate/${orderId}?type=dropoff`, text: "Navigate to Customer", icon: Navigation }},
+    'arrived': { label: 'At Customer', color: 'text-indigo-400', action: { getHref: (orderId) => `/orders/${orderId}`, text: "Confirm Delivery", icon: CheckCircle }},
     'delivered': { label: 'Delivered', color: 'text-green-500', action: null },
     'cancelled': { label: 'Cancelled', color: 'text-destructive', action: null }
 }
+
 
 export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
 
@@ -35,7 +36,7 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
   }
   
   const currentStatus = statusInfo[order.status];
-  const navAction = currentStatus?.action ? { href: currentStatus.action.href(order.id), text: currentStatus.action.text } : null;
+  const navAction = currentStatus?.action ? { href: currentStatus.action.getHref(order.id), text: currentStatus.action.text, Icon: currentStatus.action.icon } : null;
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col h-full bg-card">
@@ -75,6 +76,7 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
             {navAction && (
                 <Button asChild className="w-full text-base font-bold py-6">
                     <Link href={navAction.href}>
+                         <navAction.Icon className="mr-2 h-5 w-5"/>
                         {navAction.text}
                     </Link>
                 </Button>
@@ -84,14 +86,6 @@ export function OrderCard({ order, onCustomerChat }: OrderCardProps) {
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Chat
                 </Button>
-                {order.status === 'arrived' && (
-                    <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white">
-                        <Link href={`/orders/${order.id}`}>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Confirm
-                        </Link>
-                    </Button>
-                )}
              </div>
         </CardFooter>
     </Card>

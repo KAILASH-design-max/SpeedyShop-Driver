@@ -193,6 +193,7 @@ export default function OrderPage() {
                 description: `Order #${order.id} has been moved to your active orders.`,
                 className: "bg-green-500 text-white",
             });
+            router.push(`/navigate/${order.id}?type=pickup`);
         } catch (error) {
             console.error("Error accepting order:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not accept order." });
@@ -423,26 +424,11 @@ export default function OrderPage() {
           </div>
 
           {order.status === "arrived-at-store" && (
-              <div className="space-y-4">
-                  <Button onClick={() => {
-                      if (order) {
-                          setIsUpdating(true);
-                          const orderRef = doc(db, "orders", order.id);
-                          updateDoc(orderRef, { status: "picked-up" })
-                              .then(() => {
-                                  toast({ title: "Pickup Confirmed", description: "Order marked as picked up.", className: "bg-green-500 text-white" });
-                              })
-                              .catch(err => {
-                                  toast({ variant: "destructive", title: "Error", description: "Could not update status." });
-                                  console.error(err);
-                              })
-                              .finally(() => setIsUpdating(false));
-                      }
-                  }} className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-base py-6 font-bold" disabled={isUpdating}>
-                      {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-5 w-5" />}
-                      Confirm Pickup
-                  </Button>
-              </div>
+                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base py-6 font-bold" disabled={isUpdating}>
+                    <Link href={`/navigate/${order.id}?type=pickup`}>
+                        <PackageCheck className="mr-2 h-5 w-5" /> Confirm Pickup From Store
+                    </Link>
+                </Button>
           )}
 
           {order.status === "arrived" && (
