@@ -31,6 +31,7 @@ import { RateAndReport } from "@/components/orders/RateAndReport";
 import Link from 'next/link';
 import { User } from "firebase/auth";
 import { Textarea } from "@/components/ui/textarea";
+import { CustomerChatDialog } from "@/components/communication/CustomerChatDialog";
 
 export default function OrderPage() {
   const params = useParams();
@@ -45,6 +46,7 @@ export default function OrderPage() {
   const locationWatcherId = useRef<number | null>(null);
   const [cancellationReason, setCancellationReason] = useState("");
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+  const [isCustomerChatOpen, setIsCustomerChatOpen] = useState(false);
 
 
   useEffect(() => {
@@ -330,6 +332,14 @@ export default function OrderPage() {
     <div className="space-y-6 md:p-6">
       <OrderDetailsDisplay order={order} deliveryPartner={deliveryPartner} />
       
+      {order && (
+        <CustomerChatDialog
+          order={order}
+          open={isCustomerChatOpen}
+          onOpenChange={setIsCustomerChatOpen}
+        />
+      )}
+
       <div className="px-4 md:px-0">
         {order.status === "Placed" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -364,6 +374,12 @@ export default function OrderPage() {
                     </Link>
                   </Button>
                 </>
+              )}
+
+              {isOrderActive && (
+                 <Button variant="outline" className="w-full" onClick={() => setIsCustomerChatOpen(true)}>
+                    <MessageSquare className="mr-2 h-5 w-5" /> Chat with Customer
+                 </Button>
               )}
 
               <Button variant="outline" className="w-full" disabled={isUpdating || isOrderComplete} onClick={() => router.push(`/chat?orderId=${order.id}`)}>
