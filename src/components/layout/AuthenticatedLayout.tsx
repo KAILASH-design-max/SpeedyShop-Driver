@@ -158,6 +158,7 @@ export default function AuthenticatedLayout({
   const isCommunityPage = pathname.startsWith('/community');
   const isAchievementsPage = pathname.startsWith('/achievements');
   const isSupportPage = pathname.startsWith('/support');
+  const isProfilePage = pathname.startsWith('/profile');
 
   let headerTitle = "SpeedyDelivery";
   if (isOrderPage) {
@@ -174,6 +175,8 @@ export default function AuthenticatedLayout({
     headerTitle = "Achievements";
   } else if (isSupportPage) {
     headerTitle = "Support";
+  } else if (isProfilePage) {
+    headerTitle = "Profile";
   }
 
 
@@ -279,7 +282,7 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                {(isOrderPage || isEarningsPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage) ? (
+                {(isOrderPage || isEarningsPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage) ? (
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                       <ArrowLeft className="h-6 w-6" />
                     </Button>
