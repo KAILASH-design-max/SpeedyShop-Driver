@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Laptop, Smartphone, Loader2, AlertTriangle, CheckCircle } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Laptop, Smartphone, Loader2, AlertTriangle, CheckCircle, LogOut } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -11,6 +11,9 @@ import type { Session } from "@/types";
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "../ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { endAllOtherSessions } from "@/lib/sessionManager";
 
 
 // Helper function to parse User Agent string
@@ -30,6 +33,8 @@ export function LoginActivity() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const { toast } = useToast();
 
     useEffect(() => {
         const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -77,6 +82,28 @@ export function LoginActivity() {
 
         return () => unsubscribe();
     }, [currentUser]);
+
+    const handleLogoutFromAll = async () => {
+        if (!currentUser) return;
+        setIsLoggingOut(true);
+        try {
+            await endAllOtherSessions(currentUser.uid);
+            toast({
+                title: "Success",
+                description: "You have been logged out from all other devices.",
+                className: "bg-green-500 text-white"
+            });
+        } catch (error) {
+            console.error("Error logging out from all devices:", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not log out from other devices. Please try again."
+            });
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
 
     const formatTimestamp = (timestamp: any) => {
         if (!timestamp) return 'N/A';
@@ -129,6 +156,12 @@ export function LoginActivity() {
                     </Alert>
                 )}
             </CardContent>
+             <CardFooter className="border-t pt-4">
+                <Button variant="outline" className="w-full" onClick={handleLogoutFromAll} disabled={isLoggingOut}>
+                    {isLoggingOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <LogOut className="mr-2 h-4 w-4"/>}
+                    {isLoggingOut ? "Logging out..." : "Log out from all other devices"}
+                </Button>
+            </CardFooter>
         </Card>
     );
 }

@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
 
 // Use UTC to avoid timezone issues where the date might change overnight during a session.
 const getTodayDateString = () => {
@@ -49,5 +49,35 @@ export const endSession = async () => {
         sessionStorage.removeItem('active_session_id');
     } catch (error) {
         console.error("Error ending session:", error);
+    }
+};
+
+export const endAllOtherSessions = async (userId: string) => {
+    if (!userId) return;
+    if (typeof window === 'undefined' || !window.sessionStorage) return;
+    const currentSessionId = sessionStorage.getItem('active_session_id');
+
+    try {
+        const q = query(
+            collection(db, "sessions"),
+            where("userId", "==", userId),
+            where("logoutTimestamp", "==", null)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const batch = writeBatch(db);
+
+        querySnapshot.forEach((document) => {
+            if (document.id !== currentSessionId) {
+                const docRef = doc(db, "sessions", document.id);
+                batch.update(docRef, { logoutTimestamp: serverTimestamp() });
+            }
+        });
+
+        await batch.commit();
+
+    } catch (error) {
+        console.error("Error ending other sessions:", error);
+        throw error;
     }
 };
