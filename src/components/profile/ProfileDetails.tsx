@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +66,7 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6 p-4 md:p-0">
                 <div className="relative">
                     <Avatar className="h-24 w-24 border-4 border-primary">
                         <AvatarImage src={profile.profilePictureUrl || undefined} alt={profile.name} data-ai-hint="person face" />
@@ -92,7 +91,7 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                 <Card>
+                 <Card className="shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border">
                     <CardHeader>
                         <CardTitle className="flex items-center text-lg"><User className="mr-2 text-primary"/>Profile Information</CardTitle>
                     </CardHeader>
@@ -132,7 +131,7 @@ export function ProfileDetails({ profile, onUpdate }: ProfileDetailsProps) {
                     </CardContent>
                 </Card>
 
-                 <Card>
+                 <Card className="shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border">
                     <CardHeader className="flex flex-row justify-between items-center">
                         <CardTitle className="flex items-center text-lg"><Banknote className="mr-2 text-primary"/>Bank & Payment</CardTitle>
                          <Link href="/settings/payment">

@@ -245,7 +245,7 @@ export function DocumentManagement({ profile, onUpdate }: DocumentManagementProp
 
   if (!profile?.uid) {
       return (
-        <Card className="shadow-xl">
+        <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
           <CardHeader>
             <CardTitle className="flex items-center text-2xl font-bold text-primary"><FileText className="mr-2 h-6 w-6"/>KYC Documents</CardTitle>
             <CardDescription>Manage your verification documents.</CardDescription>
@@ -258,7 +258,7 @@ export function DocumentManagement({ profile, onUpdate }: DocumentManagementProp
   }
 
   return (
-    <Card className="shadow-xl">
+    <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
       <CardHeader>
         <CardTitle className="flex items-center text-lg"><FileText className="mr-2 h-6 w-6 text-primary"/>KYC Documents</CardTitle>
         <CardDescription>Manage your verification documents.</CardDescription>

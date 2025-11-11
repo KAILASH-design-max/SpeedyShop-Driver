@@ -134,7 +134,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="md:p-6 space-y-6">
         <ProfileDetails profile={profile} onUpdate={handleProfileUpdate} />
         <DocumentManagement profile={profile} onUpdate={handleProfileUpdate} />
     </div>
