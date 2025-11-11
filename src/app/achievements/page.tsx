@@ -171,7 +171,7 @@ export default function AchievementsPage() {
 
     if (achievements.length === 0 && !loading) {
       return (
-        <Card className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border">
+        <Card className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground border-border mx-4">
           <Trophy className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <p className="font-semibold text-lg">No Challenges Available</p>
           <p className="text-sm mt-1">Complete some deliveries to unlock your first set of achievements!</p>
@@ -183,8 +183,8 @@ export default function AchievementsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-       <div className="flex justify-between items-center">
+    <div className="md:p-6 space-y-6">
+       <div className="flex justify-between items-center px-4 pt-4 md:px-0 md:pt-0">
          <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back

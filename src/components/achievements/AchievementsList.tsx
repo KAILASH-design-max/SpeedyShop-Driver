@@ -33,8 +33,8 @@ const getStatusBadgeClass = (status: string) => {
 
 export function AchievementsList({ achievements }: AchievementsListProps) {
     return (
-        <Card className="shadow-xl">
-            <CardHeader>
+        <Card className="shadow-none md:shadow-xl border-0 md:border">
+            <CardHeader className="px-4 md:px-6">
               <CardTitle className="text-3xl font-bold text-primary flex items-center">
                   <Trophy className="mr-3 h-8 w-8"/>
                   Daily Challenges & Achievements
@@ -42,7 +42,7 @@ export function AchievementsList({ achievements }: AchievementsListProps) {
               <CardDescription>Complete challenges to earn extra rewards and badges.</CardDescription>
             </CardHeader>
             
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 md:p-6">
                 {achievements.map((item, index) => {
                     const Icon = iconMap[item.icon] || Target;
                     const isCompleted = item.status === 'Completed';
