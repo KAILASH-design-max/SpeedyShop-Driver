@@ -13,9 +13,6 @@ function OrdersHeader() {
     return (
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
                 <div>
                     <h1 className="text-2xl font-bold flex items-center"><Package className="mr-2 h-6 w-6"/>Delivery History</h1>
                     <p className="text-muted-foreground text-sm">View your past deliveries</p>
