@@ -220,12 +220,12 @@ export function PerformanceMetrics({ profile }: PerformanceMetricsProps) {
   );
 
   return (
-    <Card className="shadow-xl">
-      <CardHeader>
+    <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
+      <CardHeader className="px-4 md:px-6">
         <CardTitle className="flex items-center text-2xl font-bold text-primary"><BarChart className="mr-2 h-6 w-6"/>Your Performance</CardTitle>
         <CardDescription>A summary of your customer ratings and delivery statistics.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-8">
+      <CardContent className="space-y-8 px-4 md:px-6">
         
         {/* Performance Stats */}
         <div>

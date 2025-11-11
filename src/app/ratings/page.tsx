@@ -63,8 +63,8 @@ export default function RatingsPage() {
   }
 
   return (
-    <div className="space-y-6 px-1 pb-6">
-      <div className="hidden md:block">
+    <div className="space-y-6 md:p-6 pb-6">
+      <div className="hidden md:block px-6 pt-6 md:p-0">
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
