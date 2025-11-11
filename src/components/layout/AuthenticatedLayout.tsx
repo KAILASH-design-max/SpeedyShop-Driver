@@ -152,7 +152,8 @@ export default function AuthenticatedLayout({
     { href: "/chat", label: "Chat", icon: MessagesSquare },
   ];
 
-  const isOrderPage = pathname.startsWith('/orders/');
+  const isOrderDetailsPage = /^\/orders\/[^/]+$/.test(pathname);
+  const isOrdersHistoryPage = pathname === '/orders';
   const isEarningsPage = pathname === '/earnings';
   const isEarningsHistoryPage = pathname.startsWith('/earnings/history');
   const isSettingsPage = pathname.startsWith('/settings');
@@ -164,8 +165,10 @@ export default function AuthenticatedLayout({
   const isRatingsPage = pathname.startsWith('/ratings');
 
   let headerTitle = "SpeedyDelivery";
-  if (isOrderPage) {
-    headerTitle = "Order";
+  if (isOrderDetailsPage) {
+    headerTitle = "Order Details";
+  } else if (isOrdersHistoryPage) {
+    headerTitle = "Delivery History";
   } else if (isEarningsHistoryPage) {
     headerTitle = "Earnings History";
   } else if (isEarningsPage) {
@@ -289,7 +292,7 @@ export default function AuthenticatedLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="md:hidden flex items-center gap-2">
-                {(isOrderPage || isEarningsPage || isEarningsHistoryPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage || isRatingsPage) ? (
+                {(isOrderDetailsPage || isOrdersHistoryPage || isEarningsPage || isEarningsHistoryPage || isSettingsPage || isAnalyticsPage || isCommunityPage || isAchievementsPage || isSupportPage || isProfilePage || isRatingsPage) ? (
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                       <ArrowLeft className="h-6 w-6" />
                     </Button>
