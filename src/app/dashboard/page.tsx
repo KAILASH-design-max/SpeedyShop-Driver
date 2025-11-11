@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -20,6 +21,7 @@ import { EarningsForecast } from "@/components/dashboard/EarningsForecast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvailabilityToggle } from "@/components/dashboard/AvailabilityToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 
 export default function DashboardPage() {
@@ -227,11 +229,15 @@ export default function DashboardPage() {
                 <Tabs defaultValue="active-orders">
                     <CardHeader>
                         <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="active-orders">
-                                <PackageCheck className="mr-2 h-4 w-4" /> Active Orders
+                            <TabsTrigger value="active-orders" className="flex items-center gap-2">
+                                <PackageCheck className="h-4 w-4" /> 
+                                <span>Active Orders</span>
+                                <Badge className="ml-auto">{activeOrders.length}</Badge>
                             </TabsTrigger>
-                            <TabsTrigger value="available-orders">
-                                <PackagePlus className="mr-2 h-4 w-4" /> Available Orders
+                            <TabsTrigger value="available-orders" className="flex items-center gap-2">
+                                <PackagePlus className="h-4 w-4" /> 
+                                <span>Available Orders</span>
+                                <Badge variant="secondary" className="ml-auto">{availableOrders.length}</Badge>
                             </TabsTrigger>
                         </TabsList>
                     </CardHeader>
@@ -297,5 +303,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
