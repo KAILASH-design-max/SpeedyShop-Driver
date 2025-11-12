@@ -72,8 +72,8 @@ export function PaymentSettings({ profile, onUpdate }: PaymentSettingsProps) {
   }
 
   return (
-    <Card className="shadow-xl">
-        <CardHeader>
+    <Card className="shadow-none md:shadow-xl rounded-none md:rounded-lg border-x-0 md:border">
+        <CardHeader className="px-4 md:px-6">
             <CardTitle className="flex items-center text-2xl font-bold text-primary">
                 <Banknote className="mr-3 h-6 w-6"/>
                 Payment Settings
@@ -82,7 +82,7 @@ export function PaymentSettings({ profile, onUpdate }: PaymentSettingsProps) {
                 Manage your bank account details for payouts. Changes may require re-verification.
             </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 md:px-6">
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-1">
                 <FormField
