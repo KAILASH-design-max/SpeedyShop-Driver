@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -17,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { User, Save, Loader2, Banknote } from "lucide-react";
 import type { Profile } from "@/types";
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "../ui/switch";
 
 const paymentSettingsSchema = z.object({
