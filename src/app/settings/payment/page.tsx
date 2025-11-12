@@ -88,14 +88,7 @@ export default function PaymentSettingsPage() {
 
   return (
     <div className="md:p-6 space-y-6">
-      <div className="hidden md:block">
-        <Button variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Settings
-        </Button>
-      </div>
       <PaymentSettings profile={profile} onUpdate={handleUpdate} />
     </div>
   );
 }
-
