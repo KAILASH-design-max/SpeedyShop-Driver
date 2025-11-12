@@ -159,6 +159,7 @@ export default function AuthenticatedLayout({
   const isEarningsHistoryPage = pathname.startsWith('/earnings/history');
   const isSettingsPermissionsPage = pathname.startsWith('/settings/permissions');
   const isSettingsLoginActivityPage = pathname.startsWith('/settings/login-activity');
+  const isSettingsPaymentPage = pathname.startsWith('/settings/payment');
   const isSettingsPage = pathname.startsWith('/settings');
   const isAnalyticsPage = pathname.startsWith('/analytics');
   const isCommunityPage = pathname.startsWith('/community');
@@ -181,6 +182,8 @@ export default function AuthenticatedLayout({
     headerTitle = "Permissions";
   } else if (isSettingsLoginActivityPage) {
     headerTitle = "Login Activity";
+  } else if (isSettingsPaymentPage) {
+    headerTitle = "Payment Settings";
   } else if (isSettingsPage) {
     headerTitle = "Settings";
   } else if (isAnalyticsPage) {
